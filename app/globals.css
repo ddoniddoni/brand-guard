@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #181d26;
+  --font-brand-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  --font-brand-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo,
+    monospace;
+  --color-primary: #181d26;
+  --color-primary-active: #0d1218;
+  --color-ink: #181d26;
+  --color-body: #333840;
+  --color-muted: #41454d;
+  --color-hairline: #dddddd;
+  --color-canvas: #ffffff;
+  --color-surface-soft: #f8fafc;
+  --color-surface-strong: #e0e2e6;
+  --color-review-canvas: #181d26;
+  --color-review-canvas-panel: #1d1f25;
+  --color-review-overlay-hand: #aa2d00;
+  --color-review-overlay-ocr: #254fad;
+  --color-risk-low-bg: #eef8f0;
+  --color-risk-low-text: #006400;
+  --color-risk-medium-bg: #fff4cf;
+  --color-risk-medium-text: #6f4a00;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-brand-sans);
+  --font-mono: var(--font-brand-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-brand-sans);
+  letter-spacing: 0;
+}
+
+button,
+a {
+  cursor: pointer;
+}
