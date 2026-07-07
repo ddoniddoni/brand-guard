@@ -31,12 +31,20 @@ export default async function CampaignReviewPage({
     <AppShell activePath="/campaigns">
       <PageHeader
         action={
-          <Link
-            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
-            href="/campaigns"
-          >
-            목록으로
-          </Link>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
+              href={`/campaigns/${campaign.id}/versions`}
+            >
+              버전 비교
+            </Link>
+            <Link
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
+              href="/campaigns"
+            >
+              목록으로
+            </Link>
+          </div>
         }
         description="이미지 오버레이, 리스크 후보, 감지 근거, 수정 제안, 코멘트와 상태 변경 이력을 한 화면에서 검토합니다."
         eyebrow={`${campaign.brandName} · ${getChannelLabel(campaign.channel)}`}

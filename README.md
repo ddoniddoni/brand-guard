@@ -30,6 +30,7 @@ Open `http://localhost:3000`.
 - `/campaigns`
 - `/campaigns/new`
 - `/campaigns/[id]/review`
+- `/campaigns/[id]/versions`
 - `/risk-dictionary`
 - `/cases`
 - `/settings/team`
