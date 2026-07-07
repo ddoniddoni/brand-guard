@@ -31,7 +31,7 @@ export function StatusBadge({
   return (
     <span
       className={cx(
-        "inline-flex min-h-7 items-center rounded-md px-2.5 py-1 text-xs font-medium",
+        "inline-flex min-h-7 items-center whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium",
         statusClassName[status],
         className,
       )}

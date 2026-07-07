@@ -13,7 +13,7 @@ export function VersionScoreCards({
       : `${comparison.scoreDelta}`;
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[1fr_180px_1fr]">
+    <section className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_180px_minmax(0,1fr)]">
       <VersionScoreCard version={comparison.before} />
       <div className="flex min-h-36 flex-col items-center justify-center rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-5 text-center">
         <p className="text-sm font-medium text-[var(--color-muted)]">
@@ -39,7 +39,7 @@ function VersionScoreCard({
   return (
     <article className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-medium text-[var(--color-muted)]">
             {version.label}
           </p>
@@ -47,7 +47,7 @@ function VersionScoreCard({
             {version.riskScore}
           </p>
         </div>
-        <StatusBadge status={version.status} />
+        <StatusBadge className="shrink-0" status={version.status} />
       </div>
       <p className="mt-4 text-sm text-[var(--color-body)]">
         생성일 {formatDate(version.createdAt)}

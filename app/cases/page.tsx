@@ -150,73 +150,77 @@ export default async function CasesPage({
         </section>
 
         <form
-          className="grid min-w-0 gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 md:grid-cols-2 xl:grid-cols-[minmax(280px,1fr)_minmax(150px,180px)_minmax(132px,150px)_minmax(150px,170px)_minmax(96px,max-content)_minmax(96px,max-content)]"
+          className="grid min-w-0 gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4"
           role="search"
         >
-          <label className="relative min-w-0">
-            <span className="sr-only">케이스 검색</span>
-            <Search
-              aria-hidden="true"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
-              size={16}
-              strokeWidth={1.8}
-            />
-            <input
-              className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white pl-10 pr-3 text-sm outline-none focus:border-[var(--color-info-border)]"
-              defaultValue={rawQuery}
-              name="q"
-              placeholder="케이스, 캠페인, 체크포인트 검색"
-            />
-          </label>
+          <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.4fr)_repeat(3,minmax(0,1fr))]">
+            <label className="relative min-w-0">
+              <span className="sr-only">케이스 검색</span>
+              <Search
+                aria-hidden="true"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
+                size={16}
+                strokeWidth={1.8}
+              />
+              <input
+                className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white pl-10 pr-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+                defaultValue={rawQuery}
+                name="q"
+                placeholder="케이스, 캠페인, 체크포인트 검색…"
+              />
+            </label>
 
-          <SelectFilter
-            defaultValue={category}
-            label="검토 후보"
-            name="category"
-          >
-            <option value="">전체 후보</option>
-            {categoryOptions.map((option) => (
-              <option key={option} value={option}>
-                {getRiskCategoryLabel(option)}
-              </option>
-            ))}
-          </SelectFilter>
+            <SelectFilter
+              defaultValue={category}
+              label="검토 후보"
+              name="category"
+            >
+              <option value="">전체 후보</option>
+              {categoryOptions.map((option) => (
+                <option key={option} value={option}>
+                  {getRiskCategoryLabel(option)}
+                </option>
+              ))}
+            </SelectFilter>
 
-          <SelectFilter defaultValue={channel} label="채널" name="channel">
-            <option value="">전체 채널</option>
-            {channelOptions.map((option) => (
-              <option key={option} value={option}>
-                {getChannelLabel(option)}
-              </option>
-            ))}
-          </SelectFilter>
+            <SelectFilter defaultValue={channel} label="채널" name="channel">
+              <option value="">전체 채널</option>
+              {channelOptions.map((option) => (
+                <option key={option} value={option}>
+                  {getChannelLabel(option)}
+                </option>
+              ))}
+            </SelectFilter>
 
-          <SelectFilter defaultValue={outcome} label="결과" name="outcome">
-            <option value="">전체 결과</option>
-            {outcomeOptions.map((option) => (
-              <option key={option} value={option}>
-                {outcomeLabels[option]}
-              </option>
-            ))}
-          </SelectFilter>
+            <SelectFilter defaultValue={outcome} label="결과" name="outcome">
+              <option value="">전체 결과</option>
+              {outcomeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {outcomeLabels[option]}
+                </option>
+              ))}
+            </SelectFilter>
+          </div>
 
-          <button
-            className="inline-flex min-h-11 min-w-24 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
-            type="submit"
-          >
-            <Filter aria-hidden="true" size={16} strokeWidth={1.8} />
-            적용
-          </button>
-          <Link
-            className="inline-flex min-h-11 min-w-24 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-4 text-sm font-medium text-[var(--color-body)]"
-            href="/cases"
-          >
-            <RotateCcw aria-hidden="true" size={15} strokeWidth={1.8} />
-            초기화
-          </Link>
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:justify-end">
+            <button
+              className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+              type="submit"
+            >
+              <Filter aria-hidden="true" size={16} strokeWidth={1.8} />
+              적용
+            </button>
+            <Link
+              className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-4 text-sm font-medium text-[var(--color-body)] hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+              href="/cases"
+            >
+              <RotateCcw aria-hidden="true" size={15} strokeWidth={1.8} />
+              초기화
+            </Link>
+          </div>
         </form>
 
-        <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
+        <section className="overflow-hidden rounded-xl border border-[var(--color-hairline)] bg-white">
           <div className="border-b border-[var(--color-hairline)] px-5 py-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -226,28 +230,24 @@ export default async function CasesPage({
                 </p>
               </div>
               <p className="text-sm text-[var(--color-muted)]">
-                사례, 후보, 결과, 재사용 체크포인트만 표시합니다.
+                사례, 검토 후보, 결과 중심으로 표시합니다.
               </p>
             </div>
           </div>
 
           {filteredCases.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] table-fixed border-collapse text-left text-sm">
+              <table className="w-full min-w-[680px] table-fixed border-collapse text-left text-sm">
                 <colgroup>
-                  <col className="w-[34%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[16%]" />
+                  <col className="w-[48%]" />
                   <col className="w-[22%]" />
-                  <col className="w-[10%]" />
+                  <col className="w-[30%]" />
                 </colgroup>
                 <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
                   <tr>
                     <th className="px-5 py-3 font-medium">사례</th>
                     <th className="px-4 py-3 font-medium">검토 후보</th>
-                    <th className="px-4 py-3 font-medium">결과</th>
-                    <th className="px-4 py-3 font-medium">체크포인트</th>
-                    <th className="px-4 py-3 font-medium">담당자</th>
+                    <th className="px-4 py-3 font-medium">결과와 체크포인트</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -257,14 +257,18 @@ export default async function CasesPage({
                       key={item.id}
                     >
                       <td className="px-5 py-4">
-                        <p className="font-medium text-[var(--color-ink)]">
+                        <p
+                          className="truncate font-medium text-[var(--color-ink)]"
+                          title={item.title}
+                        >
                           {item.title}
                         </p>
                         <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--color-muted)]">
                           {item.summary}
                         </p>
                         <p className="mt-2 truncate text-xs text-[var(--color-muted)]">
-                          {item.relatedCampaign} · {getChannelLabel(item.channel)}
+                          {item.relatedCampaign} · {getChannelLabel(item.channel)} ·{" "}
+                          담당 {item.ownerName}
                         </p>
                       </td>
                       <td className="px-4 py-4">
@@ -281,25 +285,18 @@ export default async function CasesPage({
                           <span className="text-xs tabular-nums text-[var(--color-muted)]">
                             {formatDate(item.reviewDate)}
                           </span>
+                          <ul className="grid gap-1.5 text-xs leading-5 text-[var(--color-body)]">
+                            {item.checkpoints.slice(0, 2).map((checkpoint) => (
+                              <li className="flex gap-2" key={checkpoint}>
+                                <span
+                                  aria-hidden="true"
+                                  className="mt-2 size-1.5 shrink-0 rounded-full bg-[var(--color-surface-strong)]"
+                                />
+                                <span className="line-clamp-1">{checkpoint}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <ul className="grid gap-1.5 text-xs leading-5 text-[var(--color-body)]">
-                          {item.checkpoints.slice(0, 2).map((checkpoint) => (
-                            <li className="flex gap-2" key={checkpoint}>
-                              <span
-                                aria-hidden="true"
-                                className="mt-2 size-1.5 shrink-0 rounded-full bg-[var(--color-surface-strong)]"
-                              />
-                              <span>{checkpoint}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className="block truncate" title={item.ownerName}>
-                          {item.ownerName}
-                        </span>
                       </td>
                     </tr>
                   ))}
@@ -339,7 +336,7 @@ function SelectFilter({
     <label className="min-w-0">
       <span className="sr-only">{label}</span>
       <select
-        className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+        className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
         defaultValue={defaultValue}
         name={name}
       >

@@ -45,13 +45,13 @@ export function CampaignVersionsRoute({
           eyebrow="Version comparison"
           title="버전 비교 대상을 찾을 수 없습니다"
         />
-        <div className="p-6 sm:p-8">
+        <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
           <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
             <p className="text-sm leading-6 text-[var(--color-body)]">
               새 캠페인을 생성하거나 캠페인 목록에서 검토 대상을 다시 선택하세요.
             </p>
             <Link
-              className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
+              className="mt-5 inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
               href="/campaigns"
             >
               캠페인 목록
@@ -68,7 +68,7 @@ export function CampaignVersionsRoute({
         <PageHeader
           action={
             <Link
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
+              className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
               href={`/campaigns/${campaign.id}/review`}
             >
               리뷰로 돌아가기
@@ -78,7 +78,7 @@ export function CampaignVersionsRoute({
           eyebrow={`${campaign.brandName} · ${getChannelLabel(campaign.channel)}`}
           title={`${campaign.name} 버전 비교`}
         />
-        <div className="p-6 sm:p-8">
+        <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
           <div className="grid min-h-72 place-items-center rounded-xl border border-[var(--color-hairline)] bg-white p-8 text-center">
             <div>
               <p className="text-base font-medium">
@@ -89,7 +89,7 @@ export function CampaignVersionsRoute({
                 비교 화면이 생성됩니다.
               </p>
               <Link
-                className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
+                className="mt-5 inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
                 href={`/campaigns/${campaign.id}/review`}
               >
                 리뷰 화면에서 수정 업로드
@@ -106,7 +106,7 @@ export function CampaignVersionsRoute({
       <PageHeader
         action={
           <Link
-            className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
+            className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             href={`/campaigns/${campaign.id}/review`}
           >
             리뷰로 돌아가기

@@ -14,14 +14,14 @@ export function VersionImageComparison({
 }) {
   return (
     <section className="rounded-xl bg-[var(--color-review-canvas)] p-5 text-white">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
           <p className="text-sm font-medium text-white/70">
             Image comparison placeholder
           </p>
           <h2 className="mt-2 text-2xl font-normal">이미지 변경 비교</h2>
         </div>
-        <RiskBadge level="medium" label="오버레이 비교" />
+        <RiskBadge className="shrink-0" level="medium" label="오버레이 비교" />
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -54,8 +54,8 @@ function VersionPreview({
 }) {
   return (
     <article className="rounded-xl bg-[var(--color-review-canvas-panel)] p-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium">{label}</p>
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <p className="truncate text-sm font-medium">{label}</p>
       </div>
       <div className="relative mt-4 aspect-[4/3] overflow-hidden rounded-lg border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03))]">
         {imageDataUrl ? (

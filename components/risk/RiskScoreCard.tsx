@@ -10,8 +10,8 @@ export function RiskScoreCard({ analysis }: { analysis: AnalysisResult }) {
 
   return (
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-sm font-medium text-[var(--color-muted)]">
             Overall risk score
           </p>
@@ -19,7 +19,7 @@ export function RiskScoreCard({ analysis }: { analysis: AnalysisResult }) {
             {analysis.overallRiskScore}
           </p>
         </div>
-        <RiskBadge level={analysis.overallRiskLevel} />
+        <RiskBadge className="shrink-0" level={analysis.overallRiskLevel} />
       </div>
       <p className="mt-4 text-sm leading-6 text-[var(--color-body)]">
         {analysis.summary}

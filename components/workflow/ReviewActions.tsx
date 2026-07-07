@@ -24,8 +24,8 @@ export function ReviewActions({
             <button
               className={
                 index === 0
-                  ? "min-h-11 rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
-                  : "min-h-11 rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium"
+                  ? "min-h-11 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+                  : "min-h-11 whitespace-nowrap rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
               }
               key={transition.action}
               onClick={() => onAction(transition.action)}

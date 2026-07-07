@@ -19,14 +19,14 @@ export default function RiskDictionaryPage() {
             key={entry.id}
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm text-[var(--color-muted)]">
                   {getRiskCategoryLabel(entry.category)} ·{" "}
                   {formatDate(entry.lastUpdated)}
                 </p>
                 <h2 className="mt-2 text-xl font-normal">{entry.title}</h2>
               </div>
-              <RiskBadge level={entry.severity} />
+              <RiskBadge className="shrink-0" level={entry.severity} />
             </div>
             <p className="mt-4 text-sm leading-6 text-[var(--color-body)]">
               {entry.description}

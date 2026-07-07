@@ -25,16 +25,16 @@ export default function TeamSettingsPage() {
           <div className="divide-y divide-[var(--color-hairline)]">
             {members.map((member) => (
               <div
-                className="flex items-center justify-between gap-4 p-5"
+                className="flex min-w-0 items-center justify-between gap-4 p-5"
                 key={member.name}
               >
-                <div>
-                  <p className="text-sm font-medium">{member.name}</p>
-                  <p className="mt-1 text-xs text-[var(--color-muted)]">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{member.name}</p>
+                  <p className="mt-1 truncate text-xs text-[var(--color-muted)]">
                     {member.team}
                   </p>
                 </div>
-                <span className="rounded-md bg-[var(--color-surface-soft)] px-2.5 py-1.5 text-xs font-medium">
+                <span className="shrink-0 whitespace-nowrap rounded-md bg-[var(--color-surface-soft)] px-2.5 py-1.5 text-xs font-medium">
                   {getUserRoleLabel(member.role)}
                 </span>
               </div>

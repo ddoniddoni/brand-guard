@@ -143,8 +143,8 @@ export function ReviewWorkspace({
 
   return (
     <div className="mx-auto grid w-full max-w-[1700px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
-      <section className="grid gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-5 lg:grid-cols-[1fr_auto] lg:items-center">
-        <div>
+      <section className="grid min-w-0 gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={status} />
             <span className="rounded-md bg-[var(--color-surface-soft)] px-2.5 py-1 text-xs font-medium text-[var(--color-muted)]">
@@ -159,9 +159,9 @@ export function ReviewWorkspace({
             {campaign.ownerName}
           </p>
         </div>
-        <div className="rounded-lg bg-[var(--color-surface-soft)] px-4 py-3">
+        <div className="min-w-0 rounded-lg bg-[var(--color-surface-soft)] px-4 py-3 lg:max-w-80">
           <p className="text-xs text-[var(--color-muted)]">Mock provider</p>
-          <p className="mt-1 text-sm font-medium">
+          <p className="mt-1 truncate text-sm font-medium">
             {analysis.source} · version {analysis.versionId}
           </p>
         </div>

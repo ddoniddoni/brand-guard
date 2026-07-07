@@ -43,8 +43,10 @@ export function CommentThread({
             key={comment.id}
           >
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-medium">{comment.authorName}</p>
-              <p className="text-xs text-[var(--color-muted)]">
+              <p className="min-w-0 truncate text-sm font-medium">
+                {comment.authorName}
+              </p>
+              <p className="shrink-0 text-xs text-[var(--color-muted)]">
                 {formatDate(comment.createdAt)}
               </p>
             </div>
@@ -65,7 +67,7 @@ export function CommentThread({
             의견 작성 역할
           </label>
           <select
-            className="h-11 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+            className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             id="review-comment-role"
             onChange={(event) =>
               onCommentRoleChange(event.target.value as UserRole)
@@ -85,14 +87,14 @@ export function CommentThread({
             새 코멘트
           </label>
           <textarea
-            className="min-h-28 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)]"
+            className="min-h-28 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             id="review-comment"
             onChange={(event) => onCommentDraftChange(event.target.value)}
-            placeholder="검토 의견을 입력하세요."
+            placeholder="검토 의견을 입력하세요…"
             value={commentDraft}
           />
           <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={!commentDraft.trim()}
             onClick={onAddComment}
             type="button"

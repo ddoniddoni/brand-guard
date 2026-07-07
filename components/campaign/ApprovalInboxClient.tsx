@@ -58,7 +58,7 @@ export function ApprovalInboxClient({
       <section className="grid gap-4 md:grid-cols-2">
         <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
           <div className="flex items-center justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-[var(--color-muted)]">검토 대기</p>
               <p className="mt-2 text-3xl font-normal">
                 {approvalQueue.length}
@@ -69,7 +69,7 @@ export function ApprovalInboxClient({
         </div>
         <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
           <div className="flex items-center justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-[var(--color-muted)]">최종 결재</p>
               <p className="mt-2 text-3xl font-normal">{finalApprovalCount}</p>
             </div>
@@ -78,7 +78,7 @@ export function ApprovalInboxClient({
         </div>
       </section>
 
-      <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
+      <section className="overflow-hidden rounded-xl border border-[var(--color-hairline)] bg-white">
         <div className="border-b border-[var(--color-hairline)] p-5">
           <h2 className="text-xl font-normal">결재 대기 캠페인</h2>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
@@ -88,12 +88,12 @@ export function ApprovalInboxClient({
 
         {approvalQueue.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] table-fixed border-collapse text-left text-sm">
+            <table className="w-full min-w-[620px] table-fixed border-collapse text-left text-sm">
               <colgroup>
-                <col className="w-[40%]" />
-                <col className="w-[18%]" />
-                <col className="w-[22%]" />
+                <col className="w-[46%]" />
                 <col className="w-[20%]" />
+                <col className="w-[20%]" />
+                <col className="w-[14%]" />
               </colgroup>
               <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
                 <tr>
@@ -138,10 +138,14 @@ export function ApprovalInboxClient({
                     </td>
                     <td className="px-4 py-4 text-right">
                       <Link
-                        className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-hairline)] px-4 text-sm font-medium"
+                        aria-label={`${getApprovalActionLabel(
+                          campaign.status,
+                        )} 화면 열기`}
+                        className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-hairline)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
                         href={`/campaigns/${campaign.id}/approval`}
+                        title={getApprovalActionLabel(campaign.status)}
                       >
-                        {getApprovalActionLabel(campaign.status)}
+                        확인
                       </Link>
                     </td>
                   </tr>

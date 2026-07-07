@@ -95,25 +95,25 @@ export function RevisionUploadPanel({
           </div>
         ) : null}
 
-        <label className="grid gap-2 text-sm font-medium">
+        <label className="grid min-w-0 gap-2 text-sm font-medium">
           수정 문구
           <textarea
-            className="min-h-28 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] disabled:bg-[var(--color-surface-soft)]"
+            className="min-h-28 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:bg-[var(--color-surface-soft)]"
             disabled={!isEnabled || isAnalyzing}
             onChange={(event) => setCopyDraft(event.target.value)}
             value={copyDraft}
           />
         </label>
 
-        <label className="grid gap-2 text-sm font-medium">
+        <label className="grid min-w-0 gap-2 text-sm font-medium">
           수정 이미지
-          <span className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-5 text-center">
+          <span className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-5 text-center hover:bg-white focus-within:ring-2 focus-within:ring-[var(--color-info-border)]">
             {file ? (
               <CheckCircle2 aria-hidden="true" size={22} strokeWidth={1.8} />
             ) : (
               <Upload aria-hidden="true" size={22} strokeWidth={1.8} />
             )}
-            <span className="mt-3 text-sm font-medium">
+            <span className="mt-3 max-w-full truncate text-sm font-medium">
               {file ? file.name : "대체 이미지 선택"}
             </span>
             <span className="mt-1 text-xs text-[var(--color-muted)]">
@@ -142,14 +142,14 @@ export function RevisionUploadPanel({
               size={18}
               strokeWidth={1.8}
             />
-            <p className="text-sm leading-6 text-[var(--color-body)]">
+            <p className="min-w-0 break-words text-sm leading-6 text-[var(--color-body)]">
               현재 이미지: {asset.imageFileName ?? "샘플 또는 mock 이미지"}
             </p>
           </div>
         </div>
 
         <button
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
           disabled={!isEnabled || isAnalyzing || Boolean(fileError)}
           onClick={handleSubmit}
           type="button"
@@ -167,7 +167,7 @@ export function RevisionUploadPanel({
 
         {isComplete || hasVersionComparison ? (
           <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium"
+            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             href={`/campaigns/${campaignId}/versions`}
           >
             버전 비교 보기

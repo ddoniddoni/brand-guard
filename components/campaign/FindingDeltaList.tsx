@@ -48,14 +48,14 @@ function FindingGroup({
               key={finding.id}
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-[var(--color-muted)]">
                     {getRiskCategoryLabel(finding.category)} · 신뢰도{" "}
                     {formatPercent(finding.confidence)}
                   </p>
                   <h3 className="mt-2 text-sm font-medium">{finding.title}</h3>
                 </div>
-                <RiskBadge level={finding.level} />
+                <RiskBadge className="shrink-0" level={finding.level} />
               </div>
               <p className="mt-3 text-sm leading-6 text-[var(--color-body)]">
                 {finding.description}

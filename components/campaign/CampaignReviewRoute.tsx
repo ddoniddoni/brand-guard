@@ -69,21 +69,21 @@ export function CampaignReviewRoute({
     <>
       <PageHeader
         action={
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
             <Link
-              className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
+              className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
               href={`/campaigns/${campaign.id}/versions`}
             >
               버전 비교
             </Link>
             <Link
-              className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
+              className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
               href={`/campaigns/${campaign.id}/approval`}
             >
               최종 결재
             </Link>
             <Link
-              className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
+              className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
               href="/campaigns"
             >
               목록으로
@@ -119,13 +119,13 @@ function MissingCampaignActions() {
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link
-            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
+            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             href="/campaigns/new"
           >
             새 캠페인 생성
           </Link>
           <Link
-            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium"
+            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             href="/campaigns"
           >
             캠페인 목록

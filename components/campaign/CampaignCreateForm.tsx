@@ -162,15 +162,15 @@ export function CampaignCreateForm() {
 
   return (
     <form className="grid gap-6" onSubmit={onSubmit}>
-      <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <p className="text-sm font-medium">데모 소재 빠른 시작</p>
           <p className="mt-1 text-sm leading-6 text-[var(--color-body)]">
             샘플 홍보 소재를 채운 뒤 AI 1차 검토 흐름을 바로 확인할 수 있습니다.
           </p>
         </div>
         <button
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
           onClick={fillSampleAsset}
           type="button"
         >
@@ -182,21 +182,21 @@ export function CampaignCreateForm() {
       <div className="grid gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-6 md:grid-cols-2">
         <Field label="캠페인명" error={errors.name?.message}>
           <input
-            className="h-11 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
-            placeholder="예: Summer launch visual"
+            className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+            placeholder="예: Summer launch visual…"
             {...register("name")}
           />
         </Field>
         <Field label="브랜드명" error={errors.brandName?.message}>
           <input
-            className="h-11 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
-            placeholder="예: Northstar"
+            className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+            placeholder="예: Northstar…"
             {...register("brandName")}
           />
         </Field>
         <Field label="게시 채널" error={errors.channel?.message}>
           <select
-            className="h-11 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+            className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             {...register("channel")}
           >
             {channels.map((channel) => (
@@ -208,22 +208,22 @@ export function CampaignCreateForm() {
         </Field>
         <Field label="게시 예정일" error={errors.publishDate?.message}>
           <input
-            className="h-11 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+            className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             type="date"
             {...register("publishDate")}
           />
         </Field>
         <Field label="타깃" error={errors.targetAudience?.message}>
           <input
-            className="h-11 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
-            placeholder="예: 신규 고객, 멤버십 고객"
+            className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+            placeholder="예: 신규 고객, 멤버십 고객…"
             {...register("targetAudience")}
           />
         </Field>
         <Field label="업종" error={errors.industry?.message}>
           <input
-            className="h-11 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
-            placeholder="예: cosmetics"
+            className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+            placeholder="예: cosmetics…"
             {...register("industry")}
           />
         </Field>
@@ -233,8 +233,8 @@ export function CampaignCreateForm() {
         <div className="grid gap-4">
           <Field label="광고 카피" error={errors.copy?.message}>
             <textarea
-              className="min-h-36 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)]"
-              placeholder="검토할 광고 문구를 입력하세요."
+              className="min-h-36 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+              placeholder="검토할 광고 문구를 입력하세요…"
               {...register("copy")}
             />
           </Field>
@@ -244,7 +244,7 @@ export function CampaignCreateForm() {
             description="jpg, png, webp 파일을 지원합니다. mock 단계에서는 브라우저 미리보기만 사용합니다."
             error={errors.image?.message}
           >
-            <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-6 text-center">
+            <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-6 text-center hover:bg-white focus-within:ring-2 focus-within:ring-[var(--color-info-border)]">
               <Upload aria-hidden="true" size={22} strokeWidth={1.8} />
               <span className="mt-3 text-sm font-medium">이미지 선택</span>
               <span className="mt-1 text-xs text-[var(--color-muted)]">
@@ -275,13 +275,13 @@ export function CampaignCreateForm() {
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button
-          className="min-h-12 rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
+          className="min-h-12 w-full whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] sm:w-auto"
           type="button"
         >
           초안 저장
         </button>
         <button
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-5 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           disabled={isSubmitting || analysisState === "running"}
           type="submit"
         >
@@ -310,7 +310,7 @@ function AssetPreview({
   usesSampleAsset: boolean;
 }) {
   return (
-    <aside className="grid content-start gap-3">
+    <aside className="grid min-w-0 content-start gap-3">
       <p className="text-sm font-medium">소재 미리보기</p>
       <div
         className={cx(
@@ -324,7 +324,7 @@ function AssetPreview({
         }
       >
         {imagePreviewUrl ? (
-          <div className="absolute inset-x-0 bottom-0 bg-white/90 p-3 text-xs font-medium text-[var(--color-ink)]">
+          <div className="absolute inset-x-0 bottom-0 truncate bg-white/90 p-3 text-xs font-medium text-[var(--color-ink)]">
             {imageFileName}
           </div>
         ) : usesSampleAsset ? (
@@ -347,7 +347,7 @@ function AssetPreview({
         )}
       </div>
       {imageFileName ? (
-        <p className="text-xs leading-5 text-[var(--color-muted)]">
+        <p className="truncate text-xs leading-5 text-[var(--color-muted)]">
           선택된 소재: {imageFileName}
         </p>
       ) : null}
@@ -409,7 +409,7 @@ function AnalysisProgress({
         </div>
         {state === "complete" ? (
           <Link
-            className="hidden min-h-11 items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white sm:inline-flex"
+            className="hidden min-h-11 items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] sm:inline-flex"
             href={reviewHref}
           >
             리뷰 화면 열기
@@ -469,7 +469,7 @@ function AnalysisProgress({
             다시 확인하고 의견을 남길 수 있습니다.
           </p>
           <Link
-            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white sm:hidden"
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] sm:hidden"
             href={reviewHref}
           >
             리뷰 화면 열기
@@ -509,7 +509,7 @@ function Field({
   label: string;
 }) {
   return (
-    <div className="grid gap-2 text-sm font-medium text-[var(--color-ink)]">
+    <div className="grid min-w-0 gap-2 text-sm font-medium text-[var(--color-ink)]">
       <span>{label}</span>
       {children}
       {description ? (

@@ -39,24 +39,26 @@ export function RiskFindingPanel({
             <button
               aria-pressed={isSelected}
               className={cx(
-                "rounded-lg border p-4 text-left outline-none transition",
+                "min-w-0 rounded-lg border p-4 text-left outline-none transition-colors",
                 isSelected
                   ? "border-[var(--color-primary)] bg-[var(--color-surface-soft)]"
-                  : "border-[var(--color-hairline)] bg-white hover:bg-[var(--color-surface-soft)] focus-visible:border-[var(--color-primary)]",
+                  : "border-[var(--color-hairline)] bg-white hover:bg-[var(--color-surface-soft)] focus-visible:border-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]",
               )}
               key={finding.id}
               onClick={() => onSelectFinding(finding.id)}
               type="button"
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-medium text-[var(--color-muted)]">
                     {getRiskCategoryLabel(finding.category)} · 신뢰도{" "}
                     {formatPercent(finding.confidence)}
                   </p>
-                  <h3 className="mt-2 text-base font-medium">{finding.title}</h3>
+                  <h3 className="mt-2 text-base font-medium">
+                    {finding.title}
+                  </h3>
                 </div>
-                <RiskBadge level={finding.level} />
+                <RiskBadge className="shrink-0" level={finding.level} />
               </div>
               <p className="mt-3 text-sm leading-6 text-[var(--color-body)]">
                 {finding.description}

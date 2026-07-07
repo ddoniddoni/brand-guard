@@ -14,8 +14,10 @@ export function MetricCard({
   return (
     <article className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm font-medium text-[var(--color-muted)]">{title}</p>
-        <span className="flex size-9 items-center justify-center rounded-full bg-[var(--color-surface-soft)] text-[var(--color-ink)]">
+        <p className="min-w-0 text-sm font-medium text-[var(--color-muted)]">
+          {title}
+        </p>
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-soft)] text-[var(--color-ink)]">
           <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
         </span>
       </div>

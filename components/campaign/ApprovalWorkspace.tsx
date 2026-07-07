@@ -183,8 +183,8 @@ export function ApprovalWorkspace({
 
   return (
     <div className="mx-auto grid w-full max-w-[1700px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
-      <section className="grid gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-5 xl:grid-cols-[1fr_320px]">
-        <div>
+      <section className="grid min-w-0 gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={status} />
             <span className="rounded-md bg-[var(--color-surface-soft)] px-2.5 py-1 text-xs font-medium text-[var(--color-muted)]">
@@ -208,8 +208,8 @@ export function ApprovalWorkspace({
                 <button
                   className={
                     index === 0
-                      ? "min-h-11 rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
-                      : "min-h-11 rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium"
+                      ? "min-h-11 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+                      : "min-h-11 whitespace-nowrap rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
                   }
                   key={transition.action}
                   onClick={() => handleAction(transition.action)}

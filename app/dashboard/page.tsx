@@ -37,7 +37,7 @@ export default function DashboardPage() {
       <PageHeader
         action={
           <Link
-            className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-5 text-sm font-medium text-white"
+            className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-5 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             href="/campaigns/new"
           >
             <Plus aria-hidden="true" size={16} strokeWidth={1.8} />
@@ -79,8 +79,8 @@ export default function DashboardPage() {
 
         <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
           <article className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0">
                 <p className="text-sm font-medium text-[var(--color-muted)]">
                   Category distribution
                 </p>
@@ -103,18 +103,20 @@ export default function DashboardPage() {
             <div className="mt-6 grid gap-3">
               {urgentCampaigns.map((campaign) => (
                 <Link
-                  className="rounded-lg bg-white p-4 text-[var(--color-ink)]"
+                  className="min-w-0 rounded-lg bg-white p-4 text-[var(--color-ink)] hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
                   href={`/campaigns/${campaign.id}/review`}
                   key={campaign.id}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium">{campaign.name}</p>
-                      <p className="mt-1 text-xs text-[var(--color-muted)]">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {campaign.name}
+                      </p>
+                      <p className="mt-1 truncate text-xs text-[var(--color-muted)]">
                         {campaign.brandName} · {getChannelLabel(campaign.channel)}
                       </p>
                     </div>
-                    <RiskBadge level={campaign.riskLevel} />
+                    <RiskBadge className="shrink-0" level={campaign.riskLevel} />
                   </div>
                 </Link>
               ))}
@@ -122,9 +124,9 @@ export default function DashboardPage() {
           </aside>
         </section>
 
-        <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
-          <div className="flex items-start justify-between gap-4 border-b border-[var(--color-hairline)] p-6">
-            <div>
+        <section className="overflow-hidden rounded-xl border border-[var(--color-hairline)] bg-white">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-hairline)] p-6">
+            <div className="min-w-0">
               <p className="text-sm font-medium text-[var(--color-muted)]">
                 Recent campaigns
               </p>
@@ -140,14 +142,17 @@ export default function DashboardPage() {
 
           {hasRecentCampaigns ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+              <table className="w-full min-w-[620px] table-fixed border-collapse text-left text-sm">
+                <colgroup>
+                  <col className="w-[52%]" />
+                  <col className="w-[27%]" />
+                  <col className="w-[21%]" />
+                </colgroup>
                 <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
                   <tr>
                     <th className="px-6 py-3 font-medium">캠페인</th>
-                    <th className="px-6 py-3 font-medium">채널</th>
-                    <th className="px-6 py-3 font-medium">게시 예정일</th>
-                    <th className="px-6 py-3 font-medium">상태</th>
-                    <th className="px-6 py-3 font-medium">리스크</th>
+                    <th className="px-4 py-3 font-medium">진행 상태</th>
+                    <th className="px-4 py-3 font-medium">리스크</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -158,26 +163,33 @@ export default function DashboardPage() {
                     >
                       <td className="px-6 py-4">
                         <Link
-                          className="font-medium text-[var(--color-ink)]"
+                          className="block truncate font-medium text-[var(--color-ink)] hover:text-[var(--color-link)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
                           href={`/campaigns/${campaign.id}/review`}
+                          title={campaign.name}
                         >
                           {campaign.name}
                         </Link>
-                        <p className="mt-1 text-xs text-[var(--color-muted)]">
-                          {campaign.brandName} · {campaign.ownerName}
+                        <p className="mt-1 truncate text-xs text-[var(--color-muted)]">
+                          {campaign.brandName} · {getChannelLabel(campaign.channel)} ·{" "}
+                          게시 {formatDate(campaign.publishDate)} · 담당{" "}
+                          {campaign.ownerName}
                         </p>
                       </td>
-                      <td className="px-6 py-4">
-                        {getChannelLabel(campaign.channel)}
+                      <td className="px-4 py-4">
+                        <div className="grid gap-1">
+                          <StatusBadge className="w-fit" status={campaign.status} />
+                          <span className="text-xs text-[var(--color-muted)]">
+                            수정 {formatDate(campaign.updatedAt)}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-6 py-4">
-                        {formatDate(campaign.publishDate)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={campaign.status} />
-                      </td>
-                      <td className="px-6 py-4">
-                        <RiskBadge level={campaign.riskLevel} />
+                      <td className="px-4 py-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-lg font-medium tabular-nums text-[var(--color-ink)]">
+                            {campaign.riskScore}
+                          </span>
+                          <RiskBadge level={campaign.riskLevel} />
+                        </div>
                       </td>
                     </tr>
                   ))}

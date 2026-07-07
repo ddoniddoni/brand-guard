@@ -12,10 +12,10 @@ export function ZoomControls({
   zoom: number;
 }) {
   return (
-    <div className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 p-1 text-white">
+    <div className="inline-flex shrink-0 items-center rounded-lg border border-white/15 bg-white/10 p-1 text-white">
       <button
         aria-label="이미지 축소"
-        className="grid size-9 place-items-center rounded-md hover:bg-white/10"
+        className="grid size-9 place-items-center rounded-md hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         onClick={onZoomOut}
         type="button"
       >
@@ -26,7 +26,7 @@ export function ZoomControls({
       </span>
       <button
         aria-label="이미지 확대"
-        className="grid size-9 place-items-center rounded-md hover:bg-white/10"
+        className="grid size-9 place-items-center rounded-md hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         onClick={onZoomIn}
         type="button"
       >
@@ -34,7 +34,7 @@ export function ZoomControls({
       </button>
       <button
         aria-label="확대 초기화"
-        className="grid size-9 place-items-center rounded-md hover:bg-white/10"
+        className="grid size-9 place-items-center rounded-md hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         onClick={onReset}
         type="button"
       >

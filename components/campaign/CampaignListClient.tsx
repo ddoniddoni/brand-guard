@@ -121,68 +121,72 @@ export function CampaignListClient({
   return (
     <div className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
       <form
-        className="grid min-w-0 gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 md:grid-cols-2 xl:grid-cols-[minmax(280px,1fr)_minmax(132px,150px)_minmax(132px,150px)_minmax(132px,150px)_minmax(132px,150px)_minmax(96px,max-content)]"
+        className="grid min-w-0 gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4"
         role="search"
       >
-        <label className="relative min-w-0">
-          <span className="sr-only">캠페인 검색</span>
-          <Search
-            aria-hidden="true"
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
-            size={16}
-            strokeWidth={1.8}
-          />
-          <input
-            className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white pl-10 pr-3 text-sm outline-none focus:border-[var(--color-info-border)]"
-            defaultValue={filters.query}
-            name="q"
-            placeholder="캠페인, 브랜드, 담당자 검색"
-          />
-        </label>
+        <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.4fr)_repeat(4,minmax(0,1fr))]">
+          <label className="relative min-w-0">
+            <span className="sr-only">캠페인 검색</span>
+            <Search
+              aria-hidden="true"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
+              size={16}
+              strokeWidth={1.8}
+            />
+            <input
+              className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white pl-10 pr-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+              defaultValue={filters.query}
+              name="q"
+              placeholder="캠페인, 브랜드, 담당자 검색…"
+            />
+          </label>
 
-        <SelectFilter defaultValue={filters.status} label="상태" name="status">
-          <option value="">전체 상태</option>
-          {statusOptions.map((option) => (
-            <option key={option} value={option}>
-              {getStatusLabel(option)}
-            </option>
-          ))}
-        </SelectFilter>
+          <SelectFilter defaultValue={filters.status} label="상태" name="status">
+            <option value="">전체 상태</option>
+            {statusOptions.map((option) => (
+              <option key={option} value={option}>
+                {getStatusLabel(option)}
+              </option>
+            ))}
+          </SelectFilter>
 
-        <SelectFilter defaultValue={filters.risk} label="리스크" name="risk">
-          <option value="">전체 리스크</option>
-          {riskOptions.map((option) => (
-            <option key={option} value={option}>
-              {getRiskLevelLabel(option)}
-            </option>
-          ))}
-        </SelectFilter>
+          <SelectFilter defaultValue={filters.risk} label="리스크" name="risk">
+            <option value="">전체 리스크</option>
+            {riskOptions.map((option) => (
+              <option key={option} value={option}>
+                {getRiskLevelLabel(option)}
+              </option>
+            ))}
+          </SelectFilter>
 
-        <SelectFilter defaultValue={filters.channel} label="채널" name="channel">
-          <option value="">전체 채널</option>
-          {channelOptions.map((option) => (
-            <option key={option} value={option}>
-              {getChannelLabel(option)}
-            </option>
-          ))}
-        </SelectFilter>
+          <SelectFilter defaultValue={filters.channel} label="채널" name="channel">
+            <option value="">전체 채널</option>
+            {channelOptions.map((option) => (
+              <option key={option} value={option}>
+                {getChannelLabel(option)}
+              </option>
+            ))}
+          </SelectFilter>
 
-        <SelectFilter defaultValue={filters.sort} label="정렬" name="sort">
-          <option value="updatedAt">최종 수정일</option>
-          <option value="riskScore">리스크 점수</option>
-          <option value="publishDate">게시 예정일</option>
-        </SelectFilter>
+          <SelectFilter defaultValue={filters.sort} label="정렬" name="sort">
+            <option value="updatedAt">최종 수정일</option>
+            <option value="riskScore">리스크 점수</option>
+            <option value="publishDate">게시 예정일</option>
+          </SelectFilter>
+        </div>
 
-        <button
-          className="inline-flex min-h-11 min-w-24 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
-          type="submit"
-        >
-          <Filter aria-hidden="true" size={16} strokeWidth={1.8} />
-          적용
-        </button>
+        <div className="flex min-w-0 justify-stretch sm:justify-end">
+          <button
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] sm:w-auto"
+            type="submit"
+          >
+            <Filter aria-hidden="true" size={16} strokeWidth={1.8} />
+            적용
+          </button>
+        </div>
       </form>
 
-      <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
+      <section className="overflow-hidden rounded-xl border border-[var(--color-hairline)] bg-white">
         <div className="border-b border-[var(--color-hairline)] px-5 py-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -199,7 +203,7 @@ export function CampaignListClient({
 
         {filteredCampaigns.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[620px] table-fixed border-collapse text-left text-sm">
+            <table className="w-full min-w-[600px] table-fixed border-collapse text-left text-sm">
               <colgroup>
                 <col className="w-[52%]" />
                 <col className="w-[21%]" />
@@ -288,7 +292,7 @@ function SelectFilter({
     <label className="min-w-0">
       <span className="sr-only">{label}</span>
       <select
-        className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+        className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
         defaultValue={defaultValue}
         name={name}
       >

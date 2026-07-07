@@ -38,15 +38,17 @@ export function AppShell({
         <aside className="min-w-0 border-b border-[var(--color-hairline)] bg-white lg:border-b-0 lg:border-r">
           <div className="flex h-full flex-col px-4 py-4">
             <Link
-              className="flex min-h-12 items-center gap-3 rounded-lg px-3"
+              className="flex min-h-12 min-w-0 items-center gap-3 rounded-lg px-3 hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
               href="/dashboard"
             >
-              <span className="flex size-9 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white">
                 <ShieldCheck aria-hidden="true" size={20} strokeWidth={1.8} />
               </span>
-              <span>
-                <span className="block text-base font-medium">BrandGuard</span>
-                <span className="block text-xs text-[var(--color-muted)]">
+              <span className="min-w-0">
+                <span className="block truncate text-base font-medium">
+                  BrandGuard
+                </span>
+                <span className="block truncate text-xs text-[var(--color-muted)]">
                   Human review assistant
                 </span>
               </span>
@@ -61,15 +63,20 @@ export function AppShell({
                   <Link
                     aria-current={isActive ? "page" : undefined}
                     className={cx(
-                      "flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-[var(--color-body)]",
+                      "flex min-h-11 min-w-0 items-center gap-3 rounded-lg px-3 text-sm font-medium text-[var(--color-body)] hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]",
                       isActive &&
                         "bg-[var(--color-surface-soft)] text-[var(--color-ink)]",
                     )}
                     href={item.href}
                     key={item.href}
                   >
-                    <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
-                    {item.label}
+                    <Icon
+                      aria-hidden="true"
+                      className="shrink-0"
+                      size={18}
+                      strokeWidth={1.8}
+                    />
+                    <span className="truncate">{item.label}</span>
                   </Link>
                 );
               })}

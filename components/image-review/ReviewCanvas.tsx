@@ -68,7 +68,7 @@ export function ReviewCanvas({
   return (
     <section className="rounded-xl bg-[var(--color-review-canvas)] p-5 text-white">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-medium text-white/70">Review canvas</p>
           <h2 className="mt-2 text-2xl font-normal">이미지 검토 영역</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
@@ -111,7 +111,7 @@ export function ReviewCanvas({
                 <button
                   aria-label={`${region.findingTitle} 영역 선택`}
                   className={cx(
-                    "absolute rounded-md border-2 text-left outline-none transition",
+                    "absolute rounded-md border-2 text-left outline-none transition-colors",
                     regionClassName[region.type],
                     isSelected
                       ? "border-[3px] ring-2 ring-white"
@@ -127,7 +127,7 @@ export function ReviewCanvas({
                   }}
                   type="button"
                 >
-                  <span className="absolute -top-8 left-0 whitespace-nowrap rounded-md bg-white px-2 py-1 text-xs font-medium text-[var(--color-ink)]">
+                  <span className="absolute -top-8 left-0 max-w-48 truncate whitespace-nowrap rounded-md bg-white px-2 py-1 text-xs font-medium text-[var(--color-ink)]">
                     {getRiskCategoryLabel(
                       analysis.categories.find(
                         (finding) => finding.id === region.findingId,
@@ -146,17 +146,19 @@ export function ReviewCanvas({
         {regions.map((region) => (
           <button
             className={cx(
-              "rounded-lg border border-white/15 bg-white/10 p-4 text-left text-sm",
+              "min-w-0 rounded-lg border border-white/15 bg-white/10 p-4 text-left text-sm hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
               region.findingId === selectedFindingId && "bg-white text-[var(--color-ink)]",
             )}
             key={region.id}
             onClick={() => onSelectFinding(region.findingId)}
             type="button"
           >
-            <span className="block font-medium">{region.findingTitle}</span>
+            <span className="block truncate font-medium">
+              {region.findingTitle}
+            </span>
             <span
               className={cx(
-                "mt-1 block text-xs",
+                "mt-1 block truncate text-xs",
                 region.findingId === selectedFindingId
                   ? "text-[var(--color-body)]"
                   : "text-white/70",
@@ -201,12 +203,12 @@ function MockCreativeSurface({
         <p className="text-sm font-medium text-[var(--color-muted)]">
           {brandName}
         </p>
-        <p className="mt-4 max-h-36 overflow-hidden text-3xl font-normal leading-tight">
+        <p className="mt-4 max-h-36 overflow-hidden break-words text-3xl font-normal leading-tight">
           {headline}
         </p>
       </div>
       <div className="absolute right-[15%] top-[18%] h-[42%] w-[23%] rounded-full bg-[var(--color-signature-peach)]" />
-      <div className="absolute bottom-[14%] left-[16%] h-[12%] w-[58%] overflow-hidden rounded-xl bg-white/90 px-5 py-4 text-sm leading-6 text-[var(--color-body)]">
+      <div className="absolute bottom-[14%] left-[16%] h-[12%] w-[58%] overflow-hidden break-words rounded-xl bg-white/90 px-5 py-4 text-sm leading-6 text-[var(--color-body)]">
         {supportText}
       </div>
     </>
