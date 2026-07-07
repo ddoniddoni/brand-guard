@@ -15,7 +15,9 @@ export function AuditLog({ entries }: { entries: AuditLogEntry[] }) {
           <li className="p-5" key={entry.id}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-medium">{entry.action}</p>
+                <p className="text-sm font-medium">
+                  {getAuditActionLabel(entry.action)}
+                </p>
                 <p className="mt-1 text-xs text-[var(--color-muted)]">
                   {entry.actorName}
                   {entry.fromStatus && entry.toStatus
@@ -29,9 +31,9 @@ export function AuditLog({ entries }: { entries: AuditLogEntry[] }) {
                 {formatDate(entry.createdAt)}
               </time>
             </div>
-            {entry.note ? (
+            {entry.message ? (
               <p className="mt-3 text-sm leading-6 text-[var(--color-body)]">
-                {entry.note}
+                {entry.message}
               </p>
             ) : null}
           </li>
@@ -39,4 +41,23 @@ export function AuditLog({ entries }: { entries: AuditLogEntry[] }) {
       </ol>
     </section>
   );
+}
+
+function getAuditActionLabel(action: AuditLogEntry["action"]) {
+  const labels: Record<AuditLogEntry["action"], string> = {
+    analysis_completed: "AI 1차 검토 완료",
+    analysis_started: "AI 1차 검토 시작",
+    approval_step_approved: "결재 단계 승인",
+    campaign_created: "검토 요청 생성",
+    campaign_final_approved: "최종 승인",
+    campaign_rejected: "반려",
+    comment_added: "결재 의견 추가",
+    ready_to_publish: "게시 가능 처리",
+    requester_opinion_added: "작성자 의견 작성",
+    revision_requested: "수정 요청",
+    revision_uploaded: "수정본 업로드",
+    submitted_for_approval: "결재 상신",
+  };
+
+  return labels[action];
 }

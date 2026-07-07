@@ -56,8 +56,8 @@ const analysisSteps = [
     description: "게시일, 채널, 타깃 맥락과 리스크 사전 항목을 비교합니다.",
   },
   {
-    title: "담당자 검토용 요약 생성",
-    description: "근거, 오탐 가능성, 수정 제안을 리뷰 화면에 전달합니다.",
+    title: "작성자 검토용 요약 생성",
+    description: "근거, 오탐 가능성, 수정 제안을 작성자 검토 화면에 전달합니다.",
   },
 ];
 
@@ -187,7 +187,7 @@ export function CampaignCreateForm() {
       </div>
 
       <div className="grid gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-6 md:grid-cols-2">
-        <Field label="캠페인명" error={errors.name?.message}>
+        <Field label="검토 요청명" error={errors.name?.message}>
           <input
             className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             placeholder="예: 여름 신제품 메인 비주얼…"
@@ -323,7 +323,7 @@ function AssetPreview({
       <p className="text-sm font-medium">소재 미리보기</p>
       <div
         className={cx(
-          "relative aspect-[4/5] overflow-hidden rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)]",
+          "relative aspect-[16/10] overflow-hidden rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] xl:aspect-[4/3]",
           imagePreviewUrl && "bg-cover bg-center",
         )}
         style={
@@ -367,19 +367,19 @@ function AssetPreview({
 function SampleVisual() {
   return (
     <div className="relative h-full bg-[var(--color-signature-cream)] p-5">
-      <div className="absolute right-6 top-8 size-28 rounded-full bg-[var(--color-signature-peach)]" />
+      <div className="absolute right-6 top-8 size-24 rounded-full bg-[var(--color-signature-peach)]" />
       <div className="relative grid h-full content-between">
         <div>
-          <p className="text-sm font-medium text-[var(--color-muted)]">
+          <p className="text-sm font-medium text-[var(--color-ink)]">
             노스스타
           </p>
-          <h3 className="mt-5 text-4xl font-normal leading-tight">
+          <h3 className="mt-4 text-3xl font-normal leading-tight text-[var(--color-ink)]">
             여름의 산뜻함,
             <br />
             먼저 검토합니다.
           </h3>
         </div>
-        <div className="rounded-xl bg-white/85 p-4">
+        <div className="rounded-xl border border-[var(--color-hairline)] bg-[var(--color-panel)] p-4 shadow-sm">
           <p className="text-sm leading-6 text-[var(--color-body)]">
             신제품 공개 전 이미지와 문구의 검토 후보를 확인하는 샘플 홍보
             소재입니다.
@@ -412,7 +412,7 @@ function AnalysisProgress({
           </p>
           <h2 className="mt-2 text-xl font-normal">AI 1차 검토 진행</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-            분석은 모의 데이터로 진행되며, 결과는 담당자 검토를 위한 후보로만
+            분석은 모의 데이터로 진행되며, 결과는 작성자와 결재자 검토를 위한 후보로만
             표시됩니다.
           </p>
         </div>
@@ -426,7 +426,7 @@ function AnalysisProgress({
         ) : null}
       </div>
 
-      <div className="mt-5 grid gap-3 lg:grid-cols-5">
+      <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
         {analysisSteps.map((step, index) => {
           const isComplete = state === "complete" || index < activeStep;
           const isActive = state === "running" && index === activeStep;
@@ -434,31 +434,39 @@ function AnalysisProgress({
           return (
             <article
               className={cx(
-                "rounded-lg border border-[var(--color-hairline)] p-4",
+                "min-w-0 rounded-lg border border-[var(--color-hairline)] p-4",
                 isActive && "border-[var(--color-info-border)] bg-[var(--color-info-bg)]",
                 isComplete &&
                   "border-[var(--color-risk-low-text)] bg-[var(--color-risk-low-bg)]",
               )}
               key={step.title}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-start gap-2">
                 {isComplete ? (
                   <CheckCircle2
                     aria-hidden="true"
+                    className="mt-0.5 shrink-0"
                     size={16}
                     strokeWidth={1.8}
                   />
                 ) : isActive ? (
                   <LoaderCircle
                     aria-hidden="true"
-                    className="animate-spin"
+                    className="mt-0.5 shrink-0 animate-spin"
                     size={16}
                     strokeWidth={1.8}
                   />
                 ) : (
-                  <FileText aria-hidden="true" size={16} strokeWidth={1.8} />
+                  <FileText
+                    aria-hidden="true"
+                    className="mt-0.5 shrink-0"
+                    size={16}
+                    strokeWidth={1.8}
+                  />
                 )}
-                <p className="text-sm font-medium">{step.title}</p>
+                <p className="min-w-0 text-sm font-medium leading-6">
+                  {step.title}
+                </p>
               </div>
               <p className="mt-3 text-xs leading-5 text-[var(--color-body)]">
                 {step.description}
@@ -474,8 +482,8 @@ function AnalysisProgress({
             AI 1차 검토가 완료되었습니다.
           </p>
           <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-            모의 결과가 생성되었습니다. 이제 담당자가 이미지, 문구, AI 의견을
-            다시 확인하고 의견을 남길 수 있습니다.
+            모의 결과가 생성되었습니다. 이제 작성자가 이미지, 문구, AI 의견을
+            다시 확인하고 결재 상신 의견을 남길 수 있습니다.
           </p>
           <Link
             className="mt-4 inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] sm:hidden"

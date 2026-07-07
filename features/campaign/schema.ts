@@ -10,7 +10,7 @@ const hasFiles = (value: unknown) =>
 
 export const campaignCreateSchema = z
   .object({
-    name: z.string().trim().min(1, "캠페인명을 입력하세요."),
+    name: z.string().trim().min(1, "검토 요청명을 입력하세요."),
     brandName: z.string().trim().min(1, "브랜드명을 입력하세요."),
     channel: z.enum(
       ["instagram", "youtube", "tiktok", "web_banner", "push", "offline"],

@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { getUserRoleLabel } from "@/lib/format";
 
 const members = [
-  { name: "김민서", role: "MARKETER", team: "마케팅" },
+  { name: "김민서", role: "REQUESTER", team: "마케팅" },
   { name: "박준호", role: "PR_REVIEWER", team: "PR" },
   { name: "최하린", role: "LEGAL_REVIEWER", team: "법무" },
   { name: "윤지수", role: "FINAL_APPROVER", team: "브랜드 오피스" },

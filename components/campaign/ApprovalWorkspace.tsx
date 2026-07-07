@@ -14,14 +14,11 @@ import type { AnalysisResult } from "@/features/risk-analysis/types";
 import type {
   ApprovalStep,
   AuditLogEntry,
+  RequesterOpinion,
   ReviewerComment,
   ReviewAction,
 } from "@/features/review-workflow/types";
-import {
-  applyReviewAction,
-  getAvailableTransitions,
-} from "@/features/review-workflow/state-machine";
-import { getStatusLabel } from "@/lib/format";
+import { applyReviewAction } from "@/features/review-workflow/state-machine";
 import { ReviewCanvas } from "@/components/image-review/ReviewCanvas";
 import { RiskFindingPanel } from "@/components/risk/RiskFindingPanel";
 import { RiskScoreCard } from "@/components/risk/RiskScoreCard";
@@ -32,8 +29,7 @@ import { AuditLog } from "@/components/workflow/AuditLog";
 import { CommentThread } from "@/components/workflow/CommentThread";
 
 const approvalActions: ReviewAction[] = [
-  "REQUEST_FINAL_APPROVAL",
-  "APPROVE",
+  "APPROVE_STEP",
   "REQUEST_REVISION",
   "REJECT",
 ];
@@ -46,6 +42,7 @@ export function ApprovalWorkspace({
   campaign,
   comments,
   onWorkspaceChange,
+  requesterOpinion,
 }: {
   analysis: AnalysisResult;
   approvalSteps: ApprovalStep[];
@@ -54,6 +51,7 @@ export function ApprovalWorkspace({
   campaign: Campaign;
   comments: ReviewerComment[];
   onWorkspaceChange?: (patch: WorkspacePatch) => void;
+  requesterOpinion?: RequesterOpinion | null;
 }) {
   const firstFindingId = analysis.categories[0]?.id ?? "";
   const [selectedFindingId, setSelectedFindingId] = useState(firstFindingId);
@@ -62,54 +60,26 @@ export function ApprovalWorkspace({
   const [commentRole, setCommentRole] = useState<UserRole>("FINAL_APPROVER");
   const [reviewComments, setReviewComments] = useState(comments);
   const [auditEntries, setAuditEntries] = useState(auditLogEntries);
-
-  const transitions = getAvailableTransitions(status).filter((transition) =>
-    approvalActions.includes(transition.action),
+  const [displayedSteps, setDisplayedSteps] = useState(approvalSteps);
+  const [activeStepId, setActiveStepId] = useState(
+    campaign.currentApprovalStepId ?? "",
   );
 
-  const displayedSteps = useMemo(
+  const currentStep = useMemo(
     () =>
-      approvalSteps.map((step) => {
-        if (step.title === "담당자 의견 취합") {
-          if (
-            status === "FINAL_APPROVAL" ||
-            status === "APPROVED" ||
-            status === "REJECTED"
-          ) {
-            return { ...step, status: "completed" as const };
-          }
-        }
-
-        if (step.title === "최종 결재") {
-          if (status === "FINAL_APPROVAL") {
-            return { ...step, status: "in_progress" as const };
-          }
-
-          if (status === "APPROVED") {
-            return {
-              ...step,
-              decision: "approve" as const,
-              note: "최종 승인되었습니다.",
-              status: "completed" as const,
-            };
-          }
-
-          if (status === "NEEDS_REVISION" || status === "REJECTED") {
-            return {
-              ...step,
-              decision:
-                status === "NEEDS_REVISION"
-                  ? ("request_revision" as const)
-                  : ("reject" as const),
-              status: "blocked" as const,
-            };
-          }
-        }
-
-        return step;
-      }),
-    [approvalSteps, status],
+      displayedSteps.find((step) => step.id === activeStepId) ??
+      displayedSteps.find((step) => step.status === "in_progress") ??
+      displayedSteps.find((step) => step.status === "pending"),
+    [activeStepId, displayedSteps],
   );
+  const isFinalStep = currentStep?.role === "FINAL_APPROVER";
+  const transitions =
+    status === "IN_APPROVAL"
+      ? approvalActions.map((action) => ({
+          action,
+          label: getApprovalActionLabel(action, isFinalStep),
+        }))
+      : [];
 
   const createAuditEntry = (
     entry: Omit<AuditLogEntry, "id" | "createdAt">,
@@ -124,25 +94,83 @@ export function ApprovalWorkspace({
   };
 
   const handleAction = (action: ReviewAction) => {
-    const nextStatus = applyReviewAction(status, action);
+    const timestamp = new Date().toISOString();
+    const decisionComment = commentDraft.trim();
+    const nextStepId = getNextApprovalStepId(displayedSteps, currentStep?.id);
+    const isApprove = action === "APPROVE_STEP";
+    const nextStatus =
+      isApprove && !isFinalStep
+        ? status
+        : applyReviewAction(status, action);
 
-    if (nextStatus === status) {
+    if (!currentStep || (nextStatus === status && !isApprove)) {
       return;
     }
 
+    const nextSteps = displayedSteps.map((step) => {
+      if (step.id === currentStep.id) {
+        return {
+          ...step,
+          comment:
+            decisionComment ||
+            getDecisionDefaultComment(action, Boolean(isFinalStep)),
+          decidedAt: timestamp,
+          decision: getApprovalDecision(action),
+          status: getStepStatusByAction(action),
+        };
+      }
+
+      if (isApprove && !isFinalStep && step.id === nextStepId) {
+        return {
+          ...step,
+          status: "in_progress" as const,
+        };
+      }
+
+      return step;
+    });
     const auditEntry = createAuditEntry({
-      action: getDecisionActionLabel(action),
+      action: getDecisionAuditAction(action, Boolean(isFinalStep)),
       actorName: "윤지수",
+      campaignId: campaign.id,
       fromStatus: status,
-      note: `${getStatusLabel(nextStatus)} 상태로 결재 흐름을 업데이트했습니다.`,
+      message:
+        decisionComment ||
+        `${currentStep.title} 단계에서 ${getApprovalActionLabel(
+          action,
+          isFinalStep,
+        )} 처리했습니다.`,
       toStatus: nextStatus,
     });
     const nextAuditEntries = [auditEntry, ...auditEntries];
+    const nextComments = decisionComment
+      ? [
+          {
+            id: `comment-${timestamp}`,
+            campaignId: campaign.id,
+            authorName: currentStep.ownerName,
+            body: decisionComment,
+            createdAt: timestamp,
+            role: currentStep.role,
+          },
+          ...reviewComments,
+        ]
+      : reviewComments;
 
     setStatus(nextStatus);
+    setDisplayedSteps(nextSteps);
+    setActiveStepId(isApprove && !isFinalStep ? nextStepId ?? "" : "");
+    setReviewComments(nextComments);
     setAuditEntries(nextAuditEntries);
+    setCommentDraft("");
     onWorkspaceChange?.({
+      approvalSteps: nextSteps,
       auditLogEntries: nextAuditEntries,
+      comments: nextComments,
+      campaign: {
+        currentApprovalStepId:
+          isApprove && !isFinalStep ? nextStepId : campaign.currentApprovalStepId,
+      },
       status: nextStatus,
     });
   };
@@ -165,9 +193,10 @@ export function ApprovalWorkspace({
       role: commentRole,
     };
     const auditEntry = createAuditEntry({
-      action: "최종 결재 의견 추가",
+      action: "comment_added",
       actorName: "윤지수",
-      note: body,
+      campaignId: campaign.id,
+      message: body,
     });
     const nextComments = [nextComment, ...reviewComments];
     const nextAuditEntries = [auditEntry, ...auditEntries];
@@ -193,14 +222,15 @@ export function ApprovalWorkspace({
           </div>
           <h2 className="mt-4 text-2xl font-normal">결재 검토 요약</h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-[var(--color-body)]">
-            {analysis.summary} AI 의견은 참고 자료이며, 최종 결정자는 이미지,
-            문구, 담당자 의견, 감사 로그를 함께 확인해야 합니다.
+            {analysis.summary} AI 의견은 참고 자료이며, 결재자는 이미지, 문구,
+            작성자 의견, 감사 로그를 함께 확인해야 합니다.
           </p>
         </div>
         <div className="rounded-lg bg-[var(--color-surface-soft)] p-4">
-          <p className="text-sm font-medium">최종 결재 액션</p>
+          <p className="text-sm font-medium">결재 액션</p>
           <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-            결정은 감사 로그에 남고 캠페인 상태를 갱신합니다.
+            현재 단계는 {currentStep?.title ?? "결재 단계"}입니다. 수정 요청과
+            반려는 의견 입력 후 처리할 수 있습니다.
           </p>
           <div className="mt-4 grid gap-2">
             {transitions.length > 0 ? (
@@ -210,6 +240,11 @@ export function ApprovalWorkspace({
                     index === 0
                       ? "min-h-11 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
                       : "min-h-11 whitespace-nowrap rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+                  }
+                  disabled={
+                    (transition.action === "REQUEST_REVISION" ||
+                      transition.action === "REJECT") &&
+                    !commentDraft.trim()
                   }
                   key={transition.action}
                   onClick={() => handleAction(transition.action)}
@@ -247,6 +282,7 @@ export function ApprovalWorkspace({
 
         <aside className="grid content-start gap-4">
           <RiskScoreCard analysis={analysis} />
+          <RequesterOpinionSummary opinion={requesterOpinion} />
           <RevisionSuggestions suggestions={analysis.suggestions} />
           <CommentThread
             commentDraft={commentDraft}
@@ -263,17 +299,99 @@ export function ApprovalWorkspace({
   );
 }
 
-function getDecisionActionLabel(action: ReviewAction) {
-  const labels: Record<ReviewAction, string> = {
-    APPROVE: "최종 승인",
-    REANALYZE: "재분석 요청",
+function getApprovalActionLabel(action: ReviewAction, isFinalStep?: boolean) {
+  const labels: Partial<Record<ReviewAction, string>> = {
+    APPROVE_STEP: isFinalStep ? "최종 승인" : "승인",
     REJECT: "반려",
-    REQUEST_FINAL_APPROVAL: "최종 결재 요청",
-    REQUEST_LEGAL_REVIEW: "법무 검토 요청",
     REQUEST_REVISION: "수정 요청",
-    START_PR_REVIEW: "PR 검토 시작",
-    START_STAKEHOLDER_REVIEW: "담당자 검토 시작",
   };
 
-  return labels[action];
+  return labels[action] ?? action;
+}
+
+function getApprovalDecision(action: ReviewAction) {
+  if (action === "REQUEST_REVISION") {
+    return "request_revision" as const;
+  }
+
+  if (action === "REJECT") {
+    return "reject" as const;
+  }
+
+  return "approve" as const;
+}
+
+function getDecisionAuditAction(
+  action: ReviewAction,
+  isFinalStep: boolean,
+): AuditLogEntry["action"] {
+  if (action === "REQUEST_REVISION") {
+    return "revision_requested";
+  }
+
+  if (action === "REJECT") {
+    return "campaign_rejected";
+  }
+
+  return isFinalStep ? "campaign_final_approved" : "approval_step_approved";
+}
+
+function getStepStatusByAction(action: ReviewAction) {
+  if (action === "REQUEST_REVISION") {
+    return "revision_requested" as const;
+  }
+
+  if (action === "REJECT") {
+    return "rejected" as const;
+  }
+
+  return "approved" as const;
+}
+
+function getDecisionDefaultComment(action: ReviewAction, isFinalStep: boolean) {
+  if (action === "REQUEST_REVISION") {
+    return "수정 요청 처리되었습니다.";
+  }
+
+  if (action === "REJECT") {
+    return "반려 처리되었습니다.";
+  }
+
+  return isFinalStep ? "최종 승인되었습니다." : "다음 결재 단계로 전달했습니다.";
+}
+
+function getNextApprovalStepId(steps: ApprovalStep[], currentStepId?: string) {
+  const sortedSteps = steps.toSorted((a, b) => a.order - b.order);
+  const currentIndex = sortedSteps.findIndex((step) => step.id === currentStepId);
+
+  return sortedSteps
+    .slice(currentIndex + 1)
+    .find((step) => step.role !== "REQUESTER" && step.role !== "ADMIN")?.id;
+}
+
+function RequesterOpinionSummary({
+  opinion,
+}: {
+  opinion?: RequesterOpinion | null;
+}) {
+  return (
+    <section className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
+      <p className="text-sm font-medium text-[var(--color-muted)]">
+        작성자 검토 의견
+      </p>
+      {opinion ? (
+        <>
+          <h2 className="mt-2 text-xl font-normal">{opinion.authorName}</h2>
+          <p className="mt-3 text-sm leading-6 text-[var(--color-body)]">
+            {opinion.body}
+          </p>
+        </>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-[var(--color-body)]">
+          작성자 의견이 아직 저장되지 않았습니다. 리뷰 화면에서 의견 작성 후
+          결재 상신해야 합니다.
+        </p>
+      )}
+    </section>
+  );
 }

@@ -5,9 +5,9 @@ export default function CampaignApprovalLoading() {
   return (
     <AppShell activePath="/campaigns">
       <PageHeader
-        description="최종 결재 정보를 불러오는 중입니다."
-        eyebrow="캠페인 결재"
-        title="최종 결재"
+        description="결재 검토 정보를 불러오는 중입니다."
+        eyebrow="검토 요청 결재"
+        title="결재 검토"
       />
       <div className="grid gap-4 px-6 py-6 sm:px-8">
         <div className="h-36 animate-pulse rounded-xl bg-[var(--color-surface-soft)]" />

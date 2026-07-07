@@ -13,43 +13,57 @@ import { formatDate, getUserRoleLabel } from "@/lib/format";
 import { cx } from "@/lib/utils";
 
 const statusIcon: Record<ApprovalStepStatus, LucideIcon> = {
-  blocked: AlertCircle,
-  completed: CheckCircle2,
+  approved: CheckCircle2,
   in_progress: Clock3,
   pending: Circle,
+  rejected: AlertCircle,
+  revision_requested: AlertCircle,
+  skipped: Circle,
 };
 
 const statusLabel: Record<ApprovalStepStatus, string> = {
-  blocked: "확인 필요",
-  completed: "완료",
+  approved: "승인",
   in_progress: "진행 중",
   pending: "대기",
+  rejected: "반려",
+  revision_requested: "수정 요청",
+  skipped: "건너뜀",
 };
 
 const statusClassName: Record<ApprovalStepStatus, string> = {
-  blocked: "border-[var(--color-risk-high-text)] bg-[var(--color-risk-high-bg)]",
-  completed:
+  approved:
     "border-[var(--color-risk-low-text)] bg-[var(--color-risk-low-bg)]",
   in_progress:
     "border-[var(--color-risk-medium-text)] bg-[var(--color-risk-medium-bg)]",
   pending: "border-[var(--color-hairline)] bg-[var(--color-surface-soft)]",
+  rejected:
+    "border-[var(--color-risk-critical-text)] bg-[var(--color-risk-critical-bg)]",
+  revision_requested:
+    "border-[var(--color-risk-high-text)] bg-[var(--color-risk-high-bg)]",
+  skipped: "border-[var(--color-hairline)] bg-[var(--color-surface-soft)]",
 };
 
 const statusAccentClassName: Record<ApprovalStepStatus, string> = {
-  blocked: "text-[var(--color-risk-high-text)]",
-  completed: "text-[var(--color-risk-low-text)]",
+  approved: "text-[var(--color-risk-low-text)]",
   in_progress: "text-[var(--color-risk-medium-text)]",
   pending: "text-[var(--color-muted)]",
+  rejected: "text-[var(--color-risk-critical-text)]",
+  revision_requested: "text-[var(--color-risk-high-text)]",
+  skipped: "text-[var(--color-muted)]",
 };
 
 const statusBadgeClassName: Record<ApprovalStepStatus, string> = {
-  blocked:
-    "bg-[var(--color-risk-high-text)] text-[var(--color-risk-critical-text)]",
-  completed:
+  approved:
     "bg-[var(--color-risk-low-text)] text-[var(--color-risk-critical-text)]",
   in_progress:
     "bg-[var(--color-risk-medium-text)] text-[var(--color-risk-critical-text)]",
   pending:
+    "border border-[var(--color-hairline)] bg-white text-[var(--color-body)]",
+  rejected:
+    "bg-[var(--color-risk-critical-text)] text-[var(--color-risk-critical-bg)]",
+  revision_requested:
+    "bg-[var(--color-risk-high-text)] text-[var(--color-risk-critical-text)]",
+  skipped:
     "border border-[var(--color-hairline)] bg-white text-[var(--color-body)]",
 };
 
@@ -64,7 +78,7 @@ export function ApprovalTimeline({ steps }: { steps: ApprovalStep[] }) {
         </p>
         <h2 className="mt-2 text-xl font-normal">결재 단계</h2>
       </div>
-      <div className="grid gap-3 p-4 lg:grid-cols-4">
+      <div className="grid gap-3 p-4 lg:grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
         {sortedSteps.map((step) => {
           const Icon = statusIcon[step.status];
 
@@ -100,9 +114,11 @@ export function ApprovalTimeline({ steps }: { steps: ApprovalStep[] }) {
                   strokeWidth={1.8}
                 />
               </div>
-              <p className="mt-3 text-sm leading-6 text-[var(--color-ink)]">
-                {step.description}
-              </p>
+              {step.description ? (
+                <p className="mt-3 text-sm leading-6 text-[var(--color-ink)]">
+                  {step.description}
+                </p>
+              ) : null}
               <div className="mt-4 grid gap-2 text-xs text-[var(--color-body)]">
                 <span className="break-words">
                   {step.ownerName} · {getUserRoleLabel(step.role)}
@@ -115,11 +131,11 @@ export function ApprovalTimeline({ steps }: { steps: ApprovalStep[] }) {
                 >
                   {statusLabel[step.status]}
                 </span>
-                {step.updatedAt ? <span>{formatDate(step.updatedAt)}</span> : null}
+                {step.decidedAt ? <span>{formatDate(step.decidedAt)}</span> : null}
               </div>
-              {step.note ? (
+              {step.comment ? (
                 <p className="mt-3 rounded-md bg-[var(--color-panel)] px-3 py-2 text-xs leading-5 text-[var(--color-ink)]">
-                  {step.note}
+                  {step.comment}
                 </p>
               ) : null}
             </article>

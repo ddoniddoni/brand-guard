@@ -11,14 +11,14 @@ export default function CampaignApprovalError({
   return (
     <AppShell activePath="/campaigns">
       <PageHeader
-        description="최종 결재 정보를 불러오지 못했습니다."
-        eyebrow="캠페인 결재"
-        title="최종 결재"
+        description="결재 검토 정보를 불러오지 못했습니다."
+        eyebrow="검토 요청 결재"
+        title="결재 검토"
       />
       <div className="px-6 py-6 sm:px-8">
         <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
           <p className="text-base font-medium">
-            최종 결재 정보를 불러오지 못했습니다.
+            결재 검토 정보를 불러오지 못했습니다.
           </p>
           <p className="mt-2 text-sm text-[var(--color-muted)]">
             잠시 후 다시 시도하세요.

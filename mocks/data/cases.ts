@@ -60,7 +60,7 @@ export const caseLibraryItems: CaseLibraryItem[] = [
       "게시일과 문구의 조합을 함께 검토",
       "할인/긴급 표현이 과도하게 읽히지 않는지 확인",
     ],
-    preventiveAction: "캠페인 생성 단계에 민감 날짜 확인 체크포인트 추가",
+    preventiveAction: "검토 요청 생성 단계에 민감 날짜 확인 체크포인트 추가",
   },
   {
     id: "case-003",

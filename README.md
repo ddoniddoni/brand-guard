@@ -1,14 +1,14 @@
 # BrandGuard
 
-마케팅 소재 공개 전, 사회적 논란 가능성을 사전에 점검하는 브랜드 리스크 리뷰 SaaS입니다.
+마케팅 소재 공개 전, AI 1차 검토와 사람 중심 결재 라인을 통해 이미지와 문구의 브랜드 리스크 후보를 점검하는 B2B SaaS 포트폴리오입니다.
 
-BrandGuard는 특정 정치 성향이나 개인의 사상을 판정하지 않습니다. 광고 문구, 게시일, 이미지 요소, 타깃 맥락을 기반으로 논란 가능성이 있는 신호를 검토 후보로 정리하고, 브랜드/PR/법무 담당자가 근거와 대안 문구를 확인할 수 있게 돕습니다.
+BrandGuard는 특정 정치 성향이나 개인의 사상을 판정하지 않습니다. AI는 광고 문구, 게시일, 이미지 요소, 타깃 맥락에서 검토 후보와 근거를 정리하고, 작성자와 결재자가 의견을 남겨 최종 게시 여부를 결정합니다.
 
 ## Status
 
 Frontend-first MVP foundation is in progress. The current demo focuses on
 uploading a marketing asset, running a mocked AI first-pass review, collecting
-human reviewer opinions, and sending the campaign through final approval.
+the requester opinion, and sending the asset through an approval line.
 
 ## Tech Stack
 
@@ -56,5 +56,6 @@ npx @google/design.md lint DESIGN.md
 - Uploaded demo campaigns are persisted in browser `localStorage`.
 - Revision uploads create local v2 analysis and before/after comparison data.
 - AI output must remain a review assistant result, not a final judgment.
-- Human reviewers make approval, revision, and rejection decisions.
-- Final approval happens after AI first-pass review and stakeholder opinions.
+- Requesters must add an opinion before approval submission.
+- Human approvers make approval, revision, and rejection decisions.
+- Final approval happens after AI first-pass review and approval-line comments.

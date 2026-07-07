@@ -48,13 +48,13 @@ export function CampaignVersionsRoute({
         <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
           <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
             <p className="text-sm leading-6 text-[var(--color-body)]">
-              새 캠페인을 생성하거나 캠페인 목록에서 검토 대상을 다시 선택하세요.
+              새 검토 요청을 생성하거나 검토 요청 목록에서 대상을 다시 선택하세요.
             </p>
             <Link
               className="mt-5 inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
               href="/campaigns"
             >
-              캠페인 목록
+              검토 요청 목록
             </Link>
           </div>
         </div>

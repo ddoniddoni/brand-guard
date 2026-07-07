@@ -146,7 +146,7 @@ export default async function CasesPage({
   return (
     <AppShell activePath="/cases">
       <PageHeader
-        description="과거 검토 이력을 재사용 가능한 체크포인트로 정리합니다. 모든 사례는 판정이 아니라 담당자 검토를 돕는 참고 맥락입니다."
+        description="과거 검토 이력을 재사용 가능한 체크포인트로 정리합니다. 모든 사례는 판정이 아니라 작성자와 결재자 검토를 돕는 참고 맥락입니다."
         eyebrow="케이스"
         title="케이스 라이브러리"
       />

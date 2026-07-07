@@ -41,7 +41,7 @@ export default function DashboardPage() {
             href="/campaigns/new"
           >
             <Plus aria-hidden="true" size={16} strokeWidth={1.8} />
-            새 캠페인
+            새 검토 요청
           </Link>
         }
         description="AI 1차 검토 결과를 사람이 확인하고, 수정 요청과 승인 이력을 남기는 작업 공간입니다."
@@ -52,7 +52,7 @@ export default function DashboardPage() {
       <div className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
-            description="PR 또는 법무 담당자 확인이 필요한 캠페인"
+            description="결재자 확인이 필요한 검토 요청"
             icon={Clock3}
             title="검수 대기"
             value={`${dashboardSummary.pendingReviews}`}
@@ -60,17 +60,17 @@ export default function DashboardPage() {
           <MetricCard
             description="오탐 가능성을 포함해 우선 검토가 필요한 후보"
             icon={AlertTriangle}
-            title="고위험 캠페인"
+            title="고위험 요청"
             value={`${dashboardSummary.highRiskCampaigns}`}
           />
           <MetricCard
-            description="담당자 승인이 완료된 캠페인"
+            description="최종 승인이 완료된 검토 요청"
             icon={CheckCircle2}
             title="승인 완료"
             value={`${dashboardSummary.approvedCampaigns}`}
           />
           <MetricCard
-            description="최근 분석 캠페인의 평균 검토 점수"
+            description="최근 검토 요청의 평균 검토 점수"
             icon={Gauge}
             title="평균 리스크 점수"
             value={`${dashboardSummary.averageRiskScore}`}
@@ -128,9 +128,9 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-hairline)] p-6">
             <div className="min-w-0">
               <p className="text-sm font-medium text-[var(--color-muted)]">
-                최근 캠페인
+                  최근 검토 요청
               </p>
-              <h2 className="mt-2 text-2xl font-normal">최근 분석 캠페인</h2>
+              <h2 className="mt-2 text-2xl font-normal">최근 AI 검토 요청</h2>
             </div>
             <Link
               className="text-sm font-medium text-[var(--color-link)]"
@@ -150,7 +150,7 @@ export default function DashboardPage() {
                 </colgroup>
                 <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
                   <tr>
-                    <th className="px-6 py-3 font-medium">캠페인</th>
+                    <th className="px-6 py-3 font-medium">검토 요청</th>
                     <th className="px-4 py-3 font-medium">진행 상태</th>
                     <th className="px-4 py-3 font-medium">리스크</th>
                   </tr>
@@ -171,8 +171,8 @@ export default function DashboardPage() {
                         </Link>
                         <p className="mt-1 truncate text-xs text-[var(--color-muted)]">
                           {campaign.brandName} · {getChannelLabel(campaign.channel)} ·{" "}
-                          게시 {formatDate(campaign.publishDate)} · 담당{" "}
-                          {campaign.ownerName}
+                          게시 {formatDate(campaign.publishDate)} · 작성자{" "}
+                          {campaign.requesterName}
                         </p>
                       </td>
                       <td className="px-4 py-4">
@@ -198,7 +198,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="p-6 text-sm text-[var(--color-muted)]">
-              아직 분석된 캠페인이 없습니다.
+              아직 분석된 검토 요청이 없습니다.
             </div>
           )}
         </section>
@@ -209,7 +209,7 @@ export default function DashboardPage() {
             {latestAnalysis.summary}
           </p>
           <p className="mt-3 text-xs text-[var(--color-muted)]">
-            이 결과는 최종 판단이 아니며, 담당자 검토와 감사 로그 기록이
+            이 결과는 최종 판단이 아니며, 작성자 확인과 감사 로그 기록이
             필요합니다.
           </p>
         </section>

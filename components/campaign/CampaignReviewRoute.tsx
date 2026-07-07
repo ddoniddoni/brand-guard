@@ -62,8 +62,15 @@ export function CampaignReviewRoute({
     );
   }
 
-  const { analysis, approvalSteps, asset, auditLogEntries, campaign, comments } =
-    workspace;
+  const {
+    analysis,
+    approvalSteps,
+    asset,
+    auditLogEntries,
+    campaign,
+    comments,
+    requesterOpinion,
+  } = workspace;
 
   return (
     <>
@@ -80,7 +87,7 @@ export function CampaignReviewRoute({
               className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
               href={`/campaigns/${campaign.id}/approval`}
             >
-              최종 결재
+              결재 검토
             </Link>
             <Link
               className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
@@ -90,7 +97,7 @@ export function CampaignReviewRoute({
             </Link>
           </div>
         }
-        description="업로드한 소재, AI 1차 검토 후보, 담당자 의견과 상태 변경 이력을 한 화면에서 검토합니다."
+        description="업로드한 소재, AI 1차 검토 후보, 작성자 의견과 상태 변경 이력을 한 화면에서 검토합니다."
         eyebrow={`${campaign.brandName} · ${getChannelLabel(campaign.channel)}`}
         title={campaign.name}
       />
@@ -105,6 +112,7 @@ export function CampaignReviewRoute({
         hasVersionComparison={Boolean(workspace.versionComparison)}
         onRevisionSubmit={handleRevisionSubmit}
         onWorkspaceChange={handleWorkspaceChange}
+        requesterOpinion={requesterOpinion}
       />
     </>
   );
@@ -115,20 +123,20 @@ function MissingCampaignActions() {
     <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
       <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
         <p className="text-sm leading-6 text-[var(--color-body)]">
-          새 캠페인을 생성하거나 캠페인 목록에서 검토 대상을 다시 선택하세요.
+          새 검토 요청을 생성하거나 검토 요청 목록에서 대상을 다시 선택하세요.
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link
             className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             href="/campaigns/new"
           >
-            새 캠페인 생성
+            새 검토 요청
           </Link>
           <Link
             className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             href="/campaigns"
           >
-            캠페인 목록
+            검토 요청 목록
           </Link>
         </div>
       </div>

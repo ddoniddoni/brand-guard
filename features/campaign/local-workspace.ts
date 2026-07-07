@@ -18,11 +18,12 @@ import type {
 import type {
   ApprovalStep,
   AuditLogEntry,
+  RequesterOpinion,
   ReviewerComment,
 } from "@/features/review-workflow/types";
 
 const storageKey = "brandguard.campaign-workspaces.v1";
-const storageVersion = 1;
+const storageVersion = 2;
 const listeners = new Set<() => void>();
 let cachedRawValue: string | null = null;
 let cachedWorkspaces: CampaignWorkspace[] = [];
@@ -49,6 +50,7 @@ export type CampaignWorkspace = {
   auditLogEntries: AuditLogEntry[];
   campaign: Campaign;
   comments: ReviewerComment[];
+  requesterOpinion?: RequesterOpinion | null;
   versionComparison?: VersionComparison | null;
 };
 
@@ -84,6 +86,7 @@ export type WorkspacePatch = Partial<
     | "assetVersions"
     | "auditLogEntries"
     | "comments"
+    | "requesterOpinion"
     | "versionComparison"
   >
 > & {
@@ -123,10 +126,10 @@ export function createCampaignWorkspace(
     publishDate: input.publishDate,
     targetAudience: input.targetAudience,
     industry: input.industry,
-    status: "STAKEHOLDER_REVIEW",
+    status: "AI_REVIEWED",
     riskScore: analysis.overallRiskScore,
     riskLevel: analysis.overallRiskLevel,
-    ownerName: "현재 사용자",
+    requesterName: "현재 사용자",
     createdAt: timestamp,
     updatedAt: timestamp,
   };
@@ -148,6 +151,7 @@ export function createCampaignWorkspace(
     auditLogEntries: createInitialAuditLog(campaignId, timestamp),
     campaign,
     comments: [],
+    requesterOpinion: null,
     versionComparison: null,
   };
 }
@@ -358,11 +362,12 @@ export function createRevisionWorkspace(
   });
   const auditEntry: AuditLogEntry = {
     id: `${workspace.campaign.id}-audit-revision-${timestamp}`,
+    campaignId: workspace.campaign.id,
     actorName: "현재 사용자",
-    action: "수정 버전 업로드 및 재분석",
+    action: "revision_uploaded",
     fromStatus: workspace.campaign.status,
     toStatus: "AI_REVIEWED",
-    note: "2차 소재를 업로드하고 모의 AI 1차 검토를 다시 실행했습니다.",
+    message: "2차 소재를 업로드하고 모의 AI 1차 검토를 다시 실행했습니다.",
     createdAt: timestamp,
   };
 
@@ -378,11 +383,13 @@ export function createRevisionWorkspace(
     auditLogEntries: [auditEntry, ...workspace.auditLogEntries],
     campaign: {
       ...workspace.campaign,
+      currentApprovalStepId: undefined,
       riskLevel: nextAnalysis.overallRiskLevel,
       riskScore: nextAnalysis.overallRiskScore,
       status: "AI_REVIEWED",
       updatedAt: timestamp,
     },
+    requesterOpinion: null,
     versionComparison: comparison,
   };
 }
@@ -437,8 +444,8 @@ function createInputBasedAnalysis({
     overallRiskLevel: riskLevel,
     summary:
       findings.length > 0
-        ? "업로드한 소재에서 담당자 확인이 필요한 검토 후보가 정리되었습니다. 최종 판단은 캠페인 맥락을 아는 사람이 확인해야 합니다."
-        : "현재 입력값 기준으로는 주요 검토 후보가 적습니다. 게시 전 기본 담당자 확인은 유지하는 것을 권장합니다.",
+        ? "업로드한 소재에서 작성자와 결재자 확인이 필요한 검토 후보가 정리되었습니다. 최종 판단은 소재 맥락을 아는 사람이 확인해야 합니다."
+        : "현재 입력값 기준으로는 주요 검토 후보가 적습니다. 게시 전 기본 작성자 확인은 유지하는 것을 권장합니다.",
     reviewRequired: findings.length > 0,
     categories: findings,
     suggestions: createRevisionSuggestions(hasImage, hasCopy, isFastChannel),
@@ -501,16 +508,16 @@ function createRevisionAnalysis({
     overallRiskScore: score,
     overallRiskLevel: getRiskLevelByScore(score),
     summary:
-      "수정 버전에서 일부 검토 후보가 줄었습니다. 남은 후보는 최종 게시 전 담당자가 맥락을 확인해야 합니다.",
+      "수정 버전에서 일부 검토 후보가 줄었습니다. 남은 후보는 최종 게시 전 작성자와 결재자가 맥락을 확인해야 합니다.",
     reviewRequired: findings.length > 0,
     categories: findings,
     suggestions: [
       {
         id: `${campaignId}-suggestion-final-review`,
         target: "review_process",
-        title: "최종 결재 요청",
+        title: "결재 라인 확인",
         description:
-          "수정본 재분석 결과와 담당자 의견을 함께 확인한 뒤 최종 결재로 넘기세요.",
+          "수정본 재분석 결과와 작성자 의견을 함께 확인한 뒤 결재 라인으로 넘기세요.",
       },
     ],
     createdAt: new Date().toISOString(),
@@ -571,7 +578,7 @@ function createCopyFinding(
     level: hasLongCopy ? "medium" : "low",
     confidence: hasLongCopy ? 0.7 : 0.62,
     description:
-      "광고 카피가 게시 채널과 타깃 맥락에 따라 다르게 받아들여질 수 있어 담당자 확인이 권장됩니다.",
+      "광고 카피가 게시 채널과 타깃 맥락에 따라 다르게 받아들여질 수 있어 작성자와 결재자 확인이 권장됩니다.",
     evidence: [
       copyPreview
         ? `입력 문구 일부: "${copyPreview}"`
@@ -604,10 +611,10 @@ function createScheduleFinding(campaignId: string): RiskFinding {
     level: "low",
     confidence: 0.58,
     description:
-      "빠르게 확산되는 채널의 주말 게시 일정은 담당자 응답 가능 시간과 함께 검토하는 것이 좋습니다.",
+      "빠르게 확산되는 채널의 주말 게시 일정은 결재자 응답 가능 시간과 함께 검토하는 것이 좋습니다.",
     evidence: [
       "SNS 채널은 게시 직후 반응 속도가 빠를 수 있습니다.",
-      "주말 게시 시 브랜드/PR 담당자의 확인 가능 시간을 점검하는 것이 좋습니다.",
+      "주말 게시 시 브랜드/PR 결재자의 확인 가능 시간을 점검하는 것이 좋습니다.",
     ],
     falsePositiveNote:
       "일정 검토는 운영 리스크 후보이며, 특정 사회적 의미를 단정하지 않습니다.",
@@ -627,7 +634,7 @@ function createRevisionSuggestions(
       target: "image",
       title: "대체 컷 함께 검토",
       description:
-        "주요 손동작이나 크롭이 다르게 보이는 대체 이미지를 함께 올려 담당자가 비교할 수 있게 하세요.",
+        "주요 손동작이나 크롭이 다르게 보이는 대체 이미지를 함께 올려 작성자와 결재자가 비교할 수 있게 하세요.",
     });
   }
 
@@ -645,9 +652,9 @@ function createRevisionSuggestions(
     suggestions.push({
       id: "suggestion-process",
       target: "review_process",
-      title: "게시 전 담당자 확인",
+      title: "게시 전 결재 라인 확인",
       description:
-        "확산 속도가 빠른 채널은 게시 전 브랜드/PR 담당자 의견을 취합한 뒤 최종 결재로 넘기는 흐름을 권장합니다.",
+        "확산 속도가 빠른 채널은 게시 전 작성자 의견과 브랜드/PR 결재자 확인을 함께 남기는 흐름을 권장합니다.",
     });
   }
 
@@ -665,12 +672,12 @@ function createApprovalSteps(
       order: 1,
       title: "소재 등록",
       ownerName: "현재 사용자",
-      role: "MARKETER",
-      status: "completed",
+      role: "REQUESTER",
+      status: "approved",
       description: "이미지와 광고 카피를 등록했습니다.",
       decision: "approve",
-      note: "로컬 모의 작업 공간에 저장되었습니다.",
-      updatedAt: timestamp,
+      comment: "로컬 모의 작업 공간에 저장되었습니다.",
+      decidedAt: timestamp,
     },
     {
       id: `${campaignId}-step-ai`,
@@ -679,31 +686,41 @@ function createApprovalSteps(
       title: "AI 1차 검토",
       ownerName: "브랜드가드 모의 AI",
       role: "ADMIN",
-      status: "completed",
+      status: "approved",
       description: "업로드 소재 기반 검토 후보를 생성했습니다.",
       decision: "approve",
-      note: "검토 후보와 수정 제안이 생성되었습니다.",
-      updatedAt: timestamp,
+      comment: "검토 후보와 수정 제안이 생성되었습니다.",
+      decidedAt: timestamp,
     },
     {
-      id: `${campaignId}-step-stakeholder`,
+      id: `${campaignId}-step-requester-opinion`,
       campaignId,
       order: 3,
-      title: "담당자 의견 취합",
-      ownerName: "브랜드 담당자",
-      role: "BRAND_MANAGER",
+      title: "작성자 의견",
+      ownerName: "현재 사용자",
+      role: "REQUESTER",
       status: "in_progress",
-      description: "AI 의견과 실제 소재 맥락을 담당자가 다시 확인합니다.",
+      description: "AI 결과가 실제 소재 맥락과 맞는지 작성자가 의견을 남깁니다.",
+    },
+    {
+      id: `${campaignId}-step-marketing`,
+      campaignId,
+      order: 4,
+      title: "마케팅 리더",
+      ownerName: "마케팅 리더",
+      role: "MARKETING_REVIEWER",
+      status: "pending",
+      description: "작성자 의견과 AI 검토 후보를 함께 확인합니다.",
     },
     {
       id: `${campaignId}-step-final`,
       campaignId,
-      order: 4,
+      order: 5,
       title: "최종 결재",
       ownerName: "최종 결정자",
       role: "FINAL_APPROVER",
       status: "pending",
-      description: "담당자 의견 취합 후 최종 승인 여부를 결정합니다.",
+      description: "전체 의견과 감사 로그를 보고 최종 게시 가능 여부를 결정합니다.",
     },
   ];
 }
@@ -714,21 +731,32 @@ function createInitialAuditLog(
 ): AuditLogEntry[] {
   return [
     {
-      id: `${campaignId}-audit-ai`,
-      actorName: "브랜드가드 모의 AI",
-      action: "AI 1차 검토 완료",
-      fromStatus: "ANALYZING",
-      toStatus: "AI_REVIEWED",
-      note: "업로드 소재를 기반으로 검토 후보와 수정 제안을 생성했습니다.",
+      id: `${campaignId}-audit-created`,
+      campaignId,
+      actorName: "현재 사용자",
+      action: "campaign_created",
+      toStatus: "DRAFT",
+      message: "검토 요청을 생성하고 소재를 등록했습니다.",
       createdAt: timestamp,
     },
     {
-      id: `${campaignId}-audit-review`,
+      id: `${campaignId}-audit-analysis-started`,
+      campaignId,
       actorName: "현재 사용자",
-      action: "담당자 검토 요청",
-      fromStatus: "AI_REVIEWED",
-      toStatus: "STAKEHOLDER_REVIEW",
-      note: "AI 1차 의견을 담당자가 확인할 수 있도록 리뷰 화면으로 전달했습니다.",
+      action: "analysis_started",
+      fromStatus: "DRAFT",
+      toStatus: "ANALYZING",
+      message: "AI 1차 검토를 시작했습니다.",
+      createdAt: timestamp,
+    },
+    {
+      id: `${campaignId}-audit-ai`,
+      campaignId,
+      actorName: "브랜드가드 모의 AI",
+      action: "analysis_completed",
+      fromStatus: "ANALYZING",
+      toStatus: "AI_REVIEWED",
+      message: "업로드 소재를 기반으로 검토 후보와 수정 제안을 생성했습니다.",
       createdAt: timestamp,
     },
   ];
@@ -832,26 +860,26 @@ function resetApprovalStepsForRevision(
     if (step.title === "소재 등록" || step.title === "AI 1차 검토") {
       return {
         ...step,
-        status: "completed" as const,
-        updatedAt: timestamp,
+        status: "approved" as const,
+        decidedAt: timestamp,
       };
     }
 
-    if (step.title === "담당자 의견 취합") {
+    if (step.title === "작성자 의견") {
       return {
         ...step,
-        status: "pending" as const,
-        note: "수정본 재분석 후 담당자 확인 대기",
-        updatedAt: timestamp,
+        status: "in_progress" as const,
+        comment: "수정본 재분석 후 작성자 의견 대기",
+        decidedAt: undefined,
       };
     }
 
-    if (step.title === "최종 결재") {
+    if (step.title === "마케팅 리더" || step.title === "최종 결재") {
       return {
         ...step,
         status: "pending" as const,
-        note: undefined,
-        updatedAt: undefined,
+        comment: undefined,
+        decidedAt: undefined,
       };
     }
 

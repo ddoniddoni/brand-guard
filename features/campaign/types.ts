@@ -4,14 +4,11 @@ export type CampaignStatus =
   | "DRAFT"
   | "ANALYZING"
   | "AI_REVIEWED"
-  | "STAKEHOLDER_REVIEW"
+  | "IN_APPROVAL"
   | "NEEDS_REVISION"
-  | "PR_REVIEW"
-  | "LEGAL_REVIEW"
-  | "FINAL_APPROVAL"
   | "APPROVED"
-  | "REJECTED"
-  | "PUBLISHED";
+  | "READY_TO_PUBLISH"
+  | "REJECTED";
 
 export type CampaignChannel =
   | "instagram"
@@ -22,7 +19,8 @@ export type CampaignChannel =
   | "offline";
 
 export type UserRole =
-  | "MARKETER"
+  | "REQUESTER"
+  | "MARKETING_REVIEWER"
   | "BRAND_MANAGER"
   | "PR_REVIEWER"
   | "LEGAL_REVIEWER"
@@ -40,7 +38,8 @@ export type Campaign = {
   status: CampaignStatus;
   riskScore: number;
   riskLevel: RiskLevel;
-  ownerName: string;
+  requesterName: string;
+  currentApprovalStepId?: string;
   createdAt: string;
   updatedAt: string;
 };

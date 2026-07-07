@@ -7,7 +7,7 @@ export default function ApprovalsPage() {
   return (
     <AppShell activePath="/approvals">
       <PageHeader
-        description="AI 1차 검토 후 담당자 의견 취합 또는 최종 결재가 필요한 캠페인을 확인합니다."
+        description="작성자 의견이 포함되어 결재 결정이 필요한 검토 요청을 확인합니다."
         eyebrow="결재함"
         title="결재함"
       />

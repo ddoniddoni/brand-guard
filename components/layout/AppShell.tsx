@@ -16,8 +16,8 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const navigation = [
   { href: "/dashboard", label: "대시보드", icon: LayoutDashboard },
-  { href: "/campaigns", label: "캠페인", icon: FolderKanban },
-  { href: "/campaigns/new", label: "새 캠페인", icon: Plus },
+  { href: "/campaigns", label: "검토 요청", icon: FolderKanban },
+  { href: "/campaigns/new", label: "새 검토 요청", icon: Plus },
   { href: "/approvals", label: "결재함", icon: ClipboardCheck },
   { href: "/risk-dictionary", label: "리스크 사전", icon: BookOpenCheck },
   { href: "/cases", label: "케이스", icon: Library },
@@ -49,7 +49,7 @@ export function AppShell({
                   BrandGuard
                 </span>
                 <span className="block truncate text-xs text-[var(--color-muted)]">
-                  담당자 검토 보조 도구
+                  사람 중심 결재 보조 도구
                 </span>
               </span>
             </Link>
@@ -90,8 +90,8 @@ export function AppShell({
               <div className="hidden rounded-xl bg-[var(--color-surface-soft)] p-4 lg:block">
                 <p className="text-sm font-medium">검토 보조 원칙</p>
                 <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-                  AI 결과는 검토 후보입니다. 최종 승인과 반려는 담당자가
-                  결정합니다.
+                  AI 결과는 검토 후보입니다. 최종 승인과 반려는 작성자와
+                  결재자가 결정합니다.
                 </p>
               </div>
             </div>

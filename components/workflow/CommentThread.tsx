@@ -7,7 +7,7 @@ import { AdaptiveSelect } from "@/components/ui/AdaptiveSelect";
 import { formatDate, getUserRoleLabel } from "@/lib/format";
 
 const reviewerRoles: UserRole[] = [
-  "MARKETER",
+  "MARKETING_REVIEWER",
   "BRAND_MANAGER",
   "PR_REVIEWER",
   "LEGAL_REVIEWER",
@@ -38,9 +38,9 @@ export function CommentThread({
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
-          담당자 의견
+          결재자 의견
         </p>
-        <h2 className="mt-2 text-xl font-normal">담당자별 의견</h2>
+        <h2 className="mt-2 text-xl font-normal">결재 의견</h2>
       </div>
       <div className="grid gap-4 p-4">
         {comments.map((comment) => (
@@ -67,11 +67,11 @@ export function CommentThread({
 
         <div className="grid gap-2">
           <span className="text-sm font-medium text-[var(--color-ink)]">
-            의견 작성 역할
+            결재 역할
           </span>
           <AdaptiveSelect
-            ariaLabel="의견 작성 역할"
-            label="의견 작성 역할"
+            ariaLabel="결재 역할"
+            label="결재 역할"
             onValueChange={(nextValue) =>
               onCommentRoleChange(nextValue as UserRole)
             }
@@ -82,13 +82,13 @@ export function CommentThread({
             className="text-sm font-medium text-[var(--color-ink)]"
             htmlFor="review-comment"
           >
-            새 코멘트
+            새 결재 의견
           </label>
           <textarea
             className="min-h-28 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             id="review-comment"
             onChange={(event) => onCommentDraftChange(event.target.value)}
-            placeholder="검토 의견을 입력하세요…"
+            placeholder="결재 의견을 입력하세요…"
             value={commentDraft}
           />
           <button
@@ -98,7 +98,7 @@ export function CommentThread({
             type="button"
           >
             <Send aria-hidden="true" size={15} strokeWidth={1.8} />
-            코멘트 추가
+            의견 추가
           </button>
         </div>
       </div>

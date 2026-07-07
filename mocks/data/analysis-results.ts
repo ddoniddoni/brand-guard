@@ -9,7 +9,7 @@ export const analysisResults: AnalysisResult[] = [
     overallRiskScore: 74,
     overallRiskLevel: "medium",
     summary:
-      "이미지와 문구에서 담당자 검토가 필요한 리스크 후보가 확인되었습니다. 최종 판단은 캠페인 맥락을 아는 담당자가 검토해야 합니다.",
+      "이미지와 문구에서 작성자와 결재자 검토가 필요한 리스크 후보가 확인되었습니다. 최종 판단은 소재 맥락을 아는 사람이 검토해야 합니다.",
     reviewRequired: true,
     createdAt: "2026-07-07T09:10:00.000Z",
     categories: [
@@ -85,9 +85,9 @@ export const analysisResults: AnalysisResult[] = [
       {
         id: "sug-002",
         target: "review_process",
-        title: "PR팀 2차 검토 요청",
+        title: "PR 결재자 추가 검토 권장",
         description:
-          "SNS 채널 게시 전 PR 담당자의 추가 검토를 권장합니다.",
+          "SNS 채널 게시 전 PR 결재자의 추가 검토를 권장합니다.",
       },
     ],
   },

@@ -35,12 +35,12 @@ export default async function CampaignsPage({
             href="/campaigns/new"
           >
             <Plus aria-hidden="true" size={16} strokeWidth={1.8} />
-            새 캠페인
+            새 검토 요청
           </Link>
         }
-        description="캠페인 상태, 리스크 레벨, 채널을 기준으로 사전 검토 대상을 찾고 정렬합니다."
-        eyebrow="캠페인"
-        title="캠페인 목록"
+        description="상태, 리스크 레벨, 채널을 기준으로 게시 전 검토 요청을 찾고 정렬합니다."
+        eyebrow="검토 요청"
+        title="검토 요청 목록"
       />
       <CampaignListClient
         filters={{ channel, query, risk, sort, status }}

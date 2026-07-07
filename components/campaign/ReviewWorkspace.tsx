@@ -15,6 +15,8 @@ import type { AnalysisResult } from "@/features/risk-analysis/types";
 import type {
   ApprovalStep,
   AuditLogEntry,
+  RequesterOpinion,
+  RequesterOpinionConclusion,
   ReviewerComment,
   ReviewAction,
 } from "@/features/review-workflow/types";
@@ -41,6 +43,7 @@ export function ReviewWorkspace({
   hasVersionComparison,
   onRevisionSubmit,
   onWorkspaceChange,
+  requesterOpinion,
 }: {
   analysis: AnalysisResult;
   approvalSteps: ApprovalStep[];
@@ -51,6 +54,7 @@ export function ReviewWorkspace({
   hasVersionComparison?: boolean;
   onRevisionSubmit?: (input: RevisionUploadInput) => void;
   onWorkspaceChange?: (patch: WorkspacePatch) => void;
+  requesterOpinion?: RequesterOpinion | null;
 }) {
   const firstFindingId = analysis.categories[0]?.id ?? "";
   const [selectedFindingId, setSelectedFindingId] = useState(firstFindingId);
@@ -59,6 +63,14 @@ export function ReviewWorkspace({
   const [commentRole, setCommentRole] = useState<UserRole>("BRAND_MANAGER");
   const [reviewComments, setReviewComments] = useState(comments);
   const [auditEntries, setAuditEntries] = useState(auditLogEntries);
+  const [opinionBody, setOpinionBody] = useState(requesterOpinion?.body ?? "");
+  const [opinionConclusion, setOpinionConclusion] =
+    useState<RequesterOpinionConclusion>(
+      requesterOpinion?.conclusion ?? "submit_for_approval",
+    );
+  const [savedRequesterOpinion, setSavedRequesterOpinion] = useState(
+    requesterOpinion ?? null,
+  );
 
   const selectedFinding = useMemo(
     () =>
@@ -80,6 +92,10 @@ export function ReviewWorkspace({
   };
 
   const handleAction = (action: ReviewAction) => {
+    if (action === "SUBMIT_FOR_APPROVAL" && !savedRequesterOpinion) {
+      return;
+    }
+
     const nextStatus = applyReviewAction(status, action);
 
     if (nextStatus === status) {
@@ -87,10 +103,11 @@ export function ReviewWorkspace({
     }
 
     const auditEntry = createAuditEntry({
-      action: getWorkflowActionLabel(action),
+      action: getWorkflowAuditAction(action),
       actorName: "현재 검토자",
+      campaignId: campaign.id,
       fromStatus: status,
-      note: selectedFinding
+      message: selectedFinding
         ? `${selectedFinding.title} 항목을 확인하고 ${getStatusLabel(
             nextStatus,
           )} 상태로 변경했습니다.`
@@ -103,7 +120,66 @@ export function ReviewWorkspace({
     setAuditEntries(nextAuditEntries);
     onWorkspaceChange?.({
       auditLogEntries: nextAuditEntries,
+      campaign:
+        nextStatus === "IN_APPROVAL"
+          ? { currentApprovalStepId: `${campaign.id}-step-marketing` }
+          : undefined,
       status: nextStatus,
+    });
+  };
+
+  const handleSaveRequesterOpinion = () => {
+    const body = opinionBody.trim();
+
+    if (!body) {
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+    const nextOpinion: RequesterOpinion = {
+      id: `requester-opinion-${timestamp}`,
+      campaignId: campaign.id,
+      authorName: campaign.requesterName,
+      body,
+      conclusion: opinionConclusion,
+      createdAt: timestamp,
+    };
+    const nextApprovalSteps = approvalSteps.map((step) => {
+      if (step.title === "작성자 의견") {
+        return {
+          ...step,
+          comment: getRequesterConclusionLabel(opinionConclusion),
+          decidedAt: timestamp,
+          decision: "approve" as const,
+          status: "approved" as const,
+        };
+      }
+
+      if (step.title === "마케팅 리더") {
+        return {
+          ...step,
+          status: "pending" as const,
+        };
+      }
+
+      return step;
+    });
+    const auditEntry = createAuditEntry({
+      action: "requester_opinion_added",
+      actorName: campaign.requesterName,
+      campaignId: campaign.id,
+      fromStatus: status,
+      message: body,
+      toStatus: status,
+    });
+    const nextAuditEntries = [auditEntry, ...auditEntries];
+
+    setSavedRequesterOpinion(nextOpinion);
+    setAuditEntries(nextAuditEntries);
+    onWorkspaceChange?.({
+      approvalSteps: nextApprovalSteps,
+      auditLogEntries: nextAuditEntries,
+      requesterOpinion: nextOpinion,
     });
   };
 
@@ -125,9 +201,10 @@ export function ReviewWorkspace({
       role: commentRole,
     };
     const auditEntry = createAuditEntry({
-      action: "검토 코멘트 추가",
+      action: "comment_added",
       actorName: "현재 검토자",
-      note: body,
+      campaignId: campaign.id,
+      message: body,
     });
     const nextComments = [nextComment, ...reviewComments];
     const nextAuditEntries = [auditEntry, ...auditEntries];
@@ -155,8 +232,8 @@ export function ReviewWorkspace({
             </span>
           </div>
           <p className="mt-3 text-sm leading-6 text-[var(--color-body)]">
-            업종 {campaign.industry} · 타깃 {campaign.targetAudience} · 담당자{" "}
-            {campaign.ownerName}
+            업종 {campaign.industry} · 타깃 {campaign.targetAudience} · 작성자{" "}
+            {campaign.requesterName}
           </p>
         </div>
         <div className="min-w-0 rounded-lg bg-[var(--color-surface-soft)] px-4 py-3 lg:max-w-80">
@@ -187,7 +264,26 @@ export function ReviewWorkspace({
 
         <aside className="grid content-start gap-4">
           <RiskScoreCard analysis={analysis} />
-          <ReviewActions onAction={handleAction} status={status} />
+          <RequesterOpinionPanel
+            conclusion={opinionConclusion}
+            draft={opinionBody}
+            onConclusionChange={setOpinionConclusion}
+            onDraftChange={setOpinionBody}
+            onSave={handleSaveRequesterOpinion}
+            savedOpinion={savedRequesterOpinion}
+          />
+          <ReviewActions
+            disabledActionReasons={
+              savedRequesterOpinion
+                ? undefined
+                : {
+                    SUBMIT_FOR_APPROVAL:
+                      "작성자 검토 의견을 저장한 뒤 결재 상신할 수 있습니다.",
+                  }
+            }
+            onAction={handleAction}
+            status={status}
+          />
           {asset ? (
             <RevisionUploadPanel
               asset={asset}
@@ -230,17 +326,115 @@ function getAnalysisVersionLabel(versionId: string) {
   return versionNumber ? `${versionNumber}차 분석` : versionId;
 }
 
-function getWorkflowActionLabel(action: ReviewAction) {
-  const labels: Record<ReviewAction, string> = {
-    APPROVE: "승인",
-    REANALYZE: "재분석 요청",
-    REJECT: "반려",
-    REQUEST_FINAL_APPROVAL: "최종 결재 요청",
-    REQUEST_LEGAL_REVIEW: "법무 검토 요청",
-    REQUEST_REVISION: "수정 요청",
-    START_PR_REVIEW: "PR 검토 시작",
-    START_STAKEHOLDER_REVIEW: "담당자 검토 시작",
+function getWorkflowAuditAction(
+  action: ReviewAction,
+): AuditLogEntry["action"] {
+  const labels: Record<ReviewAction, AuditLogEntry["action"]> = {
+    APPROVE_STEP: "approval_step_approved",
+    COMPLETE_ANALYSIS: "analysis_completed",
+    MARK_READY_TO_PUBLISH: "ready_to_publish",
+    REANALYZE: "analysis_started",
+    REJECT: "campaign_rejected",
+    REQUEST_REVISION: "revision_requested",
+    START_ANALYSIS: "analysis_started",
+    SUBMIT_FOR_APPROVAL: "submitted_for_approval",
   };
 
   return labels[action];
+}
+
+function RequesterOpinionPanel({
+  conclusion,
+  draft,
+  onConclusionChange,
+  onDraftChange,
+  onSave,
+  savedOpinion,
+}: {
+  conclusion: RequesterOpinionConclusion;
+  draft: string;
+  onConclusionChange: (value: RequesterOpinionConclusion) => void;
+  onDraftChange: (value: string) => void;
+  onSave: () => void;
+  savedOpinion: RequesterOpinion | null;
+}) {
+  const options: { label: string; value: RequesterOpinionConclusion }[] = [
+    { label: "결재 상신", value: "submit_for_approval" },
+    { label: "수정 후 재검토 필요", value: "needs_edit_before_submit" },
+    { label: "오탐 가능성이 높음", value: "false_positive_likely" },
+  ];
+
+  return (
+    <section className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
+      <p className="text-sm font-medium text-[var(--color-muted)]">
+        작성자 검토 의견
+      </p>
+      <h2 className="mt-2 text-xl font-normal">AI 결과 확인 의견</h2>
+      {savedOpinion ? (
+        <div className="mt-4 rounded-lg bg-[var(--color-surface-soft)] p-4">
+          <p className="text-xs font-medium text-[var(--color-muted)]">
+            {savedOpinion.authorName} ·{" "}
+            {getRequesterConclusionLabel(savedOpinion.conclusion)}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-[var(--color-body)]">
+            {savedOpinion.body}
+          </p>
+        </div>
+      ) : null}
+      <div className="mt-4 grid gap-3">
+        <label
+          className="text-sm font-medium text-[var(--color-ink)]"
+          htmlFor="requester-opinion"
+        >
+          의견
+        </label>
+        <textarea
+          className="min-h-28 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+          id="requester-opinion"
+          onChange={(event) => onDraftChange(event.target.value)}
+          placeholder="AI 결과가 실제 소재 맥락과 맞는지, 오탐 가능성은 있는지 작성하세요."
+          value={draft}
+        />
+        <div className="grid gap-2">
+          <span className="text-sm font-medium text-[var(--color-ink)]">
+            작성자 결론
+          </span>
+          <div className="grid gap-2">
+            {options.map((option) => (
+              <label
+                className="flex min-h-10 items-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-3 text-sm"
+                key={option.value}
+              >
+                <input
+                  checked={conclusion === option.value}
+                  name="requester-opinion-conclusion"
+                  onChange={() => onConclusionChange(option.value)}
+                  type="radio"
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
+        </div>
+        <button
+          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={!draft.trim()}
+          onClick={onSave}
+          type="button"
+        >
+          작성자 의견 저장
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function getRequesterConclusionLabel(conclusion: RequesterOpinionConclusion) {
+  const labels: Record<RequesterOpinionConclusion, string> = {
+    false_positive_likely: "오탐 가능성이 높음",
+    needs_edit_before_submit: "수정 후 재검토 필요",
+    submit_for_approval: "결재 상신",
+  };
+
+  return labels[conclusion];
 }

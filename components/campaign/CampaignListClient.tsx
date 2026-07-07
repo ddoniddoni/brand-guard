@@ -36,14 +36,11 @@ const statusOptions: CampaignStatus[] = [
   "DRAFT",
   "ANALYZING",
   "AI_REVIEWED",
-  "STAKEHOLDER_REVIEW",
+  "IN_APPROVAL",
   "NEEDS_REVISION",
-  "PR_REVIEW",
-  "LEGAL_REVIEW",
-  "FINAL_APPROVAL",
   "APPROVED",
+  "READY_TO_PUBLISH",
   "REJECTED",
-  "PUBLISHED",
 ];
 
 const riskOptions: RiskLevel[] = ["low", "medium", "high", "critical"];
@@ -120,7 +117,7 @@ export function CampaignListClient({
             !filters.query ||
             campaign.name.toLowerCase().includes(filters.query) ||
             campaign.brandName.toLowerCase().includes(filters.query) ||
-            campaign.ownerName.toLowerCase().includes(filters.query);
+            campaign.requesterName.toLowerCase().includes(filters.query);
           const matchesStatus =
             !filters.status || campaign.status === filters.status;
           const matchesRisk =
@@ -157,7 +154,7 @@ export function CampaignListClient({
       >
         <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.4fr)_repeat(4,minmax(0,1fr))]">
           <label className="relative min-w-0">
-            <span className="sr-only">캠페인 검색</span>
+            <span className="sr-only">검토 요청 검색</span>
             <Search
               aria-hidden="true"
               className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
@@ -168,7 +165,7 @@ export function CampaignListClient({
               className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white pl-10 pr-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
               defaultValue={filters.query}
               name="q"
-              placeholder="캠페인, 브랜드, 담당자 검색…"
+              placeholder="검토 요청, 브랜드, 작성자 검색…"
             />
           </label>
 
@@ -216,13 +213,13 @@ export function CampaignListClient({
         <div className="border-b border-[var(--color-hairline)] px-5 py-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-lg font-medium">검토 대상 캠페인</h2>
+              <h2 className="text-lg font-medium">검토 요청 건</h2>
               <p className="mt-1 text-sm text-[var(--color-muted)]">
                 총 {filteredCampaigns.length}개
               </p>
             </div>
             <p className="text-sm text-[var(--color-muted)]">
-              캠페인 정보, 리스크, 진행 상태만 표시합니다.
+              검토 요청 정보, 리스크, 진행 상태만 표시합니다.
             </p>
           </div>
         </div>
@@ -237,7 +234,7 @@ export function CampaignListClient({
               </colgroup>
               <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
                 <tr>
-                  <th className="px-5 py-3 font-medium">캠페인</th>
+                  <th className="px-5 py-3 font-medium">검토 요청</th>
                   <th className="px-4 py-3 font-medium">리스크</th>
                   <th className="px-4 py-3 font-medium">진행 상태</th>
                 </tr>
@@ -258,8 +255,8 @@ export function CampaignListClient({
                       </Link>
                       <p className="mt-1 truncate text-xs text-[var(--color-muted)]">
                         {campaign.brandName} · {getChannelLabel(campaign.channel)} ·{" "}
-                        게시 {formatDate(campaign.publishDate)} · 담당{" "}
-                        {campaign.ownerName}
+                        게시 {formatDate(campaign.publishDate)} · 작성자{" "}
+                        {campaign.requesterName}
                       </p>
                     </td>
                     <td className="px-4 py-4">
@@ -290,10 +287,10 @@ export function CampaignListClient({
           <div className="grid min-h-64 place-items-center p-8 text-center">
             <div>
               <p className="text-base font-medium">
-                조건에 맞는 캠페인이 없습니다.
+                조건에 맞는 검토 요청이 없습니다.
               </p>
               <p className="mt-2 text-sm text-[var(--color-muted)]">
-                검색어나 필터를 조정하거나 새 캠페인을 생성하세요.
+                검색어나 필터를 조정하거나 새 검토 요청을 생성하세요.
               </p>
             </div>
           </div>

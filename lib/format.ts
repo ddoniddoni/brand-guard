@@ -33,14 +33,11 @@ export function getStatusLabel(status: CampaignStatus) {
     DRAFT: "초안",
     ANALYZING: "분석 중",
     AI_REVIEWED: "AI 검토 완료",
-    STAKEHOLDER_REVIEW: "담당자 검토",
+    IN_APPROVAL: "결재 진행",
     NEEDS_REVISION: "수정 요청",
-    PR_REVIEW: "PR 검토",
-    LEGAL_REVIEW: "법무 검토",
-    FINAL_APPROVAL: "최종 결재",
-    APPROVED: "승인",
+    APPROVED: "최종 승인",
+    READY_TO_PUBLISH: "게시 가능",
     REJECTED: "반려",
-    PUBLISHED: "게시 완료",
   };
 
   return labels[status];
@@ -85,8 +82,9 @@ export function getUserRoleLabel(role: string) {
     BRAND_MANAGER: "브랜드 매니저",
     FINAL_APPROVER: "최종 결정자",
     LEGAL_REVIEWER: "법무 검토자",
-    MARKETER: "마케터",
+    MARKETING_REVIEWER: "마케팅 검토자",
     PR_REVIEWER: "PR 검토자",
+    REQUESTER: "작성자",
   };
 
   return labels[role] ?? role;

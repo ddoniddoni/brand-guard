@@ -44,7 +44,7 @@ export function CampaignApprovalRoute({
       <>
         <PageHeader
           description="브라우저 저장소나 모의 데이터에서 해당 캠페인을 찾지 못했습니다."
-          eyebrow="캠페인 결재"
+          eyebrow="검토 요청 결재"
           title="결재 대상을 찾을 수 없습니다"
         />
         <MissingCampaignActions />
@@ -52,8 +52,15 @@ export function CampaignApprovalRoute({
     );
   }
 
-  const { analysis, approvalSteps, asset, auditLogEntries, campaign, comments } =
-    workspace;
+  const {
+    analysis,
+    approvalSteps,
+    asset,
+    auditLogEntries,
+    campaign,
+    comments,
+    requesterOpinion,
+  } = workspace;
 
   return (
     <>
@@ -74,9 +81,9 @@ export function CampaignApprovalRoute({
             </Link>
           </div>
         }
-        description="AI 1차 의견, 담당자별 의견, 원본 소재, 감사 로그를 확인하고 최종 승인 여부를 결정합니다."
+        description="AI 1차 의견, 작성자 의견, 원본 소재, 감사 로그를 확인하고 승인 여부를 결정합니다."
         eyebrow={`${campaign.brandName} · ${getChannelLabel(campaign.channel)}`}
-        title={`${campaign.name} 최종 결재`}
+        title={`${campaign.name} 결재 검토`}
       />
       <ApprovalWorkspace
         key={`${campaign.id}-${analysis.versionId}-${campaign.status}-${comments.length}-${auditLogEntries.length}`}
@@ -87,6 +94,7 @@ export function CampaignApprovalRoute({
         campaign={campaign}
         comments={comments}
         onWorkspaceChange={handleWorkspaceChange}
+        requesterOpinion={requesterOpinion}
       />
     </>
   );
@@ -97,7 +105,7 @@ function MissingCampaignActions() {
     <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
       <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
         <p className="text-sm leading-6 text-[var(--color-body)]">
-          새 캠페인을 생성하거나 결재함에서 대상을 다시 선택하세요.
+          새 검토 요청을 생성하거나 결재함에서 대상을 다시 선택하세요.
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link
@@ -110,7 +118,7 @@ function MissingCampaignActions() {
             className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             href="/campaigns/new"
           >
-            새 캠페인 생성
+            새 검토 요청
           </Link>
         </div>
       </div>

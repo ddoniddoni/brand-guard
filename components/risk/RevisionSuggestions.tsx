@@ -44,7 +44,7 @@ export function RevisionSuggestions({
           ))
         ) : (
           <p className="rounded-lg bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-body)]">
-            현재 모의 분석 결과에서는 별도 수정 제안이 없습니다. 기본 담당자
+            현재 모의 분석 결과에서는 별도 수정 제안이 없습니다. 기본 작성자
             확인 후 결재를 진행하세요.
           </p>
         )}

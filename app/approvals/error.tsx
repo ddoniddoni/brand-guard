@@ -11,7 +11,7 @@ export default function ApprovalsError({
   return (
     <AppShell activePath="/approvals">
       <PageHeader
-        description="결재 대기 캠페인을 불러오지 못했습니다."
+        description="결재 대기 검토 요청을 불러오지 못했습니다."
         eyebrow="결재함"
         title="결재함"
       />
