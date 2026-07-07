@@ -6,7 +6,7 @@ BrandGuard는 특정 정치 성향이나 개인의 사상을 판정하지 않습
 
 ## Status
 
-Initial Next.js setup is complete.
+Initial Next.js setup and Phase 1 app foundation are in progress.
 
 ## Tech Stack
 
@@ -23,6 +23,17 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+## Current Routes
+
+- `/dashboard`
+- `/campaigns`
+- `/campaigns/new`
+- `/campaigns/[id]/review` placeholder
+- `/risk-dictionary`
+- `/cases`
+- `/settings/team`
+- `/settings/profile`
 
 ## Checks
 

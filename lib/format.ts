@@ -1,0 +1,78 @@
+import type { CampaignChannel, CampaignStatus } from "@/features/campaign/types";
+import type { RiskCategory, RiskLevel } from "@/features/risk-analysis/types";
+
+const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
+
+export function formatDate(value: string) {
+  return dateFormatter.format(new Date(value));
+}
+
+export function formatPercent(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
+
+export function getChannelLabel(channel: CampaignChannel) {
+  const labels: Record<CampaignChannel, string> = {
+    instagram: "Instagram",
+    youtube: "YouTube",
+    tiktok: "TikTok",
+    web_banner: "Web banner",
+    push: "Push",
+    offline: "Offline",
+  };
+
+  return labels[channel];
+}
+
+export function getStatusLabel(status: CampaignStatus) {
+  const labels: Record<CampaignStatus, string> = {
+    DRAFT: "초안",
+    ANALYZING: "분석 중",
+    AI_REVIEWED: "AI 검토 완료",
+    NEEDS_REVISION: "수정 요청",
+    PR_REVIEW: "PR 검토",
+    LEGAL_REVIEW: "법무 검토",
+    APPROVED: "승인",
+    REJECTED: "반려",
+    PUBLISHED: "게시 완료",
+  };
+
+  return labels[status];
+}
+
+export function getRiskLevelLabel(level: RiskLevel) {
+  const labels: Record<RiskLevel, string> = {
+    low: "낮은 위험",
+    medium: "중간 위험",
+    high: "고위험",
+    critical: "긴급 검토",
+  };
+
+  return labels[level];
+}
+
+export function getRiskCategoryLabel(category: RiskCategory) {
+  const labels: Record<RiskCategory, string> = {
+    visual_gesture: "시각 패턴 후보",
+    ocr_text: "OCR 문구",
+    sensitive_date: "민감 날짜",
+    political_historical: "역사/정치 맥락",
+    gender_conflict: "젠더 갈등",
+    regional_discrimination: "지역 비하 후보",
+    generation_conflict: "세대 갈등",
+    disability_disease: "장애/질병 표현",
+    race_nationality: "인종/국적",
+    religion: "종교",
+    labor_power_abuse: "노동/권력 남용",
+    sexual_expression: "성적 표현",
+    violence_disaster: "폭력/재난",
+    community_slang: "커뮤니티 은어",
+    brand_mismatch: "브랜드 부적합",
+  };
+
+  return labels[category];
+}

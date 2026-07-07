@@ -15,6 +15,10 @@
   --color-muted: #41454d;
   --color-hairline: #dddddd;
   --color-canvas: #ffffff;
+  --color-link: #1b61c9;
+  --color-info: #254fad;
+  --color-info-bg: #eef4ff;
+  --color-info-border: #458fff;
   --color-surface-soft: #f8fafc;
   --color-surface-strong: #e0e2e6;
   --color-review-canvas: #181d26;
@@ -25,6 +29,10 @@
   --color-risk-low-text: #006400;
   --color-risk-medium-bg: #fff4cf;
   --color-risk-medium-text: #6f4a00;
+  --color-risk-high-bg: #fff0e8;
+  --color-risk-high-text: #aa2d00;
+  --color-risk-critical-bg: #181d26;
+  --color-risk-critical-text: #ffffff;
 }
 
 @theme inline {
