@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const supportedImageTypes = ["image/jpeg", "image/png", "image/webp"];
+const maxImageSize = 2 * 1024 * 1024;
 
 const hasFiles = (value: unknown) =>
   typeof FileList !== "undefined" &&
@@ -46,6 +47,14 @@ export const campaignCreateSchema = z
         context.addIssue({
           code: "custom",
           message: "jpg, png, webp 이미지만 업로드할 수 있습니다.",
+          path: ["image"],
+        });
+      }
+
+      if (file && file.size > maxImageSize) {
+        context.addIssue({
+          code: "custom",
+          message: "이미지 파일은 2MB 이하로 업로드하세요.",
           path: ["image"],
         });
       }

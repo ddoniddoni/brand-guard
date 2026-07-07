@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { CampaignAsset } from "@/features/campaign/local-workspace";
 import type { AnalysisResult } from "@/features/risk-analysis/types";
 import { formatPercent, getRiskCategoryLabel } from "@/lib/format";
 import { cx } from "@/lib/utils";
@@ -32,10 +33,14 @@ const regionClassName: Record<RegionViewModel["type"], string> = {
 
 export function ReviewCanvas({
   analysis,
+  asset,
+  brandName,
   selectedFindingId,
   onSelectFinding,
 }: {
   analysis: AnalysisResult;
+  asset?: CampaignAsset;
+  brandName?: string;
   selectedFindingId: string;
   onSelectFinding: (findingId: string) => void;
 }) {
@@ -85,19 +90,19 @@ export function ReviewCanvas({
           style={{ transform: `scale(${zoom})` }}
         >
           <div className="relative h-full w-full">
-            <div className="absolute inset-8 rounded-[28px] bg-[var(--color-signature-cream)]/95" />
-            <div className="absolute left-[12%] top-[18%] h-[50%] w-[42%] rounded-2xl bg-white/95 p-6 text-[var(--color-ink)]">
-              <p className="text-sm font-medium text-[var(--color-muted)]">
-                Northstar
-              </p>
-              <p className="mt-4 text-4xl font-normal leading-tight">
-                Summer calm,
-                <br />
-                reviewed first.
-              </p>
-            </div>
-            <div className="absolute right-[15%] top-[18%] h-[42%] w-[23%] rounded-full bg-[var(--color-signature-peach)]" />
-            <div className="absolute bottom-[14%] left-[16%] h-[12%] w-[58%] rounded-xl bg-white/90" />
+            {asset?.imageDataUrl ? (
+              <div
+                aria-label={`${asset.imageFileName ?? "업로드 이미지"} 미리보기`}
+                className="absolute inset-0 bg-cover bg-center"
+                role="img"
+                style={{ backgroundImage: `url(${asset.imageDataUrl})` }}
+              />
+            ) : (
+              <MockCreativeSurface
+                brandName={brandName ?? "Northstar"}
+                copy={asset?.copy}
+              />
+            )}
 
             {regions.map((region) => {
               const isSelected = region.findingId === selectedFindingId;
@@ -170,6 +175,41 @@ export function ReviewCanvas({
         </p>
       ) : null}
     </section>
+  );
+}
+
+function MockCreativeSurface({
+  brandName,
+  copy,
+}: {
+  brandName: string;
+  copy?: string;
+}) {
+  const copyLines = (copy?.trim() ? copy.trim().split(/\n+/) : [])
+    .flatMap((line) => line.split(/(?<=\.)\s+/))
+    .filter(Boolean)
+    .slice(0, 3);
+  const headline = copyLines[0] ?? "Summer calm, reviewed first.";
+  const supportText =
+    copyLines.slice(1).join(" ") ||
+    "신제품 공개 전 이미지와 문구의 검토 후보를 확인합니다.";
+
+  return (
+    <>
+      <div className="absolute inset-8 rounded-[28px] bg-[var(--color-signature-cream)]/95" />
+      <div className="absolute left-[12%] top-[18%] h-[50%] w-[42%] rounded-2xl bg-white/95 p-6 text-[var(--color-ink)]">
+        <p className="text-sm font-medium text-[var(--color-muted)]">
+          {brandName}
+        </p>
+        <p className="mt-4 max-h-36 overflow-hidden text-3xl font-normal leading-tight">
+          {headline}
+        </p>
+      </div>
+      <div className="absolute right-[15%] top-[18%] h-[42%] w-[23%] rounded-full bg-[var(--color-signature-peach)]" />
+      <div className="absolute bottom-[14%] left-[16%] h-[12%] w-[58%] overflow-hidden rounded-xl bg-white/90 px-5 py-4 text-sm leading-6 text-[var(--color-body)]">
+        {supportText}
+      </div>
+    </>
   );
 }
 

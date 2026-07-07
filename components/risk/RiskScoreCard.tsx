@@ -3,6 +3,11 @@ import { formatPercent } from "@/lib/format";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 
 export function RiskScoreCard({ analysis }: { analysis: AnalysisResult }) {
+  const highestConfidence =
+    analysis.categories.length > 0
+      ? Math.max(...analysis.categories.map((item) => item.confidence))
+      : 0;
+
   return (
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
       <div className="flex items-start justify-between gap-3">
@@ -27,9 +32,7 @@ export function RiskScoreCard({ analysis }: { analysis: AnalysisResult }) {
         <div className="rounded-lg bg-[var(--color-surface-soft)] p-3">
           <p className="text-xs text-[var(--color-muted)]">최고 신뢰도</p>
           <p className="mt-1 text-lg font-medium">
-            {formatPercent(
-              Math.max(...analysis.categories.map((item) => item.confidence)),
-            )}
+            {formatPercent(highestConfidence)}
           </p>
         </div>
       </div>

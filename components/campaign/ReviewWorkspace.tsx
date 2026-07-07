@@ -6,6 +6,10 @@ import type {
   CampaignStatus,
   UserRole,
 } from "@/features/campaign/types";
+import type {
+  CampaignAsset,
+  WorkspacePatch,
+} from "@/features/campaign/local-workspace";
 import type { AnalysisResult } from "@/features/risk-analysis/types";
 import type {
   ApprovalStep,
@@ -28,15 +32,19 @@ import { ReviewActions } from "@/components/workflow/ReviewActions";
 export function ReviewWorkspace({
   analysis,
   approvalSteps,
+  asset,
   auditLogEntries,
   campaign,
   comments,
+  onWorkspaceChange,
 }: {
   analysis: AnalysisResult;
   approvalSteps: ApprovalStep[];
+  asset?: CampaignAsset;
   auditLogEntries: AuditLogEntry[];
   campaign: Campaign;
   comments: ReviewerComment[];
+  onWorkspaceChange?: (patch: WorkspacePatch) => void;
 }) {
   const firstFindingId = analysis.categories[0]?.id ?? "";
   const [selectedFindingId, setSelectedFindingId] = useState(firstFindingId);
@@ -53,17 +61,16 @@ export function ReviewWorkspace({
     [analysis.categories, selectedFindingId],
   );
 
-  const addAuditEntry = (entry: Omit<AuditLogEntry, "id" | "createdAt">) => {
+  const createAuditEntry = (
+    entry: Omit<AuditLogEntry, "id" | "createdAt">,
+  ) => {
     const timestamp = new Date().toISOString();
 
-    setAuditEntries((currentEntries) => [
-      {
-        ...entry,
-        id: `audit-${timestamp}`,
-        createdAt: timestamp,
-      },
-      ...currentEntries,
-    ]);
+    return {
+      ...entry,
+      id: `audit-${timestamp}`,
+      createdAt: timestamp,
+    };
   };
 
   const handleAction = (action: ReviewAction) => {
@@ -73,7 +80,7 @@ export function ReviewWorkspace({
       return;
     }
 
-    addAuditEntry({
+    const auditEntry = createAuditEntry({
       action: getWorkflowActionLabel(action),
       actorName: "현재 검토자",
       fromStatus: status,
@@ -84,7 +91,14 @@ export function ReviewWorkspace({
         : `${getStatusLabel(nextStatus)} 상태로 변경했습니다.`,
       toStatus: nextStatus,
     });
+    const nextAuditEntries = [auditEntry, ...auditEntries];
+
     setStatus(nextStatus);
+    setAuditEntries(nextAuditEntries);
+    onWorkspaceChange?.({
+      auditLogEntries: nextAuditEntries,
+      status: nextStatus,
+    });
   };
 
   const handleAddComment = () => {
@@ -96,22 +110,28 @@ export function ReviewWorkspace({
 
     const timestamp = new Date().toISOString();
 
-    setReviewComments((currentComments) => [
-      {
-        id: `comment-${timestamp}`,
-        campaignId: campaign.id,
-        authorName: "현재 검토자",
-        body,
-        createdAt: timestamp,
-        role: commentRole,
-      },
-      ...currentComments,
-    ]);
-    setCommentDraft("");
-    addAuditEntry({
+    const nextComment = {
+      id: `comment-${timestamp}`,
+      campaignId: campaign.id,
+      authorName: "현재 검토자",
+      body,
+      createdAt: timestamp,
+      role: commentRole,
+    };
+    const auditEntry = createAuditEntry({
       action: "검토 코멘트 추가",
       actorName: "현재 검토자",
       note: body,
+    });
+    const nextComments = [nextComment, ...reviewComments];
+    const nextAuditEntries = [auditEntry, ...auditEntries];
+
+    setReviewComments(nextComments);
+    setAuditEntries(nextAuditEntries);
+    setCommentDraft("");
+    onWorkspaceChange?.({
+      auditLogEntries: nextAuditEntries,
+      comments: nextComments,
     });
   };
 
@@ -146,6 +166,8 @@ export function ReviewWorkspace({
         <div className="grid gap-6">
           <ReviewCanvas
             analysis={analysis}
+            asset={asset}
+            brandName={campaign.brandName}
             onSelectFinding={setSelectedFindingId}
             selectedFindingId={selectedFindingId}
           />

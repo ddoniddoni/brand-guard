@@ -9,6 +9,7 @@ import {
   Upload,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +17,10 @@ import {
   campaignCreateSchema,
   type CampaignCreateInput,
 } from "@/features/campaign/schema";
+import {
+  createCampaignWorkspace,
+  saveCampaignWorkspace,
+} from "@/features/campaign/local-workspace";
 import { cx } from "@/lib/utils";
 
 const channels = [
@@ -53,10 +58,13 @@ const analysisSteps = [
 type AnalysisState = "idle" | "running" | "complete";
 
 export function CampaignCreateForm() {
+  const router = useRouter();
   const [analysisState, setAnalysisState] = useState<AnalysisState>("idle");
   const [activeAnalysisStep, setActiveAnalysisStep] = useState(0);
+  const [createdCampaignId, setCreatedCampaignId] = useState("");
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [imageFileName, setImageFileName] = useState("");
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [usesSampleAsset, setUsesSampleAsset] = useState(false);
   const {
     formState: { errors, isSubmitting },
@@ -85,12 +93,16 @@ export function CampaignCreateForm() {
     if (!file) {
       setImagePreviewUrl(null);
       setImageFileName("");
+      setSelectedImageFile(null);
       return;
     }
 
     setImagePreviewUrl(URL.createObjectURL(file));
     setImageFileName(file.name);
+    setSelectedImageFile(file);
     setUsesSampleAsset(false);
+    setCreatedCampaignId("");
+    setAnalysisState("idle");
   };
 
   const fillSampleAsset = () => {
@@ -109,19 +121,43 @@ export function CampaignCreateForm() {
     );
     setImagePreviewUrl(null);
     setImageFileName("BrandGuard sample visual");
+    setSelectedImageFile(null);
     setUsesSampleAsset(true);
+    setCreatedCampaignId("");
+    setAnalysisState("idle");
   };
 
-  const onSubmit = handleSubmit(async () => {
+  const onSubmit = handleSubmit(async (input) => {
     setAnalysisState("running");
     setActiveAnalysisStep(0);
+    setCreatedCampaignId("");
 
     for (let index = 0; index < analysisSteps.length; index += 1) {
       setActiveAnalysisStep(index);
       await new Promise((resolve) => setTimeout(resolve, 420));
     }
 
+    const imageDataUrl = selectedImageFile
+      ? await readFileAsDataUrl(selectedImageFile)
+      : undefined;
+    const workspace = createCampaignWorkspace({
+      brandName: input.brandName,
+      channel: input.channel,
+      copy: input.copy ?? "",
+      imageDataUrl,
+      imageFileName,
+      industry: input.industry,
+      name: input.name,
+      publishDate: input.publishDate,
+      targetAudience: input.targetAudience,
+      usesSampleAsset,
+    });
+
+    saveCampaignWorkspace(workspace);
+    setCreatedCampaignId(workspace.campaign.id);
     setAnalysisState("complete");
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    router.push(`/campaigns/${workspace.campaign.id}/review`);
   });
 
   return (
@@ -233,6 +269,7 @@ export function CampaignCreateForm() {
 
       <AnalysisProgress
         activeStep={activeAnalysisStep}
+        createdCampaignId={createdCampaignId}
         state={analysisState}
       />
 
@@ -346,11 +383,17 @@ function SampleVisual() {
 
 function AnalysisProgress({
   activeStep,
+  createdCampaignId,
   state,
 }: {
   activeStep: number;
+  createdCampaignId: string;
   state: AnalysisState;
 }) {
+  const reviewHref = createdCampaignId
+    ? `/campaigns/${createdCampaignId}/review`
+    : "/campaigns";
+
   return (
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
       <div className="flex items-start justify-between gap-4">
@@ -367,7 +410,7 @@ function AnalysisProgress({
         {state === "complete" ? (
           <Link
             className="hidden min-h-11 items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white sm:inline-flex"
-            href="/campaigns/cmp-001/review"
+            href={reviewHref}
           >
             리뷰 화면 열기
           </Link>
@@ -427,7 +470,7 @@ function AnalysisProgress({
           </p>
           <Link
             className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white sm:hidden"
-            href="/campaigns/cmp-001/review"
+            href={reviewHref}
           >
             리뷰 화면 열기
           </Link>
@@ -435,6 +478,23 @@ function AnalysisProgress({
       ) : null}
     </section>
   );
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.addEventListener("load", () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error("Image preview could not be read."));
+    });
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsDataURL(file);
+  });
 }
 
 function Field({
