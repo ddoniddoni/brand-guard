@@ -43,8 +43,8 @@ export function CampaignApprovalRoute({
     return (
       <>
         <PageHeader
-          description="브라우저 저장소나 mock 데이터에서 해당 캠페인을 찾지 못했습니다."
-          eyebrow="Campaign approval"
+          description="브라우저 저장소나 모의 데이터에서 해당 캠페인을 찾지 못했습니다."
+          eyebrow="캠페인 결재"
           title="결재 대상을 찾을 수 없습니다"
         />
         <MissingCampaignActions />

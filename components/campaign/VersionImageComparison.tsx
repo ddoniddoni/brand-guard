@@ -17,7 +17,7 @@ export function VersionImageComparison({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-medium text-white/70">
-            Image comparison placeholder
+            이미지 비교 미리보기
           </p>
           <h2 className="mt-2 text-2xl font-normal">이미지 변경 비교</h2>
         </div>

@@ -39,7 +39,7 @@ export default async function CampaignsPage({
           </Link>
         }
         description="캠페인 상태, 리스크 레벨, 채널을 기준으로 사전 검토 대상을 찾고 정렬합니다."
-        eyebrow="Campaigns"
+        eyebrow="캠페인"
         title="캠페인 목록"
       />
       <CampaignListClient

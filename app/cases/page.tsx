@@ -7,11 +7,11 @@ import {
   Search,
 } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
 import type { CampaignChannel } from "@/features/campaign/types";
 import type { RiskCategory } from "@/features/risk-analysis/types";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { AdaptiveSelect } from "@/components/ui/AdaptiveSelect";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { cx } from "@/lib/utils";
@@ -56,6 +56,30 @@ const channelOptions = Array.from(
 const outcomeOptions = Array.from(
   new Set(caseLibraryItems.map((item) => item.outcome)),
 );
+
+const categorySelectOptions = [
+  { label: "전체 후보", value: "" },
+  ...categoryOptions.map((option) => ({
+    label: getRiskCategoryLabel(option),
+    value: option,
+  })),
+];
+
+const channelSelectOptions = [
+  { label: "전체 채널", value: "" },
+  ...channelOptions.map((option) => ({
+    label: getChannelLabel(option),
+    value: option,
+  })),
+];
+
+const outcomeSelectOptions = [
+  { label: "전체 결과", value: "" },
+  ...outcomeOptions.map((option) => ({
+    label: outcomeLabels[option],
+    value: option,
+  })),
+];
 
 function getParam(params: SearchParams, key: string) {
   const value = params[key];
@@ -123,14 +147,14 @@ export default async function CasesPage({
     <AppShell activePath="/cases">
       <PageHeader
         description="과거 검토 이력을 재사용 가능한 체크포인트로 정리합니다. 모든 사례는 판정이 아니라 담당자 검토를 돕는 참고 맥락입니다."
-        eyebrow="Cases"
+        eyebrow="케이스"
         title="케이스 라이브러리"
       />
 
       <div className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
         <section className="grid gap-4 md:grid-cols-3">
           <MetricCard
-            description="최근 mock 검토 사례 기준"
+            description="최근 모의 검토 사례 기준"
             icon={BookOpenCheck}
             title="등록 사례"
             value={`${caseLibraryItems.length}건`}
@@ -170,36 +194,26 @@ export default async function CasesPage({
               />
             </label>
 
-            <SelectFilter
+            <AdaptiveSelect
               defaultValue={category}
               label="검토 후보"
               name="category"
-            >
-              <option value="">전체 후보</option>
-              {categoryOptions.map((option) => (
-                <option key={option} value={option}>
-                  {getRiskCategoryLabel(option)}
-                </option>
-              ))}
-            </SelectFilter>
+              options={categorySelectOptions}
+            />
 
-            <SelectFilter defaultValue={channel} label="채널" name="channel">
-              <option value="">전체 채널</option>
-              {channelOptions.map((option) => (
-                <option key={option} value={option}>
-                  {getChannelLabel(option)}
-                </option>
-              ))}
-            </SelectFilter>
+            <AdaptiveSelect
+              defaultValue={channel}
+              label="채널"
+              name="channel"
+              options={channelSelectOptions}
+            />
 
-            <SelectFilter defaultValue={outcome} label="결과" name="outcome">
-              <option value="">전체 결과</option>
-              {outcomeOptions.map((option) => (
-                <option key={option} value={option}>
-                  {outcomeLabels[option]}
-                </option>
-              ))}
-            </SelectFilter>
+            <AdaptiveSelect
+              defaultValue={outcome}
+              label="결과"
+              name="outcome"
+              options={outcomeSelectOptions}
+            />
           </div>
 
           <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:justify-end">
@@ -318,31 +332,6 @@ export default async function CasesPage({
         </section>
       </div>
     </AppShell>
-  );
-}
-
-function SelectFilter({
-  children,
-  defaultValue,
-  label,
-  name,
-}: {
-  children: ReactNode;
-  defaultValue?: string;
-  label: string;
-  name: string;
-}) {
-  return (
-    <label className="min-w-0">
-      <span className="sr-only">{label}</span>
-      <select
-        className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-        defaultValue={defaultValue}
-        name={name}
-      >
-        {children}
-      </select>
-    </label>
   );
 }
 

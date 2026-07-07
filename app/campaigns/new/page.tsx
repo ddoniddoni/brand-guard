@@ -6,8 +6,8 @@ export default function CampaignNewPage() {
   return (
     <AppShell activePath="/campaigns/new">
       <PageHeader
-        description="이미지와 문구 중 하나 이상을 입력하면 mock AI 1차 검토 플로우를 시작할 수 있습니다."
-        eyebrow="New campaign"
+        description="이미지와 문구 중 하나 이상을 입력하면 모의 AI 1차 검토 플로우를 시작할 수 있습니다."
+        eyebrow="새 캠페인"
         title="새 캠페인 생성"
       />
       <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">

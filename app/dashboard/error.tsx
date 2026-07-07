@@ -11,7 +11,7 @@ export default function DashboardError({ reset }: { reset: () => void }) {
             대시보드를 불러오지 못했습니다.
           </p>
           <p className="mt-2 text-sm text-[var(--color-body)]">
-            mock 데이터 로딩 중 문제가 발생했습니다.
+            모의 데이터 로딩 중 문제가 발생했습니다.
           </p>
           <button
             className="mt-5 min-h-11 rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white"

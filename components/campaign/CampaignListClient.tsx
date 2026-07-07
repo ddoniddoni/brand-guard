@@ -14,6 +14,7 @@ import {
   subscribeCampaignWorkspaces,
 } from "@/features/campaign/local-workspace";
 import type { RiskLevel } from "@/features/risk-analysis/types";
+import { AdaptiveSelect } from "@/components/ui/AdaptiveSelect";
 import { RiskBadge } from "@/components/ui/RiskBadge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
@@ -54,6 +55,36 @@ const channelOptions: CampaignChannel[] = [
   "web_banner",
   "push",
   "offline",
+];
+
+const statusSelectOptions = [
+  { label: "전체 상태", value: "" },
+  ...statusOptions.map((option) => ({
+    label: getStatusLabel(option),
+    value: option,
+  })),
+];
+
+const riskSelectOptions = [
+  { label: "전체 리스크", value: "" },
+  ...riskOptions.map((option) => ({
+    label: getRiskLevelLabel(option),
+    value: option,
+  })),
+];
+
+const channelSelectOptions = [
+  { label: "전체 채널", value: "" },
+  ...channelOptions.map((option) => ({
+    label: getChannelLabel(option),
+    value: option,
+  })),
+];
+
+const sortSelectOptions = [
+  { label: "최종 수정일", value: "updatedAt" },
+  { label: "리스크 점수", value: "riskScore" },
+  { label: "게시 예정일", value: "publishDate" },
 ];
 
 export function CampaignListClient({
@@ -141,38 +172,33 @@ export function CampaignListClient({
             />
           </label>
 
-          <SelectFilter defaultValue={filters.status} label="상태" name="status">
-            <option value="">전체 상태</option>
-            {statusOptions.map((option) => (
-              <option key={option} value={option}>
-                {getStatusLabel(option)}
-              </option>
-            ))}
-          </SelectFilter>
+          <AdaptiveSelect
+            defaultValue={filters.status}
+            label="상태"
+            name="status"
+            options={statusSelectOptions}
+          />
 
-          <SelectFilter defaultValue={filters.risk} label="리스크" name="risk">
-            <option value="">전체 리스크</option>
-            {riskOptions.map((option) => (
-              <option key={option} value={option}>
-                {getRiskLevelLabel(option)}
-              </option>
-            ))}
-          </SelectFilter>
+          <AdaptiveSelect
+            defaultValue={filters.risk}
+            label="리스크"
+            name="risk"
+            options={riskSelectOptions}
+          />
 
-          <SelectFilter defaultValue={filters.channel} label="채널" name="channel">
-            <option value="">전체 채널</option>
-            {channelOptions.map((option) => (
-              <option key={option} value={option}>
-                {getChannelLabel(option)}
-              </option>
-            ))}
-          </SelectFilter>
+          <AdaptiveSelect
+            defaultValue={filters.channel}
+            label="채널"
+            name="channel"
+            options={channelSelectOptions}
+          />
 
-          <SelectFilter defaultValue={filters.sort} label="정렬" name="sort">
-            <option value="updatedAt">최종 수정일</option>
-            <option value="riskScore">리스크 점수</option>
-            <option value="publishDate">게시 예정일</option>
-          </SelectFilter>
+          <AdaptiveSelect
+            defaultValue={filters.sort}
+            label="정렬"
+            name="sort"
+            options={sortSelectOptions}
+          />
         </div>
 
         <div className="flex min-w-0 justify-stretch sm:justify-end">
@@ -274,30 +300,5 @@ export function CampaignListClient({
         )}
       </section>
     </div>
-  );
-}
-
-function SelectFilter({
-  children,
-  defaultValue,
-  label,
-  name,
-}: {
-  children: React.ReactNode;
-  defaultValue?: string;
-  label: string;
-  name: string;
-}) {
-  return (
-    <label className="min-w-0">
-      <span className="sr-only">{label}</span>
-      <select
-        className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-        defaultValue={defaultValue}
-        name={name}
-      >
-        {children}
-      </select>
-    </label>
   );
 }

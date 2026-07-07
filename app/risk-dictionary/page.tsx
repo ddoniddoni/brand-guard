@@ -8,8 +8,8 @@ export default function RiskDictionaryPage() {
   return (
     <AppShell activePath="/risk-dictionary">
       <PageHeader
-        description="검토 기준과 대체 표현을 관리하는 mock 사전입니다. 실제 민감 표현 대신 중립적인 placeholder 예시를 사용합니다."
-        eyebrow="Risk dictionary"
+        description="검토 기준과 대체 표현을 관리하는 모의 사전입니다. 실제 민감 표현 대신 중립적인 예시를 사용합니다."
+        eyebrow="리스크 사전"
         title="리스크 사전"
       />
       <div className="mx-auto grid w-full max-w-[1500px] gap-4 px-5 py-6 sm:px-6 lg:px-8">

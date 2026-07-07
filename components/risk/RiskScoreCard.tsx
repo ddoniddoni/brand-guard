@@ -13,7 +13,7 @@ export function RiskScoreCard({ analysis }: { analysis: AnalysisResult }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-[var(--color-muted)]">
-            Overall risk score
+            종합 리스크 점수
           </p>
           <p className="mt-3 text-5xl font-normal leading-none">
             {analysis.overallRiskScore}

@@ -3,18 +3,18 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { getUserRoleLabel } from "@/lib/format";
 
 const members = [
-  { name: "김민서", role: "MARKETER", team: "Marketing" },
+  { name: "김민서", role: "MARKETER", team: "마케팅" },
   { name: "박준호", role: "PR_REVIEWER", team: "PR" },
-  { name: "최하린", role: "LEGAL_REVIEWER", team: "Legal" },
-  { name: "윤지수", role: "FINAL_APPROVER", team: "Brand Office" },
+  { name: "최하린", role: "LEGAL_REVIEWER", team: "법무" },
+  { name: "윤지수", role: "FINAL_APPROVER", team: "브랜드 오피스" },
 ];
 
 export default function TeamSettingsPage() {
   return (
     <AppShell activePath="/settings/team">
       <PageHeader
-        description="권한 기반 워크플로우를 보여주기 위한 mock 팀 설정 화면입니다."
-        eyebrow="Settings"
+        description="권한 기반 워크플로우를 보여주기 위한 모의 팀 설정 화면입니다."
+        eyebrow="설정"
         title="팀 설정"
       />
       <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">

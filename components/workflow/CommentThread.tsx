@@ -3,6 +3,7 @@
 import { Send } from "lucide-react";
 import type { UserRole } from "@/features/campaign/types";
 import type { ReviewerComment } from "@/features/review-workflow/types";
+import { AdaptiveSelect } from "@/components/ui/AdaptiveSelect";
 import { formatDate, getUserRoleLabel } from "@/lib/format";
 
 const reviewerRoles: UserRole[] = [
@@ -12,6 +13,11 @@ const reviewerRoles: UserRole[] = [
   "LEGAL_REVIEWER",
   "FINAL_APPROVER",
 ];
+
+const reviewerRoleOptions = reviewerRoles.map((role) => ({
+  label: getUserRoleLabel(role),
+  value: role,
+}));
 
 export function CommentThread({
   comments,
@@ -32,7 +38,7 @@ export function CommentThread({
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
-          Stakeholder opinions
+          담당자 의견
         </p>
         <h2 className="mt-2 text-xl font-normal">담당자별 의견</h2>
       </div>
@@ -60,26 +66,18 @@ export function CommentThread({
         ))}
 
         <div className="grid gap-2">
-          <label
-            className="text-sm font-medium text-[var(--color-ink)]"
-            htmlFor="review-comment-role"
-          >
+          <span className="text-sm font-medium text-[var(--color-ink)]">
             의견 작성 역할
-          </label>
-          <select
-            className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-            id="review-comment-role"
-            onChange={(event) =>
-              onCommentRoleChange(event.target.value as UserRole)
+          </span>
+          <AdaptiveSelect
+            ariaLabel="의견 작성 역할"
+            label="의견 작성 역할"
+            onValueChange={(nextValue) =>
+              onCommentRoleChange(nextValue as UserRole)
             }
+            options={reviewerRoleOptions}
             value={commentRole}
-          >
-            {reviewerRoles.map((role) => (
-              <option key={role} value={role}>
-                {getUserRoleLabel(role)}
-              </option>
-            ))}
-          </select>
+          />
           <label
             className="text-sm font-medium text-[var(--color-ink)]"
             htmlFor="review-comment"

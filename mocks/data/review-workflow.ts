@@ -18,7 +18,7 @@ export const reviewerComments: ReviewerComment[] = [
     campaignId: "cmp-001",
     authorName: "김민서",
     role: "MARKETER",
-    body: "손이 보이지 않는 제품 단독 컷을 준비해 두었습니다. 필요하면 v2로 업로드하겠습니다.",
+    body: "손이 보이지 않는 제품 단독 컷을 준비해 두었습니다. 필요하면 2차 수정본으로 업로드하겠습니다.",
     createdAt: "2026-07-07T09:50:00.000Z",
   },
   {
@@ -42,7 +42,7 @@ export const approvalSteps: ApprovalStep[] = [
     status: "completed",
     description: "이미지와 광고 카피를 등록했습니다.",
     decision: "approve",
-    note: "SNS용 메인 비주얼 v1",
+    note: "SNS용 메인 비주얼 1차안",
     updatedAt: "2026-07-07T09:00:00.000Z",
   },
   {
@@ -50,7 +50,7 @@ export const approvalSteps: ApprovalStep[] = [
     campaignId: "cmp-001",
     order: 2,
     title: "AI 1차 검토",
-    ownerName: "BrandGuard mock AI",
+    ownerName: "브랜드가드 모의 AI",
     role: "ADMIN",
     status: "completed",
     description: "시각 패턴 후보와 OCR 문구 후보를 구조화했습니다.",
@@ -85,7 +85,7 @@ export const approvalSteps: ApprovalStep[] = [
 export const auditLogEntries: AuditLogEntry[] = [
   {
     id: "audit-001",
-    actorName: "BrandGuard mock AI",
+    actorName: "브랜드가드 모의 AI",
     action: "AI 1차 검토 완료",
     fromStatus: "ANALYZING",
     toStatus: "AI_REVIEWED",

@@ -11,7 +11,7 @@ export default function CampaignsError({ reset }: { reset: () => void }) {
             캠페인 목록을 불러오지 못했습니다.
           </p>
           <p className="mt-2 text-sm text-[var(--color-body)]">
-            mock 데이터 필터링 중 문제가 발생했습니다.
+            모의 데이터 필터링 중 문제가 발생했습니다.
           </p>
           <button
             className="mt-5 min-h-11 rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white"

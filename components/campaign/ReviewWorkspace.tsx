@@ -160,9 +160,10 @@ export function ReviewWorkspace({
           </p>
         </div>
         <div className="min-w-0 rounded-lg bg-[var(--color-surface-soft)] px-4 py-3 lg:max-w-80">
-          <p className="text-xs text-[var(--color-muted)]">Mock provider</p>
+          <p className="text-xs text-[var(--color-muted)]">분석 제공자</p>
           <p className="mt-1 truncate text-sm font-medium">
-            {analysis.source} · version {analysis.versionId}
+            {getAnalysisSourceLabel(analysis.source)} ·{" "}
+            {getAnalysisVersionLabel(analysis.versionId)}
           </p>
         </div>
       </section>
@@ -210,6 +211,23 @@ export function ReviewWorkspace({
       </div>
     </div>
   );
+}
+
+function getAnalysisSourceLabel(source: AnalysisResult["source"]) {
+  const labels: Record<AnalysisResult["source"], string> = {
+    hybrid: "혼합 분석",
+    mock: "모의 분석",
+    ocr: "OCR 분석",
+    vision_llm: "비전 모델 분석",
+  };
+
+  return labels[source];
+}
+
+function getAnalysisVersionLabel(versionId: string) {
+  const versionNumber = versionId.match(/^v(\d+)$/)?.[1];
+
+  return versionNumber ? `${versionNumber}차 분석` : versionId;
 }
 
 function getWorkflowActionLabel(action: ReviewAction) {

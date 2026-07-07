@@ -41,8 +41,8 @@ export function CampaignVersionsRoute({
     return (
       <>
         <PageHeader
-          description="브라우저 저장소나 mock 데이터에서 해당 캠페인을 찾지 못했습니다."
-          eyebrow="Version comparison"
+          description="브라우저 저장소나 모의 데이터에서 해당 캠페인을 찾지 못했습니다."
+          eyebrow="버전 비교"
           title="버전 비교 대상을 찾을 수 없습니다"
         />
         <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
@@ -85,7 +85,7 @@ export function CampaignVersionsRoute({
                 수정 버전이 아직 없습니다.
               </p>
               <p className="mt-2 text-sm leading-6 text-[var(--color-muted)]">
-                리뷰 화면에서 수정 요청 후 v2 이미지 또는 문구를 업로드하면
+                리뷰 화면에서 수정 요청 후 2차 이미지 또는 문구를 업로드하면
                 비교 화면이 생성됩니다.
               </p>
               <Link

@@ -16,7 +16,7 @@ export const handlers = [
     const id = String(params.id);
 
     if (!getCampaignById(id)) {
-      return HttpResponse.json({ message: "Campaign not found" }, { status: 404 });
+      return HttpResponse.json({ message: "캠페인을 찾을 수 없습니다." }, { status: 404 });
     }
 
     return HttpResponse.json({ analysis: getAnalysisByCampaignId(id) });
@@ -25,7 +25,7 @@ export const handlers = [
     const id = String(params.id);
 
     if (!getCampaignById(id)) {
-      return HttpResponse.json({ message: "Campaign not found" }, { status: 404 });
+      return HttpResponse.json({ message: "캠페인을 찾을 수 없습니다." }, { status: 404 });
     }
 
     return HttpResponse.json({
@@ -36,7 +36,7 @@ export const handlers = [
     const id = String(params.id);
 
     if (!getCampaignById(id)) {
-      return HttpResponse.json({ message: "Campaign not found" }, { status: 404 });
+      return HttpResponse.json({ message: "캠페인을 찾을 수 없습니다." }, { status: 404 });
     }
 
     return HttpResponse.json({

@@ -69,10 +69,10 @@ export function ReviewCanvas({
     <section className="rounded-xl bg-[var(--color-review-canvas)] p-5 text-white">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-white/70">Review canvas</p>
+          <p className="text-sm font-medium text-white/70">검토 캔버스</p>
           <h2 className="mt-2 text-2xl font-normal">이미지 검토 영역</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
-            좌표는 원본 이미지 기준 normalized `0..1` 값으로 저장하고, 렌더링
+            좌표는 원본 이미지 기준 정규화 좌표 `0..1` 값으로 저장하고, 렌더링
             시 현재 캔버스 크기에 맞춰 변환합니다.
           </p>
         </div>
@@ -99,7 +99,7 @@ export function ReviewCanvas({
               />
             ) : (
               <MockCreativeSurface
-                brandName={brandName ?? "Northstar"}
+                brandName={brandName ?? "노스스타"}
                 copy={asset?.copy}
               />
             )}
@@ -191,7 +191,7 @@ function MockCreativeSurface({
     .flatMap((line) => line.split(/(?<=\.)\s+/))
     .filter(Boolean)
     .slice(0, 3);
-  const headline = copyLines[0] ?? "Summer calm, reviewed first.";
+  const headline = copyLines[0] ?? "여름의 산뜻함을 먼저 만나보세요.";
   const supportText =
     copyLines.slice(1).join(" ") ||
     "신제품 공개 전 이미지와 문구의 검토 후보를 확인합니다.";

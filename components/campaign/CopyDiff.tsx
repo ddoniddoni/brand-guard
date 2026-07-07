@@ -11,7 +11,7 @@ const diffClassName: Record<CopyDiffSegment["type"], string> = {
 export function CopyDiff({ segments }: { segments: CopyDiffSegment[] }) {
   return (
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
-      <p className="text-sm font-medium text-[var(--color-muted)]">Copy diff</p>
+      <p className="text-sm font-medium text-[var(--color-muted)]">문구 비교</p>
       <h2 className="mt-2 text-2xl font-normal">문구 변경 비교</h2>
       <p className="mt-4 rounded-lg bg-[var(--color-surface-soft)] p-4 text-base leading-8">
         {segments.map((segment, index) => (

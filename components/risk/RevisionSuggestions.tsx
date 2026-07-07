@@ -16,7 +16,7 @@ export function RevisionSuggestions({
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
-          Suggested revisions
+          수정 제안
         </p>
         <h2 className="mt-2 text-xl font-normal">수정 제안</h2>
       </div>
@@ -36,15 +36,15 @@ export function RevisionSuggestions({
               </p>
               {suggestion.before || suggestion.after ? (
                 <div className="mt-3 grid gap-2 text-xs text-[var(--color-body)]">
-                  {suggestion.before ? <p>Before: {suggestion.before}</p> : null}
-                  {suggestion.after ? <p>After: {suggestion.after}</p> : null}
+                  {suggestion.before ? <p>이전: {suggestion.before}</p> : null}
+                  {suggestion.after ? <p>수정: {suggestion.after}</p> : null}
                 </div>
               ) : null}
             </article>
           ))
         ) : (
           <p className="rounded-lg bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-body)]">
-            현재 mock 분석 결과에서는 별도 수정 제안이 없습니다. 기본 담당자
+            현재 모의 분석 결과에서는 별도 수정 제안이 없습니다. 기본 담당자
             확인 후 결재를 진행하세요.
           </p>
         )}

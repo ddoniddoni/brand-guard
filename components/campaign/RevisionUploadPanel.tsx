@@ -78,11 +78,11 @@ export function RevisionUploadPanel({
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
-          Revision upload
+          수정본 업로드
         </p>
         <h2 className="mt-2 text-xl font-normal">수정 버전 업로드</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-          수정 요청 상태에서 v2 소재를 올리면 mock AI 재분석 후 버전 비교가
+          수정 요청 상태에서 2차 소재를 올리면 모의 AI 재분석 후 버전 비교가
           생성됩니다.
         </p>
       </div>
@@ -90,7 +90,7 @@ export function RevisionUploadPanel({
       <div className="grid gap-4 p-4">
         {!isEnabled ? (
           <div className="rounded-lg bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-body)]">
-            먼저 검토 액션에서 `수정 요청`을 선택하면 v2 업로드를 진행할 수
+            먼저 검토 액션에서 `수정 요청`을 선택하면 2차 업로드를 진행할 수
             있습니다.
           </div>
         ) : null}
@@ -107,7 +107,7 @@ export function RevisionUploadPanel({
 
         <label className="grid min-w-0 gap-2 text-sm font-medium">
           수정 이미지
-          <span className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-5 text-center hover:bg-white focus-within:ring-2 focus-within:ring-[var(--color-info-border)]">
+          <span className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-5 text-center hover:border-[var(--color-info-border)] focus-within:ring-2 focus-within:ring-[var(--color-info-border)]">
             {file ? (
               <CheckCircle2 aria-hidden="true" size={22} strokeWidth={1.8} />
             ) : (
@@ -143,7 +143,7 @@ export function RevisionUploadPanel({
               strokeWidth={1.8}
             />
             <p className="min-w-0 break-words text-sm leading-6 text-[var(--color-body)]">
-              현재 이미지: {asset.imageFileName ?? "샘플 또는 mock 이미지"}
+              현재 이미지: {asset.imageFileName ?? "샘플 또는 모의 이미지"}
             </p>
           </div>
         </div>
@@ -162,7 +162,7 @@ export function RevisionUploadPanel({
               strokeWidth={1.8}
             />
           ) : null}
-          v2 재분석
+          2차 재분석
         </button>
 
         {isComplete || hasVersionComparison ? (

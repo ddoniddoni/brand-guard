@@ -81,7 +81,7 @@ function createFallbackApprovalSteps(
       campaignId,
       order: 2,
       title: "AI 1차 검토",
-      ownerName: "BrandGuard mock AI",
+      ownerName: "브랜드가드 모의 AI",
       role: "ADMIN",
       status: getFallbackApprovalStepStatus(status, 2),
       description: "검토 후보와 수정 제안을 구조화합니다.",

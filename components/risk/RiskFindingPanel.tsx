@@ -17,7 +17,7 @@ export function RiskFindingPanel({
       <section className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
         <p className="text-sm font-medium">검토 후보 없음</p>
         <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-          현재 mock 분석 결과에서는 검토가 필요한 후보가 없습니다.
+          현재 모의 분석 결과에서는 검토가 필요한 후보가 없습니다.
         </p>
       </section>
     );
@@ -27,7 +27,7 @@ export function RiskFindingPanel({
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
-          Category-level findings
+          항목별 검토 후보
         </p>
         <h2 className="mt-2 text-xl font-normal">리스크 후보</h2>
       </div>

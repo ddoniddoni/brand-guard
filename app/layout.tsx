@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "BrandGuard",
   description:
-    "A brand risk review assistant for pre-publication marketing workflows.",
+    "마케팅 소재 공개 전 브랜드 리스크를 검토하는 담당자 보조 SaaS입니다.",
 };
 
 export default function RootLayout({

@@ -6,7 +6,7 @@ export function AuditLog({ entries }: { entries: AuditLogEntry[] }) {
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
-          Audit log
+          감사 로그
         </p>
         <h2 className="mt-2 text-xl font-normal">검토 이력</h2>
       </div>

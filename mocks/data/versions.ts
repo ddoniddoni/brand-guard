@@ -6,7 +6,7 @@ const handFinding = baseFindings.find((finding) => finding.id === "risk-001");
 const ocrFinding = baseFindings.find((finding) => finding.id === "risk-002");
 
 if (!handFinding || !ocrFinding) {
-  throw new Error("Version mock data requires base risk findings.");
+  throw new Error("버전 모의 데이터에는 기본 리스크 후보가 필요합니다.");
 }
 
 const refinedOcrFinding = {
@@ -31,7 +31,7 @@ export const versionComparisons: VersionComparison[] = [
     before: {
       id: "v1",
       campaignId: "cmp-001",
-      label: "v1 original",
+      label: "1차 원본",
       riskScore: 74,
       status: "NEEDS_REVISION",
       createdAt: "2026-07-07T09:10:00.000Z",
@@ -43,7 +43,7 @@ export const versionComparisons: VersionComparison[] = [
     after: {
       id: "v2",
       campaignId: "cmp-001",
-      label: "v2 revised",
+      label: "2차 수정본",
       riskScore: 38,
       status: "AI_REVIEWED",
       createdAt: "2026-07-07T11:40:00.000Z",

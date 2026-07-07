@@ -18,7 +18,7 @@ const transitions: Partial<Record<CampaignStatus, WorkflowTransition[]>> = {
       action: "START_PR_REVIEW",
       label: "AI 검토 완료",
       nextStatus: "AI_REVIEWED",
-      description: "mock 분석 결과를 검토 가능 상태로 전환합니다.",
+      description: "모의 분석 결과를 검토 가능 상태로 전환합니다.",
     },
   ],
   AI_REVIEWED: [

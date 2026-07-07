@@ -6,7 +6,7 @@ export default function ApprovalsLoading() {
     <AppShell activePath="/approvals">
       <PageHeader
         description="결재 대기 캠페인을 불러오는 중입니다."
-        eyebrow="Approval inbox"
+        eyebrow="결재함"
         title="결재함"
       />
       <div className="mx-auto grid w-full max-w-[1500px] gap-4 px-5 py-6 sm:px-6 lg:px-8">

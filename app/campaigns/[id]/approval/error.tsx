@@ -12,7 +12,7 @@ export default function CampaignApprovalError({
     <AppShell activePath="/campaigns">
       <PageHeader
         description="최종 결재 정보를 불러오지 못했습니다."
-        eyebrow="Campaign approval"
+        eyebrow="캠페인 결재"
         title="최종 결재"
       />
       <div className="px-6 py-6 sm:px-8">

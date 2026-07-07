@@ -33,9 +33,9 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen overflow-x-clip bg-[var(--color-canvas)] text-[var(--color-ink)]">
-      <div className="grid min-h-screen min-w-0 lg:grid-cols-[minmax(0,264px)_minmax(0,1fr)]">
-        <aside className="min-w-0 border-b border-[var(--color-hairline)] bg-white lg:border-b-0 lg:border-r">
+    <div className="min-h-screen overflow-x-clip bg-[var(--color-canvas)] text-[var(--color-ink)] lg:h-screen lg:overflow-hidden">
+      <div className="grid min-h-screen min-w-0 lg:h-screen lg:grid-cols-[minmax(0,264px)_minmax(0,1fr)]">
+        <aside className="min-w-0 border-b border-[var(--color-hairline)] bg-white lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="flex h-full flex-col px-4 py-4">
             <Link
               className="flex min-h-12 min-w-0 items-center gap-3 rounded-lg px-3 hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
@@ -49,7 +49,7 @@ export function AppShell({
                   BrandGuard
                 </span>
                 <span className="block truncate text-xs text-[var(--color-muted)]">
-                  Human review assistant
+                  담당자 검토 보조 도구
                 </span>
               </span>
             </Link>
@@ -82,21 +82,23 @@ export function AppShell({
               })}
             </nav>
 
-            <div className="mt-4 px-3">
-              <ThemeToggle />
-            </div>
+            <div className="mt-auto grid gap-3 px-3 lg:px-0">
+              <div className="lg:px-3">
+                <ThemeToggle />
+              </div>
 
-            <div className="mt-auto hidden rounded-xl bg-[var(--color-surface-soft)] p-4 lg:block">
-              <p className="text-sm font-medium">검토 보조 원칙</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-                AI 결과는 검토 후보입니다. 최종 승인과 반려는 담당자가
-                결정합니다.
-              </p>
+              <div className="hidden rounded-xl bg-[var(--color-surface-soft)] p-4 lg:block">
+                <p className="text-sm font-medium">검토 보조 원칙</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
+                  AI 결과는 검토 후보입니다. 최종 승인과 반려는 담당자가
+                  결정합니다.
+                </p>
+              </div>
             </div>
           </div>
         </aside>
 
-        <main className="min-w-0 overflow-x-clip bg-[var(--color-canvas)]">
+        <main className="min-w-0 overflow-x-clip bg-[var(--color-canvas)] lg:h-screen lg:overflow-y-auto">
           {children}
         </main>
       </div>

@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   campaignCreateSchema,
@@ -21,16 +21,22 @@ import {
   createCampaignWorkspace,
   saveCampaignWorkspace,
 } from "@/features/campaign/local-workspace";
+import { AdaptiveSelect } from "@/components/ui/AdaptiveSelect";
 import { cx } from "@/lib/utils";
 
 const channels = [
-  { value: "instagram", label: "Instagram" },
-  { value: "youtube", label: "YouTube" },
-  { value: "tiktok", label: "TikTok" },
-  { value: "web_banner", label: "Web banner" },
-  { value: "push", label: "Push" },
-  { value: "offline", label: "Offline" },
+  { value: "instagram", label: "인스타그램" },
+  { value: "youtube", label: "유튜브" },
+  { value: "tiktok", label: "틱톡" },
+  { value: "web_banner", label: "웹 배너" },
+  { value: "push", label: "푸시" },
+  { value: "offline", label: "오프라인" },
 ] as const;
+
+const channelSelectOptions = channels.map((channel) => ({
+  label: channel.label,
+  value: channel.value,
+}));
 
 const analysisSteps = [
   {
@@ -39,7 +45,7 @@ const analysisSteps = [
   },
   {
     title: "이미지 후보 영역 확인",
-    description: "시각 패턴 후보와 오브젝트 영역을 mock 좌표로 구조화합니다.",
+    description: "시각 패턴 후보와 오브젝트 영역을 모의 좌표로 구조화합니다.",
   },
   {
     title: "OCR 문구 후보 확인",
@@ -68,6 +74,7 @@ export function CampaignCreateForm() {
   const [usesSampleAsset, setUsesSampleAsset] = useState(false);
   const {
     formState: { errors, isSubmitting },
+    control,
     handleSubmit,
     register,
     setValue,
@@ -106,21 +113,21 @@ export function CampaignCreateForm() {
   };
 
   const fillSampleAsset = () => {
-    setValue("name", "Summer launch visual", { shouldValidate: true });
-    setValue("brandName", "Northstar", { shouldValidate: true });
+    setValue("name", "여름 신제품 메인 비주얼", { shouldValidate: true });
+    setValue("brandName", "노스스타", { shouldValidate: true });
     setValue("channel", "instagram", { shouldValidate: true });
     setValue("publishDate", "2026-07-18", { shouldValidate: true });
     setValue("targetAudience", "20대 여성, 신규 제품 관심군", {
       shouldValidate: true,
     });
-    setValue("industry", "cosmetics", { shouldValidate: true });
+    setValue("industry", "화장품", { shouldValidate: true });
     setValue(
       "copy",
-      "Summer calm, reviewed first.\n신제품 공개 전 브랜드 리스크를 함께 확인합니다.",
+      "여름의 산뜻함을 먼저 만나보세요.\n신제품 공개 전 브랜드 리스크를 함께 확인합니다.",
       { shouldValidate: true },
     );
     setImagePreviewUrl(null);
-    setImageFileName("BrandGuard sample visual");
+    setImageFileName("브랜드가드 샘플 비주얼");
     setSelectedImageFile(null);
     setUsesSampleAsset(true);
     setCreatedCampaignId("");
@@ -183,28 +190,30 @@ export function CampaignCreateForm() {
         <Field label="캠페인명" error={errors.name?.message}>
           <input
             className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-            placeholder="예: Summer launch visual…"
+            placeholder="예: 여름 신제품 메인 비주얼…"
             {...register("name")}
           />
         </Field>
         <Field label="브랜드명" error={errors.brandName?.message}>
           <input
             className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-            placeholder="예: Northstar…"
+            placeholder="예: 노스스타…"
             {...register("brandName")}
           />
         </Field>
         <Field label="게시 채널" error={errors.channel?.message}>
-          <select
-            className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-            {...register("channel")}
-          >
-            {channels.map((channel) => (
-              <option key={channel.value} value={channel.value}>
-                {channel.label}
-              </option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name="channel"
+            render={({ field }) => (
+              <AdaptiveSelect
+                label="게시 채널"
+                onValueChange={field.onChange}
+                options={channelSelectOptions}
+                value={field.value}
+              />
+            )}
+          />
         </Field>
         <Field label="게시 예정일" error={errors.publishDate?.message}>
           <input
@@ -223,7 +232,7 @@ export function CampaignCreateForm() {
         <Field label="업종" error={errors.industry?.message}>
           <input
             className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-            placeholder="예: cosmetics…"
+            placeholder="예: 화장품…"
             {...register("industry")}
           />
         </Field>
@@ -241,10 +250,10 @@ export function CampaignCreateForm() {
 
           <Field
             label="이미지 파일"
-            description="jpg, png, webp 파일을 지원합니다. mock 단계에서는 브라우저 미리보기만 사용합니다."
+            description="jpg, png, webp 파일을 지원합니다. 모의 단계에서는 브라우저 미리보기만 사용합니다."
             error={errors.image?.message}
           >
-            <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-6 text-center hover:bg-white focus-within:ring-2 focus-within:ring-[var(--color-info-border)]">
+            <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-6 text-center hover:border-[var(--color-info-border)] focus-within:ring-2 focus-within:ring-[var(--color-info-border)]">
               <Upload aria-hidden="true" size={22} strokeWidth={1.8} />
               <span className="mt-3 text-sm font-medium">이미지 선택</span>
               <span className="mt-1 text-xs text-[var(--color-muted)]">
@@ -362,12 +371,12 @@ function SampleVisual() {
       <div className="relative grid h-full content-between">
         <div>
           <p className="text-sm font-medium text-[var(--color-muted)]">
-            Northstar
+            노스스타
           </p>
           <h3 className="mt-5 text-4xl font-normal leading-tight">
-            Summer calm,
+            여름의 산뜻함,
             <br />
-            reviewed first.
+            먼저 검토합니다.
           </h3>
         </div>
         <div className="rounded-xl bg-white/85 p-4">
@@ -399,11 +408,11 @@ function AnalysisProgress({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-[var(--color-muted)]">
-            AI first-pass review
+            AI 1차 검토
           </p>
           <h2 className="mt-2 text-xl font-normal">AI 1차 검토 진행</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-            분석은 mock 데이터로 진행되며, 결과는 담당자 검토를 위한 후보로만
+            분석은 모의 데이터로 진행되며, 결과는 담당자 검토를 위한 후보로만
             표시됩니다.
           </p>
         </div>
@@ -465,7 +474,7 @@ function AnalysisProgress({
             AI 1차 검토가 완료되었습니다.
           </p>
           <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-            mock 결과가 생성되었습니다. 이제 담당자가 이미지, 문구, AI 의견을
+            모의 결과가 생성되었습니다. 이제 담당자가 이미지, 문구, AI 의견을
             다시 확인하고 의견을 남길 수 있습니다.
           </p>
           <Link

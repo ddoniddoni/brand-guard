@@ -142,7 +142,7 @@ export function createCampaignWorkspace(
         createdAt: timestamp,
         id: "v1",
         imageNote: getAssetImageNote(asset),
-        label: "v1 original",
+        label: "1차 원본",
       },
     ],
     auditLogEntries: createInitialAuditLog(campaignId, timestamp),
@@ -156,7 +156,7 @@ export function createMockCampaignAsset(campaign: Campaign): CampaignAsset {
   return {
     copy:
       campaign.id === "cmp-001"
-        ? "Summer calm, reviewed first.\n신제품 공개 전 브랜드 리스크를 함께 확인합니다."
+        ? "여름의 산뜻함을 먼저 만나보세요.\n신제품 공개 전 브랜드 리스크를 함께 확인합니다."
         : `${campaign.name}\n게시 전 브랜드 맥락을 확인합니다.`,
     source: "mock",
     usesSampleAsset: true,
@@ -337,7 +337,7 @@ export function createRevisionWorkspace(
             createdAt: workspace.campaign.createdAt,
             id: "v1",
             imageNote: getAssetImageNote(previousAsset),
-            label: "v1 original",
+            label: "1차 원본",
           },
         ];
   const nextAssetVersion: CampaignAssetVersion = {
@@ -348,7 +348,7 @@ export function createRevisionWorkspace(
     imageNote: isImageReplaced
       ? "수정 업로드된 대체 이미지입니다. 주요 시각 후보가 줄어든 상태로 재분석되었습니다."
       : "이미지는 유지하고 문구를 수정한 버전입니다. 문구 맥락 중심으로 재분석되었습니다.",
-    label: `v${previousVersions.length + 1} revised`,
+    label: `${previousVersions.length + 1}차 수정본`,
   };
   const beforeVersion = previousVersions[0];
   const comparison = createVersionComparisonFromAssets({
@@ -362,7 +362,7 @@ export function createRevisionWorkspace(
     action: "수정 버전 업로드 및 재분석",
     fromStatus: workspace.campaign.status,
     toStatus: "AI_REVIEWED",
-    note: "v2 소재를 업로드하고 mock AI 1차 검토를 다시 실행했습니다.",
+    note: "2차 소재를 업로드하고 모의 AI 1차 검토를 다시 실행했습니다.",
     createdAt: timestamp,
   };
 
@@ -542,11 +542,11 @@ function createVisualFinding(campaignId: string): RiskFinding {
         width: 0.24,
         height: 0.34,
         confidence: 0.86,
-        label: "visual pattern candidate",
+        label: "시각 패턴 후보",
         landmarks: [
-          { x: 0.56, y: 0.31, label: "wrist" },
-          { x: 0.63, y: 0.28, label: "thumb_tip" },
-          { x: 0.65, y: 0.3, label: "index_tip" },
+          { x: 0.56, y: 0.31, label: "손목" },
+          { x: 0.63, y: 0.28, label: "엄지 끝" },
+          { x: 0.65, y: 0.3, label: "검지 끝" },
         ],
       },
     ],
@@ -590,7 +590,7 @@ function createCopyFinding(
         width: 0.58,
         height: 0.12,
         confidence: 0.78,
-        label: "copy context candidate",
+        label: "문구 맥락 후보",
       },
     ],
   };
@@ -669,7 +669,7 @@ function createApprovalSteps(
       status: "completed",
       description: "이미지와 광고 카피를 등록했습니다.",
       decision: "approve",
-      note: "로컬 mock workspace에 저장되었습니다.",
+      note: "로컬 모의 작업 공간에 저장되었습니다.",
       updatedAt: timestamp,
     },
     {
@@ -677,7 +677,7 @@ function createApprovalSteps(
       campaignId,
       order: 2,
       title: "AI 1차 검토",
-      ownerName: "BrandGuard mock AI",
+      ownerName: "브랜드가드 모의 AI",
       role: "ADMIN",
       status: "completed",
       description: "업로드 소재 기반 검토 후보를 생성했습니다.",
@@ -715,7 +715,7 @@ function createInitialAuditLog(
   return [
     {
       id: `${campaignId}-audit-ai`,
-      actorName: "BrandGuard mock AI",
+      actorName: "브랜드가드 모의 AI",
       action: "AI 1차 검토 완료",
       fromStatus: "ANALYZING",
       toStatus: "AI_REVIEWED",
@@ -818,7 +818,7 @@ function getAssetImageNote(asset: CampaignAsset) {
   }
 
   if (asset.usesSampleAsset) {
-    return "샘플 홍보 소재입니다. mock 시각 후보와 OCR 문구 후보가 함께 표시됩니다.";
+    return "샘플 홍보 소재입니다. 모의 시각 후보와 OCR 문구 후보가 함께 표시됩니다.";
   }
 
   return "이미지 없이 문구 중심으로 등록된 소재입니다.";

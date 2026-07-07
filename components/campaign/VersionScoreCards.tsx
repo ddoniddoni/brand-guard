@@ -17,7 +17,7 @@ export function VersionScoreCards({
       <VersionScoreCard version={comparison.before} />
       <div className="flex min-h-36 flex-col items-center justify-center rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-5 text-center">
         <p className="text-sm font-medium text-[var(--color-muted)]">
-          Score delta
+          점수 변화
         </p>
         <p className="mt-3 text-4xl font-normal text-[var(--color-risk-low-text)]">
           {deltaLabel}

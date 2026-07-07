@@ -17,12 +17,12 @@ export function formatPercent(value: number) {
 
 export function getChannelLabel(channel: CampaignChannel) {
   const labels: Record<CampaignChannel, string> = {
-    instagram: "Instagram",
-    youtube: "YouTube",
-    tiktok: "TikTok",
-    web_banner: "Web banner",
-    push: "Push",
-    offline: "Offline",
+    instagram: "인스타그램",
+    youtube: "유튜브",
+    tiktok: "틱톡",
+    web_banner: "웹 배너",
+    push: "푸시",
+    offline: "오프라인",
   };
 
   return labels[channel];

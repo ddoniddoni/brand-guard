@@ -12,7 +12,7 @@ export async function GET(
   const campaign = getCampaignById(id);
 
   if (!campaign) {
-    return NextResponse.json({ message: "Campaign not found" }, { status: 404 });
+    return NextResponse.json({ message: "캠페인을 찾을 수 없습니다." }, { status: 404 });
   }
 
   return NextResponse.json({

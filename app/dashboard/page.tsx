@@ -45,7 +45,7 @@ export default function DashboardPage() {
           </Link>
         }
         description="AI 1차 검토 결과를 사람이 확인하고, 수정 요청과 승인 이력을 남기는 작업 공간입니다."
-        eyebrow="Dashboard"
+        eyebrow="대시보드"
         title="오늘의 검토 현황"
       />
 
@@ -82,7 +82,7 @@ export default function DashboardPage() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-[var(--color-muted)]">
-                  Category distribution
+                  후보 분포
                 </p>
                 <h2 className="mt-2 text-2xl font-normal">
                   리스크 후보 분포
@@ -97,7 +97,7 @@ export default function DashboardPage() {
 
           <aside className="rounded-xl bg-[var(--color-review-canvas)] p-6 text-white">
             <p className="text-sm font-medium text-white/70">
-              Needs urgent review
+              우선 검토 필요
             </p>
             <h2 className="mt-2 text-2xl font-normal">우선 검토 목록</h2>
             <div className="mt-6 grid gap-3">
@@ -128,7 +128,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-hairline)] p-6">
             <div className="min-w-0">
               <p className="text-sm font-medium text-[var(--color-muted)]">
-                Recent campaigns
+                최근 캠페인
               </p>
               <h2 className="mt-2 text-2xl font-normal">최근 분석 캠페인</h2>
             </div>
