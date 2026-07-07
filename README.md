@@ -29,7 +29,7 @@ Open `http://localhost:3000`.
 - `/dashboard`
 - `/campaigns`
 - `/campaigns/new`
-- `/campaigns/[id]/review` placeholder
+- `/campaigns/[id]/review`
 - `/risk-dictionary`
 - `/cases`
 - `/settings/team`
