@@ -201,53 +201,74 @@ export function CampaignListClient({
 
         {filteredCampaigns.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] border-collapse text-left text-sm">
+            <table className="w-full min-w-[1120px] table-fixed border-collapse text-left text-sm">
+              <colgroup>
+                <col className="w-[280px]" />
+                <col className="w-[140px]" />
+                <col className="w-[130px]" />
+                <col className="w-[140px]" />
+                <col className="w-[170px]" />
+                <col className="w-[150px]" />
+                <col className="w-[130px]" />
+                <col className="w-[140px]" />
+              </colgroup>
               <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
                 <tr>
                   <th className="px-5 py-3 font-medium">캠페인명</th>
-                  <th className="px-5 py-3 font-medium">브랜드</th>
-                  <th className="px-5 py-3 font-medium">채널</th>
-                  <th className="px-5 py-3 font-medium">게시 예정일</th>
-                  <th className="px-5 py-3 font-medium">리스크 점수</th>
-                  <th className="px-5 py-3 font-medium">상태</th>
-                  <th className="px-5 py-3 font-medium">담당자</th>
-                  <th className="px-5 py-3 font-medium">최종 수정일</th>
+                  <th className="px-4 py-3 font-medium">브랜드</th>
+                  <th className="px-4 py-3 font-medium">채널</th>
+                  <th className="px-4 py-3 font-medium">게시 예정일</th>
+                  <th className="px-4 py-3 text-right font-medium">
+                    리스크 점수
+                  </th>
+                  <th className="px-4 py-3 font-medium">상태</th>
+                  <th className="px-4 py-3 font-medium">담당자</th>
+                  <th className="px-4 py-3 font-medium">최종 수정일</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCampaigns.map((campaign) => (
                   <tr
-                    className="border-t border-[var(--color-hairline)]"
+                    className="border-t border-[var(--color-hairline)] align-middle hover:bg-[var(--color-surface-soft)]"
                     key={campaign.id}
                   >
                     <td className="px-5 py-4">
                       <Link
-                        className="font-medium text-[var(--color-ink)]"
+                        className="block truncate font-medium text-[var(--color-ink)]"
                         href={`/campaigns/${campaign.id}/review`}
+                        title={campaign.name}
                       >
                         {campaign.name}
                       </Link>
                     </td>
-                    <td className="px-5 py-4">{campaign.brandName}</td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
+                      <span className="block truncate" title={campaign.brandName}>
+                        {campaign.brandName}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4">
                       {getChannelLabel(campaign.channel)}
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="whitespace-nowrap px-4 py-4 tabular-nums">
                       {formatDate(campaign.publishDate)}
                     </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="w-8 text-right font-medium tabular-nums">
                           {campaign.riskScore}
                         </span>
                         <RiskBadge level={campaign.riskLevel} />
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
                       <StatusBadge status={campaign.status} />
                     </td>
-                    <td className="px-5 py-4">{campaign.ownerName}</td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
+                      <span className="block truncate" title={campaign.ownerName}>
+                        {campaign.ownerName}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4 tabular-nums">
                       {formatDate(campaign.updatedAt)}
                     </td>
                   </tr>

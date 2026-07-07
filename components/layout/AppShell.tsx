@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cx } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const navigation = [
   { href: "/dashboard", label: "대시보드", icon: LayoutDashboard },
@@ -73,6 +74,10 @@ export function AppShell({
                 );
               })}
             </nav>
+
+            <div className="mt-4 px-3">
+              <ThemeToggle />
+            </div>
 
             <div className="mt-auto hidden rounded-xl bg-[var(--color-surface-soft)] p-4 lg:block">
               <p className="text-sm font-medium">검토 보조 원칙</p>

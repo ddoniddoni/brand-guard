@@ -88,49 +88,67 @@ export function ApprovalInboxClient({
 
         {approvalQueue.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] border-collapse text-left text-sm">
+            <table className="w-full min-w-[980px] table-fixed border-collapse text-left text-sm">
+              <colgroup>
+                <col className="w-[280px]" />
+                <col className="w-[120px]" />
+                <col className="w-[140px]" />
+                <col className="w-[160px]" />
+                <col className="w-[150px]" />
+                <col className="w-[130px]" />
+                <col className="w-[160px]" />
+              </colgroup>
               <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
                 <tr>
                   <th className="px-5 py-3 font-medium">캠페인</th>
-                  <th className="px-5 py-3 font-medium">채널</th>
-                  <th className="px-5 py-3 font-medium">게시 예정일</th>
-                  <th className="px-5 py-3 font-medium">리스크</th>
-                  <th className="px-5 py-3 font-medium">상태</th>
-                  <th className="px-5 py-3 font-medium">담당자</th>
-                  <th className="px-5 py-3 font-medium">액션</th>
+                  <th className="px-4 py-3 font-medium">채널</th>
+                  <th className="px-4 py-3 font-medium">게시 예정일</th>
+                  <th className="px-4 py-3 text-right font-medium">리스크</th>
+                  <th className="px-4 py-3 font-medium">상태</th>
+                  <th className="px-4 py-3 font-medium">담당자</th>
+                  <th className="px-4 py-3 text-right font-medium">액션</th>
                 </tr>
               </thead>
               <tbody>
                 {approvalQueue.map((campaign) => (
                   <tr
-                    className="border-t border-[var(--color-hairline)]"
+                    className="border-t border-[var(--color-hairline)] align-middle hover:bg-[var(--color-surface-soft)]"
                     key={campaign.id}
                   >
                     <td className="px-5 py-4">
-                      <p className="font-medium">{campaign.name}</p>
-                      <p className="mt-1 text-xs text-[var(--color-muted)]">
+                      <p className="truncate font-medium" title={campaign.name}>
+                        {campaign.name}
+                      </p>
+                      <p
+                        className="mt-1 truncate text-xs text-[var(--color-muted)]"
+                        title={campaign.brandName}
+                      >
                         {campaign.brandName}
                       </p>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="whitespace-nowrap px-4 py-4">
                       {getChannelLabel(campaign.channel)}
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="whitespace-nowrap px-4 py-4 tabular-nums">
                       {formatDate(campaign.publishDate)}
                     </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="w-8 text-right font-medium tabular-nums">
                           {campaign.riskScore}
                         </span>
                         <RiskBadge level={campaign.riskLevel} />
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
                       <StatusBadge status={campaign.status} />
                     </td>
-                    <td className="px-5 py-4">{campaign.ownerName}</td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
+                      <span className="block truncate" title={campaign.ownerName}>
+                        {campaign.ownerName}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-right">
                       <Link
                         className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[var(--color-hairline)] px-4 text-sm font-medium"
                         href={`/campaigns/${campaign.id}/approval`}
