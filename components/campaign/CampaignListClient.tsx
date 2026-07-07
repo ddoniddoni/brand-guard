@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter, Plus, Search } from "lucide-react";
+import { Filter, Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
 import type {
@@ -121,7 +121,7 @@ export function CampaignListClient({
   return (
     <div className="grid gap-6 px-6 py-6 sm:px-8">
       <form
-        className="grid gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 lg:grid-cols-[1fr_180px_180px_180px_180px_auto]"
+        className="grid gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_150px_150px_150px_150px_auto]"
         role="search"
       >
         <label className="relative">
@@ -183,47 +183,35 @@ export function CampaignListClient({
       </form>
 
       <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
-        <div className="flex items-center justify-between gap-4 border-b border-[var(--color-hairline)] p-5">
-          <div>
-            <h2 className="text-xl font-normal">검토 대상 캠페인</h2>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">
-              총 {filteredCampaigns.length}개
+        <div className="border-b border-[var(--color-hairline)] px-5 py-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-medium">검토 대상 캠페인</h2>
+              <p className="mt-1 text-sm text-[var(--color-muted)]">
+                총 {filteredCampaigns.length}개
+              </p>
+            </div>
+            <p className="text-sm text-[var(--color-muted)]">
+              캠페인 정보, 리스크, 진행 상태만 표시합니다.
             </p>
           </div>
-          <Link
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[var(--color-hairline)] px-4 text-sm font-medium"
-            href="/campaigns/new"
-          >
-            <Plus aria-hidden="true" size={15} strokeWidth={1.8} />
-            새 캠페인
-          </Link>
         </div>
 
         {filteredCampaigns.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1120px] table-fixed border-collapse text-left text-sm">
+            <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
               <colgroup>
-                <col className="w-[280px]" />
-                <col className="w-[140px]" />
-                <col className="w-[130px]" />
-                <col className="w-[140px]" />
-                <col className="w-[170px]" />
-                <col className="w-[150px]" />
-                <col className="w-[130px]" />
-                <col className="w-[140px]" />
+                <col className="w-[42%]" />
+                <col className="w-[20%]" />
+                <col className="w-[22%]" />
+                <col className="w-[16%]" />
               </colgroup>
               <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
                 <tr>
-                  <th className="px-5 py-3 font-medium">캠페인명</th>
-                  <th className="px-4 py-3 font-medium">브랜드</th>
-                  <th className="px-4 py-3 font-medium">채널</th>
-                  <th className="px-4 py-3 font-medium">게시 예정일</th>
-                  <th className="px-4 py-3 text-right font-medium">
-                    리스크 점수
-                  </th>
-                  <th className="px-4 py-3 font-medium">상태</th>
+                  <th className="px-5 py-3 font-medium">캠페인</th>
+                  <th className="px-4 py-3 font-medium">리스크</th>
+                  <th className="px-4 py-3 font-medium">진행 상태</th>
                   <th className="px-4 py-3 font-medium">담당자</th>
-                  <th className="px-4 py-3 font-medium">최종 수정일</th>
                 </tr>
               </thead>
               <tbody>
@@ -240,36 +228,34 @@ export function CampaignListClient({
                       >
                         {campaign.name}
                       </Link>
+                      <p className="mt-1 truncate text-xs text-[var(--color-muted)]">
+                        {campaign.brandName} · {getChannelLabel(campaign.channel)} ·{" "}
+                        게시 {formatDate(campaign.publishDate)}
+                      </p>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="block truncate" title={campaign.brandName}>
-                        {campaign.brandName}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-4">
-                      {getChannelLabel(campaign.channel)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-4 tabular-nums">
-                      {formatDate(campaign.publishDate)}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="w-8 text-right font-medium tabular-nums">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-lg font-medium tabular-nums text-[var(--color-ink)]">
                           {campaign.riskScore}
                         </span>
                         <RiskBadge level={campaign.riskLevel} />
                       </div>
                     </td>
                     <td className="px-4 py-4">
-                      <StatusBadge status={campaign.status} />
+                      <div className="grid gap-1">
+                        <StatusBadge
+                          className="w-fit"
+                          status={campaign.status}
+                        />
+                        <span className="text-xs text-[var(--color-muted)]">
+                          수정 {formatDate(campaign.updatedAt)}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-4 py-4">
                       <span className="block truncate" title={campaign.ownerName}>
                         {campaign.ownerName}
                       </span>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-4 tabular-nums">
-                      {formatDate(campaign.updatedAt)}
                     </td>
                   </tr>
                 ))}
