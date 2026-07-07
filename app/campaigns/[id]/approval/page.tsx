@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ReviewWorkspace } from "@/components/campaign/ReviewWorkspace";
+import { ApprovalWorkspace } from "@/components/campaign/ApprovalWorkspace";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
@@ -13,7 +13,7 @@ import {
 import { getChannelLabel } from "@/lib/format";
 import { analysisResults } from "@/mocks/data/analysis-results";
 
-export default async function CampaignReviewPage({
+export default async function CampaignApprovalPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -37,15 +37,9 @@ export default async function CampaignReviewPage({
           <div className="flex flex-col gap-2 sm:flex-row">
             <Link
               className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
-              href={`/campaigns/${campaign.id}/versions`}
+              href={`/campaigns/${campaign.id}/review`}
             >
-              버전 비교
-            </Link>
-            <Link
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
-              href={`/campaigns/${campaign.id}/approval`}
-            >
-              최종 결재
+              리뷰 화면
             </Link>
             <Link
               className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
@@ -55,11 +49,11 @@ export default async function CampaignReviewPage({
             </Link>
           </div>
         }
-        description="이미지 오버레이, 리스크 후보, 감지 근거, 수정 제안, 코멘트와 상태 변경 이력을 한 화면에서 검토합니다."
+        description="AI 1차 의견, 담당자별 의견, 원본 소재, 감사 로그를 확인하고 최종 승인 여부를 결정합니다."
         eyebrow={`${campaign.brandName} · ${getChannelLabel(campaign.channel)}`}
-        title={campaign.name}
+        title={`${campaign.name} 최종 결재`}
       />
-      <ReviewWorkspace
+      <ApprovalWorkspace
         analysis={analysis}
         approvalSteps={approvalSteps}
         auditLogEntries={auditLogEntries}

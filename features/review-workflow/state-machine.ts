@@ -23,10 +23,36 @@ const transitions: Partial<Record<CampaignStatus, WorkflowTransition[]>> = {
   ],
   AI_REVIEWED: [
     {
+      action: "START_STAKEHOLDER_REVIEW",
+      label: "담당자 검토 시작",
+      nextStatus: "STAKEHOLDER_REVIEW",
+      description: "브랜드/PR 담당자에게 AI 1차 의견 확인을 요청합니다.",
+    },
+  ],
+  STAKEHOLDER_REVIEW: [
+    {
+      action: "REQUEST_REVISION",
+      label: "수정 요청",
+      nextStatus: "NEEDS_REVISION",
+      description: "수정이 필요한 후보와 근거를 담당자에게 전달합니다.",
+    },
+    {
+      action: "REQUEST_FINAL_APPROVAL",
+      label: "최종 결재 요청",
+      nextStatus: "FINAL_APPROVAL",
+      description: "담당자 의견을 취합하고 최종 결정자에게 전달합니다.",
+    },
+    {
       action: "START_PR_REVIEW",
-      label: "PR 검토 시작",
+      label: "PR 추가 검토",
       nextStatus: "PR_REVIEW",
-      description: "PR 담당자에게 2차 검토를 요청합니다.",
+      description: "PR 담당자에게 채널/여론 맥락 추가 검토를 요청합니다.",
+    },
+    {
+      action: "REQUEST_LEGAL_REVIEW",
+      label: "법무 추가 검토",
+      nextStatus: "LEGAL_REVIEW",
+      description: "민감도가 높은 항목을 법무 담당자에게 전달합니다.",
     },
   ],
   PR_REVIEW: [
@@ -37,10 +63,10 @@ const transitions: Partial<Record<CampaignStatus, WorkflowTransition[]>> = {
       description: "수정이 필요한 후보와 근거를 담당자에게 전달합니다.",
     },
     {
-      action: "REQUEST_LEGAL_REVIEW",
-      label: "법무 검토 요청",
-      nextStatus: "LEGAL_REVIEW",
-      description: "민감도가 높은 항목을 법무 담당자에게 전달합니다.",
+      action: "REQUEST_FINAL_APPROVAL",
+      label: "최종 결재 요청",
+      nextStatus: "FINAL_APPROVAL",
+      description: "PR 검토 의견을 포함해 최종 결정자에게 전달합니다.",
     },
     {
       action: "REJECT",
@@ -51,16 +77,36 @@ const transitions: Partial<Record<CampaignStatus, WorkflowTransition[]>> = {
   ],
   LEGAL_REVIEW: [
     {
-      action: "APPROVE",
-      label: "승인",
-      nextStatus: "APPROVED",
-      description: "법무 검토 완료 후 최종 승인합니다.",
+      action: "REQUEST_FINAL_APPROVAL",
+      label: "최종 결재 요청",
+      nextStatus: "FINAL_APPROVAL",
+      description: "법무 검토 의견을 포함해 최종 결정자에게 전달합니다.",
     },
     {
       action: "REJECT",
       label: "반려",
       nextStatus: "REJECTED",
       description: "법무 검토 결과 현재 버전을 반려합니다.",
+    },
+  ],
+  FINAL_APPROVAL: [
+    {
+      action: "APPROVE",
+      label: "최종 승인",
+      nextStatus: "APPROVED",
+      description: "담당자 의견과 AI 검토 후보를 확인하고 최종 승인합니다.",
+    },
+    {
+      action: "REQUEST_REVISION",
+      label: "수정 요청",
+      nextStatus: "NEEDS_REVISION",
+      description: "최종 결정자가 수정이 필요한 항목을 지정합니다.",
+    },
+    {
+      action: "REJECT",
+      label: "반려",
+      nextStatus: "REJECTED",
+      description: "현재 버전 게시를 중단하고 반려 이력을 남깁니다.",
     },
   ],
   NEEDS_REVISION: [

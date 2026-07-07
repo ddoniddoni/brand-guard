@@ -33,9 +33,11 @@ export function getStatusLabel(status: CampaignStatus) {
     DRAFT: "초안",
     ANALYZING: "분석 중",
     AI_REVIEWED: "AI 검토 완료",
+    STAKEHOLDER_REVIEW: "담당자 검토",
     NEEDS_REVISION: "수정 요청",
     PR_REVIEW: "PR 검토",
     LEGAL_REVIEW: "법무 검토",
+    FINAL_APPROVAL: "최종 결재",
     APPROVED: "승인",
     REJECTED: "반려",
     PUBLISHED: "게시 완료",
@@ -75,4 +77,17 @@ export function getRiskCategoryLabel(category: RiskCategory) {
   };
 
   return labels[category];
+}
+
+export function getUserRoleLabel(role: string) {
+  const labels: Record<string, string> = {
+    ADMIN: "관리자",
+    BRAND_MANAGER: "브랜드 매니저",
+    FINAL_APPROVER: "최종 결정자",
+    LEGAL_REVIEWER: "법무 검토자",
+    MARKETER: "마케터",
+    PR_REVIEWER: "PR 검토자",
+  };
+
+  return labels[role] ?? role;
 }

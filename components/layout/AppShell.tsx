@@ -1,5 +1,6 @@
 import {
   BookOpenCheck,
+  ClipboardCheck,
   FolderKanban,
   LayoutDashboard,
   Library,
@@ -16,6 +17,7 @@ const navigation = [
   { href: "/dashboard", label: "대시보드", icon: LayoutDashboard },
   { href: "/campaigns", label: "캠페인", icon: FolderKanban },
   { href: "/campaigns/new", label: "새 캠페인", icon: Plus },
+  { href: "/approvals", label: "결재함", icon: ClipboardCheck },
   { href: "/risk-dictionary", label: "리스크 사전", icon: BookOpenCheck },
   { href: "/cases", label: "케이스", icon: Library },
   { href: "/settings/team", label: "팀 설정", icon: Users },

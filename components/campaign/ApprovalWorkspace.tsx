@@ -13,8 +13,11 @@ import type {
   ReviewerComment,
   ReviewAction,
 } from "@/features/review-workflow/types";
-import { applyReviewAction } from "@/features/review-workflow/state-machine";
-import { formatDate, getChannelLabel, getStatusLabel } from "@/lib/format";
+import {
+  applyReviewAction,
+  getAvailableTransitions,
+} from "@/features/review-workflow/state-machine";
+import { getStatusLabel } from "@/lib/format";
 import { ReviewCanvas } from "@/components/image-review/ReviewCanvas";
 import { RiskFindingPanel } from "@/components/risk/RiskFindingPanel";
 import { RiskScoreCard } from "@/components/risk/RiskScoreCard";
@@ -23,9 +26,15 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ApprovalTimeline } from "@/components/workflow/ApprovalTimeline";
 import { AuditLog } from "@/components/workflow/AuditLog";
 import { CommentThread } from "@/components/workflow/CommentThread";
-import { ReviewActions } from "@/components/workflow/ReviewActions";
 
-export function ReviewWorkspace({
+const approvalActions: ReviewAction[] = [
+  "REQUEST_FINAL_APPROVAL",
+  "APPROVE",
+  "REQUEST_REVISION",
+  "REJECT",
+];
+
+export function ApprovalWorkspace({
   analysis,
   approvalSteps,
   auditLogEntries,
@@ -42,15 +51,56 @@ export function ReviewWorkspace({
   const [selectedFindingId, setSelectedFindingId] = useState(firstFindingId);
   const [status, setStatus] = useState<CampaignStatus>(campaign.status);
   const [commentDraft, setCommentDraft] = useState("");
-  const [commentRole, setCommentRole] = useState<UserRole>("BRAND_MANAGER");
+  const [commentRole, setCommentRole] = useState<UserRole>("FINAL_APPROVER");
   const [reviewComments, setReviewComments] = useState(comments);
   const [auditEntries, setAuditEntries] = useState(auditLogEntries);
 
-  const selectedFinding = useMemo(
+  const transitions = getAvailableTransitions(status).filter((transition) =>
+    approvalActions.includes(transition.action),
+  );
+
+  const displayedSteps = useMemo(
     () =>
-      analysis.categories.find((finding) => finding.id === selectedFindingId) ??
-      analysis.categories[0],
-    [analysis.categories, selectedFindingId],
+      approvalSteps.map((step) => {
+        if (step.title === "담당자 의견 취합") {
+          if (
+            status === "FINAL_APPROVAL" ||
+            status === "APPROVED" ||
+            status === "REJECTED"
+          ) {
+            return { ...step, status: "completed" as const };
+          }
+        }
+
+        if (step.title === "최종 결재") {
+          if (status === "FINAL_APPROVAL") {
+            return { ...step, status: "in_progress" as const };
+          }
+
+          if (status === "APPROVED") {
+            return {
+              ...step,
+              decision: "approve" as const,
+              note: "최종 승인되었습니다.",
+              status: "completed" as const,
+            };
+          }
+
+          if (status === "NEEDS_REVISION" || status === "REJECTED") {
+            return {
+              ...step,
+              decision:
+                status === "NEEDS_REVISION"
+                  ? ("request_revision" as const)
+                  : ("reject" as const),
+              status: "blocked" as const,
+            };
+          }
+        }
+
+        return step;
+      }),
+    [approvalSteps, status],
   );
 
   const addAuditEntry = (entry: Omit<AuditLogEntry, "id" | "createdAt">) => {
@@ -74,14 +124,10 @@ export function ReviewWorkspace({
     }
 
     addAuditEntry({
-      action: getWorkflowActionLabel(action),
-      actorName: "현재 검토자",
+      action: getDecisionActionLabel(action),
+      actorName: "윤지수",
       fromStatus: status,
-      note: selectedFinding
-        ? `${selectedFinding.title} 항목을 확인하고 ${getStatusLabel(
-            nextStatus,
-          )} 상태로 변경했습니다.`
-        : `${getStatusLabel(nextStatus)} 상태로 변경했습니다.`,
+      note: `${getStatusLabel(nextStatus)} 상태로 결재 흐름을 업데이트했습니다.`,
       toStatus: nextStatus,
     });
     setStatus(nextStatus);
@@ -100,7 +146,7 @@ export function ReviewWorkspace({
       {
         id: `comment-${timestamp}`,
         campaignId: campaign.id,
-        authorName: "현재 검토자",
+        authorName: "윤지수",
         body,
         createdAt: timestamp,
         role: commentRole,
@@ -109,38 +155,59 @@ export function ReviewWorkspace({
     ]);
     setCommentDraft("");
     addAuditEntry({
-      action: "검토 코멘트 추가",
-      actorName: "현재 검토자",
+      action: "최종 결재 의견 추가",
+      actorName: "윤지수",
       note: body,
     });
   };
 
   return (
     <div className="grid gap-6 px-6 py-6 sm:px-8">
-      <section className="grid gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-5 lg:grid-cols-[1fr_auto] lg:items-center">
+      <section className="grid gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-5 xl:grid-cols-[1fr_320px]">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={status} />
             <span className="rounded-md bg-[var(--color-surface-soft)] px-2.5 py-1 text-xs font-medium text-[var(--color-muted)]">
-              {getChannelLabel(campaign.channel)}
-            </span>
-            <span className="rounded-md bg-[var(--color-surface-soft)] px-2.5 py-1 text-xs font-medium text-[var(--color-muted)]">
-              게시 예정 {formatDate(campaign.publishDate)}
+              최종 결정자 확인
             </span>
           </div>
-          <p className="mt-3 text-sm leading-6 text-[var(--color-body)]">
-            업종 {campaign.industry} · 타깃 {campaign.targetAudience} · 담당자{" "}
-            {campaign.ownerName}
+          <h2 className="mt-4 text-2xl font-normal">결재 검토 요약</h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-[var(--color-body)]">
+            {analysis.summary} AI 의견은 참고 자료이며, 최종 결정자는 이미지,
+            문구, 담당자 의견, 감사 로그를 함께 확인해야 합니다.
           </p>
         </div>
-        <div className="rounded-lg bg-[var(--color-surface-soft)] px-4 py-3">
-          <p className="text-xs text-[var(--color-muted)]">Mock provider</p>
-          <p className="mt-1 text-sm font-medium">
-            {analysis.source} · version {analysis.versionId}
+        <div className="rounded-lg bg-[var(--color-surface-soft)] p-4">
+          <p className="text-sm font-medium">최종 결재 액션</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
+            결정은 감사 로그에 남고 캠페인 상태를 갱신합니다.
           </p>
+          <div className="mt-4 grid gap-2">
+            {transitions.length > 0 ? (
+              transitions.map((transition, index) => (
+                <button
+                  className={
+                    index === 0
+                      ? "min-h-11 rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
+                      : "min-h-11 rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium"
+                  }
+                  key={transition.action}
+                  onClick={() => handleAction(transition.action)}
+                  type="button"
+                >
+                  {transition.label}
+                </button>
+              ))
+            ) : (
+              <p className="rounded-lg bg-white p-3 text-sm text-[var(--color-body)]">
+                현재 상태에서는 추가 결재 액션이 없습니다.
+              </p>
+            )}
+          </div>
         </div>
       </section>
-      <ApprovalTimeline steps={approvalSteps} />
+
+      <ApprovalTimeline steps={displayedSteps} />
 
       <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_460px]">
         <div className="grid gap-6">
@@ -158,11 +225,10 @@ export function ReviewWorkspace({
 
         <aside className="grid content-start gap-4">
           <RiskScoreCard analysis={analysis} />
-          <ReviewActions onAction={handleAction} status={status} />
           <RevisionSuggestions suggestions={analysis.suggestions} />
           <CommentThread
-            commentRole={commentRole}
             commentDraft={commentDraft}
+            commentRole={commentRole}
             comments={reviewComments}
             onAddComment={handleAddComment}
             onCommentDraftChange={setCommentDraft}
@@ -175,9 +241,9 @@ export function ReviewWorkspace({
   );
 }
 
-function getWorkflowActionLabel(action: ReviewAction) {
+function getDecisionActionLabel(action: ReviewAction) {
   const labels: Record<ReviewAction, string> = {
-    APPROVE: "승인",
+    APPROVE: "최종 승인",
     REANALYZE: "재분석 요청",
     REJECT: "반려",
     REQUEST_FINAL_APPROVAL: "최종 결재 요청",

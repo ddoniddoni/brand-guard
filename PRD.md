@@ -95,6 +95,8 @@ BrandGuard는 이 과정을 하나의 리뷰 워크플로우로 정리한다.
 - 대시보드
 - 캠페인 생성
 - 이미지/문구 소재 업로드
+- 업로드 소재 미리보기와 AI 1차 검토 시작 플로우
+- AI 1차 검토 진행 상태 표시
 - AI 1차 검토 플로우를 고려한 mock 분석 결과 표시
 - 분석 provider 인터페이스(mock 우선, 실제 AI 교체 가능)
 - 이미지 위 리스크 영역 오버레이
@@ -102,8 +104,9 @@ BrandGuard는 이 과정을 하나의 리뷰 워크플로우로 정리한다.
 - OCR 텍스트 영역 mock 표시
 - 리스크 점수 및 카테고리별 결과
 - 감지 근거와 수정 제안
-- 담당자 코멘트
-- 승인/수정요청/반려 워크플로우
+- 담당자별 검토 의견
+- 최종 결재자 확인 화면
+- 승인/수정요청/반려/최종 결재 워크플로우
 - 버전 비교
 - 리스크 사전
 - 케이스 라이브러리
@@ -126,26 +129,35 @@ BrandGuard는 이 과정을 하나의 리뷰 워크플로우로 정리한다.
 ### Flow 1. 캠페인 생성 및 분석
 1. 사용자가 `/campaigns/new`로 이동한다.
 2. 캠페인명, 브랜드, 채널, 게시 예정일, 타깃, 업종을 입력한다.
-3. 광고 이미지와 카피를 업로드한다.
-4. 분석 요청 버튼을 누른다.
-5. 시스템은 `ANALYZING` 상태로 전환하고 mock 또는 AI provider를 통해 1차 검토 결과를 생성한다.
-6. 사용자는 `/campaigns/[id]/review`에서 결과를 확인한다.
+3. 광고 이미지와 카피를 업로드하고 미리보기를 확인한다.
+4. `AI 1차 검토 시작` 버튼을 누른다.
+5. 시스템은 `ANALYZING` 상태로 전환하고 이미지, OCR, 리스크 사전, 문맥 요약 단계를 순차적으로 표시한다.
+6. mock 또는 AI provider가 1차 검토 결과를 `AnalysisResult` 형식으로 생성한다.
+7. 사용자는 `/campaigns/[id]/review`에서 AI 의견과 원본 소재를 함께 확인한다.
 
-### Flow 2. 리스크 리뷰
+### Flow 2. 담당자 2차 검토
 1. 사용자는 이미지 위에 표시된 bounding box를 확인한다.
 2. 오른쪽 패널에서 리스크 카테고리, 신뢰도, 감지 근거를 본다.
 3. 수정 제안을 확인한다.
-4. 코멘트를 남긴다.
-5. `승인`, `수정 요청`, `반려` 중 하나를 선택한다.
-6. 상태 변경과 코멘트가 감사 로그에 기록된다.
+4. AI 의견이 실제 이미지/문구 맥락과 맞는지 담당자 관점에서 확인한다.
+5. 담당자별 의견을 남긴다.
+6. `수정 요청`, `추가 검토 요청`, `최종 결재 요청` 중 하나를 선택한다.
+7. 상태 변경과 코멘트가 감사 로그에 기록된다.
 
-### Flow 3. 버전 비교
+### Flow 3. 최종 결재
+1. 최종 결정자는 `/campaigns/[id]/approval`에서 결재 대상을 확인한다.
+2. AI 1차 의견, 원본 이미지/문구, 담당자별 의견, 감사 로그를 한 화면에서 확인한다.
+3. 최종 결정자는 `최종 승인`, `수정 요청`, `반려` 중 하나를 선택한다.
+4. 최종 결정은 감사 로그에 기록되고 캠페인 상태를 갱신한다.
+5. 승인된 소재만 게시 가능 상태가 된다.
+
+### Flow 4. 버전 비교
 1. 마케터가 수정된 문구 또는 이미지를 새 버전으로 업로드한다.
 2. 시스템은 v1/v2 리스크 결과를 비교한다.
 3. 사용자는 변경 전후 리스크 점수, 감지 항목, 문구 차이를 확인한다.
 4. 리뷰어는 수정된 버전을 승인한다.
 
-### Flow 4. AI 1차 검토 및 담당자 확인
+### Flow 5. AI 1차 검토 및 담당자 확인
 1. 사용자가 캠페인 분석을 요청하면 시스템은 AI 1차 검토 작업을 생성한다.
 2. OCR 단계는 이미지 내 텍스트 후보와 좌표를 추출한다.
 3. Vision 단계는 이미지에서 검토가 필요할 수 있는 시각 패턴 후보를 구조화한다.
@@ -182,7 +194,9 @@ GET /api/campaigns/:id/analysis-job
 /campaigns
 /campaigns/new
 /campaigns/[id]/review
+/campaigns/[id]/approval
 /campaigns/[id]/versions
+/approvals
 /risk-dictionary
 /cases
 /settings/team
@@ -246,7 +260,7 @@ type DashboardSummary = {
 ### 8.3 Campaign Create
 
 #### 목적
-새로운 마케팅 소재 검수 프로젝트를 생성한다.
+새로운 마케팅 소재 검수 프로젝트를 생성하고 AI 1차 검토를 시작한다.
 
 #### 입력 필드
 - 캠페인명
@@ -257,6 +271,19 @@ type DashboardSummary = {
 - 업종
 - 광고 카피
 - 이미지 파일
+- 샘플 홍보 소재 사용 옵션
+
+#### 분석 시작 UX
+- 업로드 이미지 미리보기
+- 광고 카피 미리보기
+- `AI 1차 검토 시작` 버튼
+- 분석 단계 진행 표시
+  - 소재 보안 처리
+  - 이미지 후보 영역 확인
+  - OCR 문구 후보 확인
+  - 리스크 사전 대조
+  - 담당자 검토용 요약 생성
+- 분석 완료 후 리뷰 화면 이동 CTA
 
 #### 검증
 - 캠페인명 필수
@@ -307,7 +334,30 @@ type DashboardSummary = {
 
 ---
 
-### 8.5 Versions Page
+### 8.5 Approval Page
+
+#### 목적
+담당자별 의견을 취합한 뒤 최종 결정자가 승인, 수정 요청, 반려를 선택한다.
+
+#### 주요 기능
+- 결재 단계 타임라인
+- AI 1차 의견 요약
+- 원본 이미지/문구 확인
+- 담당자별 의견 목록
+- 리스크 후보와 수정 제안 확인
+- 최종 결정 코멘트 입력
+- `최종 승인`, `수정 요청`, `반려` 액션
+- 결정 결과 감사 로그 기록
+
+#### 결재 원칙
+- AI 의견은 결재 참고 자료이며 최종 결정이 아니다.
+- 담당자 의견은 역할, 작성자, 작성 시각과 함께 남긴다.
+- 최종 결정자는 근거 없이 자동 승인하지 않는다.
+- 수정 요청 시 어떤 소재/문구를 다시 봐야 하는지 명시한다.
+
+---
+
+### 8.6 Versions Page
 
 #### 목적
 수정 전후 리스크 변화를 비교한다.
@@ -323,7 +373,7 @@ type DashboardSummary = {
 
 ---
 
-### 8.6 Risk Dictionary
+### 8.7 Risk Dictionary
 
 #### 목적
 리스크 규칙과 카테고리를 관리한다.
@@ -343,7 +393,7 @@ type DashboardSummary = {
 
 ---
 
-### 8.7 Case Library
+### 8.8 Case Library
 
 #### 목적
 과거 논란 유형을 학습 가능한 참고 자료로 정리한다.
@@ -389,9 +439,11 @@ type CampaignStatus =
   | 'DRAFT'
   | 'ANALYZING'
   | 'AI_REVIEWED'
+  | 'STAKEHOLDER_REVIEW'
   | 'NEEDS_REVISION'
   | 'PR_REVIEW'
   | 'LEGAL_REVIEW'
+  | 'FINAL_APPROVAL'
   | 'APPROVED'
   | 'REJECTED'
   | 'PUBLISHED'
@@ -403,10 +455,10 @@ type CampaignStatus =
 DRAFT
 → ANALYZING
 → AI_REVIEWED
-→ PR_REVIEW
+→ STAKEHOLDER_REVIEW
 → NEEDS_REVISION
 → AI_REVIEWED
-→ LEGAL_REVIEW
+→ FINAL_APPROVAL
 → APPROVED
 ```
 
@@ -488,6 +540,48 @@ type RevisionSuggestion = {
 
 ---
 
+## 11.1 결재 워크플로우 데이터 모델
+
+```ts
+type ApprovalStepStatus = 'pending' | 'in_progress' | 'completed' | 'blocked'
+
+type ApprovalDecision = 'approve' | 'request_revision' | 'reject'
+
+type ApprovalStep = {
+  id: string
+  campaignId: string
+  order: number
+  title: string
+  ownerName: string
+  role: UserRole
+  status: ApprovalStepStatus
+  description: string
+  decision?: ApprovalDecision
+  note?: string
+  updatedAt?: string
+}
+
+type ReviewerComment = {
+  id: string
+  campaignId: string
+  authorName: string
+  role: UserRole
+  body: string
+  createdAt: string
+}
+```
+
+결재 플로우는 다음 순서를 기본으로 한다.
+
+```txt
+소재 등록
+→ AI 1차 검토
+→ 담당자 의견 취합
+→ 최종 결재
+```
+
+---
+
 ## 12. Mock 분석 결과 예시
 
 ```json
@@ -552,14 +646,21 @@ type RevisionSuggestion = {
 ## 13. 권한
 
 ```ts
-type UserRole = 'MARKETER' | 'BRAND_MANAGER' | 'PR_REVIEWER' | 'LEGAL_REVIEWER' | 'ADMIN'
+type UserRole =
+  | 'MARKETER'
+  | 'BRAND_MANAGER'
+  | 'PR_REVIEWER'
+  | 'LEGAL_REVIEWER'
+  | 'FINAL_APPROVER'
+  | 'ADMIN'
 ```
 
 ### 권한별 가능 기능
 - MARKETER: 캠페인 생성, 소재 업로드, 수정 요청 반영
 - BRAND_MANAGER: 리뷰 코멘트, 수정 요청, 승인 요청
 - PR_REVIEWER: 고위험 캠페인 검토, 승인/반려
-- LEGAL_REVIEWER: 법무 검토 필요 캠페인 최종 승인
+- LEGAL_REVIEWER: 법무 검토 필요 캠페인 의견 작성
+- FINAL_APPROVER: AI 의견과 담당자 의견 확인 후 최종 승인/수정요청/반려 결정
 - ADMIN: 팀 설정, 권한 관리, 리스크 사전 관리
 
 ---

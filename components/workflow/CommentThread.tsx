@@ -1,27 +1,40 @@
 "use client";
 
 import { Send } from "lucide-react";
+import type { UserRole } from "@/features/campaign/types";
 import type { ReviewerComment } from "@/features/review-workflow/types";
-import { formatDate } from "@/lib/format";
+import { formatDate, getUserRoleLabel } from "@/lib/format";
+
+const reviewerRoles: UserRole[] = [
+  "MARKETER",
+  "BRAND_MANAGER",
+  "PR_REVIEWER",
+  "LEGAL_REVIEWER",
+  "FINAL_APPROVER",
+];
 
 export function CommentThread({
   comments,
   commentDraft,
+  commentRole,
   onAddComment,
   onCommentDraftChange,
+  onCommentRoleChange,
 }: {
   comments: ReviewerComment[];
   commentDraft: string;
+  commentRole: UserRole;
   onAddComment: () => void;
   onCommentDraftChange: (value: string) => void;
+  onCommentRoleChange: (value: UserRole) => void;
 }) {
   return (
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
-          Reviewer comments
+          Stakeholder opinions
         </p>
-        <h2 className="mt-2 text-xl font-normal">검토 코멘트</h2>
+        <h2 className="mt-2 text-xl font-normal">담당자별 의견</h2>
       </div>
       <div className="grid gap-4 p-4">
         {comments.map((comment) => (
@@ -36,7 +49,7 @@ export function CommentThread({
               </p>
             </div>
             <p className="mt-1 text-xs text-[var(--color-muted)]">
-              {comment.role}
+              {getUserRoleLabel(comment.role)}
             </p>
             <p className="mt-3 text-sm leading-6 text-[var(--color-body)]">
               {comment.body}
@@ -45,6 +58,26 @@ export function CommentThread({
         ))}
 
         <div className="grid gap-2">
+          <label
+            className="text-sm font-medium text-[var(--color-ink)]"
+            htmlFor="review-comment-role"
+          >
+            의견 작성 역할
+          </label>
+          <select
+            className="h-11 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+            id="review-comment-role"
+            onChange={(event) =>
+              onCommentRoleChange(event.target.value as UserRole)
+            }
+            value={commentRole}
+          >
+            {reviewerRoles.map((role) => (
+              <option key={role} value={role}>
+                {getUserRoleLabel(role)}
+              </option>
+            ))}
+          </select>
           <label
             className="text-sm font-medium text-[var(--color-ink)]"
             htmlFor="review-comment"

@@ -4,9 +4,11 @@ export type CampaignStatus =
   | "DRAFT"
   | "ANALYZING"
   | "AI_REVIEWED"
+  | "STAKEHOLDER_REVIEW"
   | "NEEDS_REVISION"
   | "PR_REVIEW"
   | "LEGAL_REVIEW"
+  | "FINAL_APPROVAL"
   | "APPROVED"
   | "REJECTED"
   | "PUBLISHED";
@@ -24,6 +26,7 @@ export type UserRole =
   | "BRAND_MANAGER"
   | "PR_REVIEWER"
   | "LEGAL_REVIEWER"
+  | "FINAL_APPROVER"
   | "ADMIN";
 
 export type Campaign = {

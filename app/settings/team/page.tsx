@@ -1,10 +1,12 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { getUserRoleLabel } from "@/lib/format";
 
 const members = [
   { name: "김민서", role: "MARKETER", team: "Marketing" },
   { name: "박준호", role: "PR_REVIEWER", team: "PR" },
   { name: "최하린", role: "LEGAL_REVIEWER", team: "Legal" },
+  { name: "윤지수", role: "FINAL_APPROVER", team: "Brand Office" },
 ];
 
 export default function TeamSettingsPage() {
@@ -33,7 +35,7 @@ export default function TeamSettingsPage() {
                   </p>
                 </div>
                 <span className="rounded-md bg-[var(--color-surface-soft)] px-2.5 py-1.5 text-xs font-medium">
-                  {member.role}
+                  {getUserRoleLabel(member.role)}
                 </span>
               </div>
             ))}

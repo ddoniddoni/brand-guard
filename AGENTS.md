@@ -91,7 +91,9 @@ This page should show:
 /campaigns
 /campaigns/new
 /campaigns/[id]/review
+/campaigns/[id]/approval
 /campaigns/[id]/versions
+/approvals
 /risk-dictionary
 /cases
 /settings/team
@@ -117,8 +119,12 @@ app/
     [id]/
       review/
         page.tsx
+      approval/
+        page.tsx
       versions/
         page.tsx
+  approvals/
+    page.tsx
   risk-dictionary/
     page.tsx
   cases/
@@ -195,9 +201,11 @@ export type CampaignStatus =
   | 'DRAFT'
   | 'ANALYZING'
   | 'AI_REVIEWED'
+  | 'STAKEHOLDER_REVIEW'
   | 'NEEDS_REVISION'
   | 'PR_REVIEW'
   | 'LEGAL_REVIEW'
+  | 'FINAL_APPROVAL'
   | 'APPROVED'
   | 'REJECTED'
   | 'PUBLISHED'
@@ -224,6 +232,7 @@ export type UserRole =
   | 'BRAND_MANAGER'
   | 'PR_REVIEWER'
   | 'LEGAL_REVIEWER'
+  | 'FINAL_APPROVER'
   | 'ADMIN'
 
 export type Campaign = {
@@ -308,6 +317,36 @@ Recommended order:
 5. Build workflow state changes.
 6. Add mock API using MSW.
 7. Add optional real detection demo later.
+
+---
+
+## Upload, AI Review, and Approval Flow
+
+The core v2 demo must show a complete review pipeline:
+
+```txt
+Upload marketing asset
+→ AI first-pass review
+→ Human stakeholder review
+→ Stakeholder opinions
+→ Final approval decision
+```
+
+Required screens:
+- `/campaigns/new` uploads or previews a marketing image and campaign copy.
+- The create screen starts an AI first-pass review simulation with staged progress.
+- `/campaigns/[id]/review` shows the uploaded or mock asset, AI review candidates, and reviewer opinions.
+- `/campaigns/[id]/approval` lets the final decision maker review AI output, human opinions, audit log, and choose approve/revision/reject.
+- `/approvals` shows campaigns waiting for stakeholder review or final approval.
+
+AI review stages should be presented as review assistance:
+- asset intake
+- image region candidate scan
+- OCR text candidate scan
+- risk dictionary comparison
+- reviewer summary generation
+
+The app must not imply AI makes the final decision. AI output is only the first-pass opinion used by people in the approval workflow.
 
 ---
 
@@ -492,22 +531,27 @@ Implement clear state transitions.
 DRAFT
 → ANALYZING
 → AI_REVIEWED
-→ PR_REVIEW
+→ STAKEHOLDER_REVIEW
 → NEEDS_REVISION
 → AI_REVIEWED
-→ LEGAL_REVIEW
+→ FINAL_APPROVAL
 → APPROVED
 ```
 
 Allow:
 - DRAFT → ANALYZING
 - ANALYZING → AI_REVIEWED
-- AI_REVIEWED → PR_REVIEW
-- PR_REVIEW → NEEDS_REVISION
-- PR_REVIEW → LEGAL_REVIEW
+- AI_REVIEWED → STAKEHOLDER_REVIEW
+- STAKEHOLDER_REVIEW → NEEDS_REVISION
+- STAKEHOLDER_REVIEW → FINAL_APPROVAL
+- STAKEHOLDER_REVIEW → PR_REVIEW
+- STAKEHOLDER_REVIEW → LEGAL_REVIEW
+- PR_REVIEW → FINAL_APPROVAL
+- LEGAL_REVIEW → FINAL_APPROVAL
 - PR_REVIEW → REJECTED
-- LEGAL_REVIEW → APPROVED
-- LEGAL_REVIEW → REJECTED
+- FINAL_APPROVAL → APPROVED
+- FINAL_APPROVAL → NEEDS_REVISION
+- FINAL_APPROVAL → REJECTED
 - NEEDS_REVISION → ANALYZING
 
 Every state change should create an audit log entry.

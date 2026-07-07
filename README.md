@@ -6,7 +6,9 @@ BrandGuard는 특정 정치 성향이나 개인의 사상을 판정하지 않습
 
 ## Status
 
-Initial Next.js setup and Phase 1 app foundation are in progress.
+Frontend-first MVP foundation is in progress. The current demo focuses on
+uploading a marketing asset, running a mocked AI first-pass review, collecting
+human reviewer opinions, and sending the campaign through final approval.
 
 ## Tech Stack
 
@@ -30,7 +32,9 @@ Open `http://localhost:3000`.
 - `/campaigns`
 - `/campaigns/new`
 - `/campaigns/[id]/review`
+- `/campaigns/[id]/approval`
 - `/campaigns/[id]/versions`
+- `/approvals`
 - `/risk-dictionary`
 - `/cases`
 - `/settings/team`
@@ -51,3 +55,4 @@ npx @google/design.md lint DESIGN.md
 - AI analysis is mocked first.
 - AI output must remain a review assistant result, not a final judgment.
 - Human reviewers make approval, revision, and rejection decisions.
+- Final approval happens after AI first-pass review and stakeholder opinions.

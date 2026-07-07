@@ -7,11 +7,14 @@ const statusClassName: Record<CampaignStatus, string> = {
   ANALYZING: "bg-[var(--color-info-bg)] text-[var(--color-info)]",
   AI_REVIEWED:
     "bg-[var(--color-risk-medium-bg)] text-[var(--color-risk-medium-text)]",
+  STAKEHOLDER_REVIEW:
+    "bg-[var(--color-risk-medium-bg)] text-[var(--color-risk-medium-text)]",
   NEEDS_REVISION:
     "bg-[var(--color-risk-high-bg)] text-[var(--color-risk-high-text)]",
   PR_REVIEW:
     "bg-[var(--color-risk-medium-bg)] text-[var(--color-risk-medium-text)]",
   LEGAL_REVIEW: "bg-[var(--color-surface-soft)] text-[var(--color-ink)]",
+  FINAL_APPROVAL: "bg-[var(--color-info-bg)] text-[var(--color-info)]",
   APPROVED: "bg-[var(--color-risk-low-bg)] text-[var(--color-risk-low-text)]",
   REJECTED:
     "bg-[var(--color-risk-critical-bg)] text-[var(--color-risk-critical-text)]",
