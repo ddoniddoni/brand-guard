@@ -31,7 +31,7 @@ export default async function CampaignsPage({
       <PageHeader
         action={
           <Link
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 text-sm font-medium text-white"
+            className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-5 text-sm font-medium text-white"
             href="/campaigns/new"
           >
             <Plus aria-hidden="true" size={16} strokeWidth={1.8} />

@@ -182,7 +182,7 @@ export function ApprovalWorkspace({
   };
 
   return (
-    <div className="grid gap-6 px-6 py-6 sm:px-8">
+    <div className="mx-auto grid w-full max-w-[1700px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
       <section className="grid gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-5 xl:grid-cols-[1fr_320px]">
         <div>
           <div className="flex flex-wrap items-center gap-2">

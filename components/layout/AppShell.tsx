@@ -33,9 +33,9 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-ink)]">
-      <div className="grid min-h-screen lg:grid-cols-[264px_1fr]">
-        <aside className="border-b border-[var(--color-hairline)] bg-white lg:border-b-0 lg:border-r">
+    <div className="min-h-screen overflow-x-clip bg-[var(--color-canvas)] text-[var(--color-ink)]">
+      <div className="grid min-h-screen min-w-0 lg:grid-cols-[minmax(0,264px)_minmax(0,1fr)]">
+        <aside className="min-w-0 border-b border-[var(--color-hairline)] bg-white lg:border-b-0 lg:border-r">
           <div className="flex h-full flex-col px-4 py-4">
             <Link
               className="flex min-h-12 items-center gap-3 rounded-lg px-3"
@@ -89,7 +89,9 @@ export function AppShell({
           </div>
         </aside>
 
-        <main className="min-w-0 bg-[var(--color-canvas)]">{children}</main>
+        <main className="min-w-0 overflow-x-clip bg-[var(--color-canvas)]">
+          {children}
+        </main>
       </div>
     </div>
   );

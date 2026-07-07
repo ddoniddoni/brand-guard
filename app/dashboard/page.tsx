@@ -37,7 +37,7 @@ export default function DashboardPage() {
       <PageHeader
         action={
           <Link
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 text-sm font-medium text-white"
+            className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-5 text-sm font-medium text-white"
             href="/campaigns/new"
           >
             <Plus aria-hidden="true" size={16} strokeWidth={1.8} />
@@ -49,7 +49,7 @@ export default function DashboardPage() {
         title="오늘의 검토 현황"
       />
 
-      <div className="grid gap-6 px-6 py-6 sm:px-8">
+      <div className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
             description="PR 또는 법무 담당자 확인이 필요한 캠페인"

@@ -9,7 +9,7 @@ export default function ProfileSettingsPage() {
         eyebrow="Settings"
         title="프로필"
       />
-      <div className="grid gap-4 px-6 py-6 sm:px-8 lg:grid-cols-2">
+      <div className="mx-auto grid w-full max-w-[1500px] gap-4 px-5 py-6 sm:px-6 lg:grid-cols-2 lg:px-8">
         <section className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
           <p className="text-sm font-medium">기본 역할</p>
           <p className="mt-2 text-sm text-[var(--color-body)]">

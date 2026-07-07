@@ -9,7 +9,7 @@ export default function ApprovalsLoading() {
         eyebrow="Approval inbox"
         title="결재함"
       />
-      <div className="grid gap-4 px-6 py-6 sm:px-8">
+      <div className="mx-auto grid w-full max-w-[1500px] gap-4 px-5 py-6 sm:px-6 lg:px-8">
         {Array.from({ length: 4 }, (_, index) => (
           <div
             className="h-24 animate-pulse rounded-xl bg-[var(--color-surface-soft)]"

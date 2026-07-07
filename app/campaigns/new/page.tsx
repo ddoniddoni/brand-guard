@@ -10,7 +10,7 @@ export default function CampaignNewPage() {
         eyebrow="New campaign"
         title="새 캠페인 생성"
       />
-      <div className="px-6 py-6 sm:px-8">
+      <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
         <CampaignCreateForm />
       </div>
     </AppShell>

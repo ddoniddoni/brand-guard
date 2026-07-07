@@ -61,13 +61,13 @@ export function CampaignApprovalRoute({
         action={
           <div className="flex flex-col gap-2 sm:flex-row">
             <Link
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
+              className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
               href={`/campaigns/${campaign.id}/review`}
             >
               리뷰 화면
             </Link>
             <Link
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
+              className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
               href="/campaigns"
             >
               목록으로
@@ -94,20 +94,20 @@ export function CampaignApprovalRoute({
 
 function MissingCampaignActions() {
   return (
-    <div className="px-6 py-6 sm:px-8">
+    <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
       <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
         <p className="text-sm leading-6 text-[var(--color-body)]">
           새 캠페인을 생성하거나 결재함에서 대상을 다시 선택하세요.
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
+            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
             href="/approvals"
           >
             결재함
           </Link>
           <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium"
+            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium"
             href="/campaigns/new"
           >
             새 캠페인 생성

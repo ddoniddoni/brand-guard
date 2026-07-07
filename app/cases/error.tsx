@@ -11,7 +11,7 @@ export default function CasesError({ reset }: { reset: () => void }) {
         eyebrow="Cases"
         title="케이스 라이브러리"
       />
-      <div className="px-6 py-6 sm:px-8">
+      <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
         <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
           <p className="text-base font-medium">
             케이스 라이브러리를 불러오지 못했습니다.

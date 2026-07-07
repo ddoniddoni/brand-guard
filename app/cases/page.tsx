@@ -127,7 +127,7 @@ export default async function CasesPage({
         title="케이스 라이브러리"
       />
 
-      <div className="grid gap-6 px-6 py-6 sm:px-8">
+      <div className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
         <section className="grid gap-4 md:grid-cols-3">
           <MetricCard
             description="최근 mock 검토 사례 기준"
@@ -150,10 +150,10 @@ export default async function CasesPage({
         </section>
 
         <form
-          className="grid gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_180px_150px_170px_auto_auto]"
+          className="grid min-w-0 gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 md:grid-cols-2 xl:grid-cols-[minmax(280px,1fr)_minmax(150px,180px)_minmax(132px,150px)_minmax(150px,170px)_minmax(96px,max-content)_minmax(96px,max-content)]"
           role="search"
         >
-          <label className="relative">
+          <label className="relative min-w-0">
             <span className="sr-only">케이스 검색</span>
             <Search
               aria-hidden="true"
@@ -162,7 +162,7 @@ export default async function CasesPage({
               strokeWidth={1.8}
             />
             <input
-              className="h-11 w-full rounded-md border border-[var(--color-hairline)] bg-white pl-10 pr-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+              className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white pl-10 pr-3 text-sm outline-none focus:border-[var(--color-info-border)]"
               defaultValue={rawQuery}
               name="q"
               placeholder="케이스, 캠페인, 체크포인트 검색"
@@ -201,14 +201,14 @@ export default async function CasesPage({
           </SelectFilter>
 
           <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
+            className="inline-flex min-h-11 min-w-24 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
             type="submit"
           >
             <Filter aria-hidden="true" size={16} strokeWidth={1.8} />
             적용
           </button>
           <Link
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-4 text-sm font-medium text-[var(--color-body)]"
+            className="inline-flex min-h-11 min-w-24 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-4 text-sm font-medium text-[var(--color-body)]"
             href="/cases"
           >
             <RotateCcw aria-hidden="true" size={15} strokeWidth={1.8} />
@@ -336,10 +336,10 @@ function SelectFilter({
   name: string;
 }) {
   return (
-    <label>
+    <label className="min-w-0">
       <span className="sr-only">{label}</span>
       <select
-        className="h-11 w-full rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+        className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
         defaultValue={defaultValue}
         name={name}
       >

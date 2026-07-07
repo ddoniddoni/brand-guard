@@ -81,11 +81,16 @@
   --font-mono: var(--font-brand-mono);
 }
 
+html {
+  overflow-x: clip;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-brand-sans);
   letter-spacing: 0;
+  overflow-x: clip;
 }
 
 :root[data-theme="dark"] .bg-white {
@@ -107,4 +112,5 @@ body {
 button,
 a {
   cursor: pointer;
+  touch-action: manipulation;
 }

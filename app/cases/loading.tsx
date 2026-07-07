@@ -9,7 +9,7 @@ export default function CasesLoading() {
         eyebrow="Cases"
         title="케이스 라이브러리"
       />
-      <div className="grid gap-6 px-6 py-6 sm:px-8">
+      <div className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
         <section className="grid gap-4 md:grid-cols-3">
           {Array.from({ length: 3 }, (_, index) => (
             <div

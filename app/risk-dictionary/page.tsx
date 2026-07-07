@@ -12,7 +12,7 @@ export default function RiskDictionaryPage() {
         eyebrow="Risk dictionary"
         title="리스크 사전"
       />
-      <div className="grid gap-4 px-6 py-6 sm:px-8">
+      <div className="mx-auto grid w-full max-w-[1500px] gap-4 px-5 py-6 sm:px-6 lg:px-8">
         {riskDictionaryEntries.map((entry) => (
           <article
             className="rounded-xl border border-[var(--color-hairline)] bg-white p-5"

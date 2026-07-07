@@ -119,12 +119,12 @@ export function CampaignListClient({
   );
 
   return (
-    <div className="grid gap-6 px-6 py-6 sm:px-8">
+    <div className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
       <form
-        className="grid gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_150px_150px_150px_150px_auto]"
+        className="grid min-w-0 gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 md:grid-cols-2 xl:grid-cols-[minmax(280px,1fr)_minmax(132px,150px)_minmax(132px,150px)_minmax(132px,150px)_minmax(132px,150px)_minmax(96px,max-content)]"
         role="search"
       >
-        <label className="relative">
+        <label className="relative min-w-0">
           <span className="sr-only">캠페인 검색</span>
           <Search
             aria-hidden="true"
@@ -133,7 +133,7 @@ export function CampaignListClient({
             strokeWidth={1.8}
           />
           <input
-            className="h-11 w-full rounded-md border border-[var(--color-hairline)] bg-white pl-10 pr-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+            className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white pl-10 pr-3 text-sm outline-none focus:border-[var(--color-info-border)]"
             defaultValue={filters.query}
             name="q"
             placeholder="캠페인, 브랜드, 담당자 검색"
@@ -174,7 +174,7 @@ export function CampaignListClient({
         </SelectFilter>
 
         <button
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
+          className="inline-flex min-h-11 min-w-24 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
           type="submit"
         >
           <Filter aria-hidden="true" size={16} strokeWidth={1.8} />
@@ -199,19 +199,17 @@ export function CampaignListClient({
 
         {filteredCampaigns.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
+            <table className="w-full min-w-[620px] table-fixed border-collapse text-left text-sm">
               <colgroup>
-                <col className="w-[42%]" />
-                <col className="w-[20%]" />
-                <col className="w-[22%]" />
-                <col className="w-[16%]" />
+                <col className="w-[52%]" />
+                <col className="w-[21%]" />
+                <col className="w-[27%]" />
               </colgroup>
               <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
                 <tr>
                   <th className="px-5 py-3 font-medium">캠페인</th>
                   <th className="px-4 py-3 font-medium">리스크</th>
                   <th className="px-4 py-3 font-medium">진행 상태</th>
-                  <th className="px-4 py-3 font-medium">담당자</th>
                 </tr>
               </thead>
               <tbody>
@@ -230,7 +228,8 @@ export function CampaignListClient({
                       </Link>
                       <p className="mt-1 truncate text-xs text-[var(--color-muted)]">
                         {campaign.brandName} · {getChannelLabel(campaign.channel)} ·{" "}
-                        게시 {formatDate(campaign.publishDate)}
+                        게시 {formatDate(campaign.publishDate)} · 담당{" "}
+                        {campaign.ownerName}
                       </p>
                     </td>
                     <td className="px-4 py-4">
@@ -251,11 +250,6 @@ export function CampaignListClient({
                           수정 {formatDate(campaign.updatedAt)}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="block truncate" title={campaign.ownerName}>
-                        {campaign.ownerName}
-                      </span>
                     </td>
                   </tr>
                 ))}
@@ -291,10 +285,10 @@ function SelectFilter({
   name: string;
 }) {
   return (
-    <label>
+    <label className="min-w-0">
       <span className="sr-only">{label}</span>
       <select
-        className="h-11 w-full rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+        className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
         defaultValue={defaultValue}
         name={name}
       >

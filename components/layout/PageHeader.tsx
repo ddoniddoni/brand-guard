@@ -13,7 +13,7 @@ export function PageHeader({
 }) {
   return (
     <header className="border-b border-[var(--color-hairline)] bg-white px-6 py-6 sm:px-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           {eyebrow ? (
             <p className="text-sm font-medium text-[var(--color-muted)]">

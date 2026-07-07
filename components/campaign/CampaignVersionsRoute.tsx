@@ -106,7 +106,7 @@ export function CampaignVersionsRoute({
       <PageHeader
         action={
           <Link
-            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
+            className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium"
             href={`/campaigns/${campaign.id}/review`}
           >
             리뷰로 돌아가기
@@ -117,7 +117,7 @@ export function CampaignVersionsRoute({
         title={`${campaign.name} 버전 비교`}
       />
 
-      <div className="grid gap-6 px-6 py-6 sm:px-8">
+      <div className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
         <VersionScoreCards comparison={comparison} />
         <VersionImageComparison
           after={comparison.after}

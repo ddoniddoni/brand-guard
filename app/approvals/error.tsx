@@ -15,7 +15,7 @@ export default function ApprovalsError({
         eyebrow="Approval inbox"
         title="결재함"
       />
-      <div className="px-6 py-6 sm:px-8">
+      <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
         <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
           <p className="text-base font-medium">결재함을 불러오지 못했습니다.</p>
           <p className="mt-2 text-sm text-[var(--color-muted)]">

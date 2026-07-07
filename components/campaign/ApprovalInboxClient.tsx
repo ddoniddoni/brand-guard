@@ -54,7 +54,7 @@ export function ApprovalInboxClient({
   ).length;
 
   return (
-    <div className="grid gap-6 px-6 py-6 sm:px-8">
+    <div className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
       <section className="grid gap-4 md:grid-cols-2">
         <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
           <div className="flex items-center justify-between gap-3">
@@ -88,20 +88,18 @@ export function ApprovalInboxClient({
 
         {approvalQueue.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-sm">
+            <table className="w-full min-w-[680px] table-fixed border-collapse text-left text-sm">
               <colgroup>
-                <col className="w-[36%]" />
-                <col className="w-[17%]" />
-                <col className="w-[19%]" />
-                <col className="w-[12%]" />
-                <col className="w-[16%]" />
+                <col className="w-[40%]" />
+                <col className="w-[18%]" />
+                <col className="w-[22%]" />
+                <col className="w-[20%]" />
               </colgroup>
               <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
                 <tr>
                   <th className="px-5 py-3 font-medium">캠페인</th>
                   <th className="px-4 py-3 font-medium">리스크</th>
                   <th className="px-4 py-3 font-medium">결재 단계</th>
-                  <th className="px-4 py-3 font-medium">담당자</th>
                   <th className="px-4 py-3 text-right font-medium">액션</th>
                 </tr>
               </thead>
@@ -120,7 +118,8 @@ export function ApprovalInboxClient({
                         title={campaign.brandName}
                       >
                         {campaign.brandName} · {getChannelLabel(campaign.channel)} ·{" "}
-                        게시 {formatDate(campaign.publishDate)}
+                        게시 {formatDate(campaign.publishDate)} · 담당{" "}
+                        {campaign.ownerName}
                       </p>
                     </td>
                     <td className="px-4 py-4">
@@ -137,14 +136,9 @@ export function ApprovalInboxClient({
                         status={campaign.status}
                       />
                     </td>
-                    <td className="px-4 py-4">
-                      <span className="block truncate" title={campaign.ownerName}>
-                        {campaign.ownerName}
-                      </span>
-                    </td>
                     <td className="px-4 py-4 text-right">
                       <Link
-                        className="inline-flex min-h-10 items-center justify-center rounded-lg border border-[var(--color-hairline)] px-4 text-sm font-medium"
+                        className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-hairline)] px-4 text-sm font-medium"
                         href={`/campaigns/${campaign.id}/approval`}
                       >
                         {getApprovalActionLabel(campaign.status)}

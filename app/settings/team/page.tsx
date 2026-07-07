@@ -17,7 +17,7 @@ export default function TeamSettingsPage() {
         eyebrow="Settings"
         title="팀 설정"
       />
-      <div className="px-6 py-6 sm:px-8">
+      <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
         <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
           <div className="border-b border-[var(--color-hairline)] p-5">
             <h2 className="text-xl font-normal">검토 팀</h2>
