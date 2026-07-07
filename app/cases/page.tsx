@@ -1,53 +1,363 @@
+import {
+  BookOpenCheck,
+  CheckCircle2,
+  Filter,
+  ListChecks,
+  RotateCcw,
+  Search,
+} from "lucide-react";
+import Link from "next/link";
+import type { ReactNode } from "react";
+import type { CampaignChannel } from "@/features/campaign/types";
+import type { RiskCategory } from "@/features/risk-analysis/types";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { MetricCard } from "@/components/ui/MetricCard";
+import { RiskBadge } from "@/components/ui/RiskBadge";
+import { cx } from "@/lib/utils";
+import {
+  formatDate,
+  getChannelLabel,
+  getRiskCategoryLabel,
+} from "@/lib/format";
+import {
+  caseLibraryItems,
+  type CaseReviewOutcome,
+} from "@/mocks/data/cases";
 
-const cases = [
-  {
-    title: "게시일과 문구 맥락 불일치",
-    category: "민감 날짜",
-    channel: "Push",
-    checkpoint: "프로모션 표현과 게시 예정일의 조합을 사전 확인",
-  },
-  {
-    title: "제품 사용 컷의 시각 패턴 후보",
-    category: "시각 패턴 후보",
-    channel: "Instagram",
-    checkpoint: "손동작이 명확한 대체 컷 또는 제품 단독 컷 검토",
-  },
-  {
-    title: "커뮤니티 은어로 오해 가능한 카피",
-    category: "커뮤니티 은어",
-    channel: "Web banner",
-    checkpoint: "더 넓은 고객층이 이해 가능한 표현으로 조정",
-  },
-];
+type SearchParams = Record<string, string | string[] | undefined>;
 
-export default function CasesPage() {
+const outcomeLabels: Record<CaseReviewOutcome, string> = {
+  approved_after_revision: "수정 후 승인",
+  approved_with_note: "메모 후 승인",
+  monitoring: "모니터링",
+  revision_requested: "수정 요청",
+};
+
+const outcomeClassNames: Record<CaseReviewOutcome, string> = {
+  approved_after_revision:
+    "bg-[var(--color-risk-low-bg)] text-[var(--color-risk-low-text)]",
+  approved_with_note:
+    "bg-[var(--color-info-bg)] text-[var(--color-info)]",
+  monitoring:
+    "bg-[var(--color-surface-soft)] text-[var(--color-body)]",
+  revision_requested:
+    "bg-[var(--color-risk-high-bg)] text-[var(--color-risk-high-text)]",
+};
+
+const categoryOptions = Array.from(
+  new Set(caseLibraryItems.map((item) => item.category)),
+);
+
+const channelOptions = Array.from(
+  new Set(caseLibraryItems.map((item) => item.channel)),
+);
+
+const outcomeOptions = Array.from(
+  new Set(caseLibraryItems.map((item) => item.outcome)),
+);
+
+function getParam(params: SearchParams, key: string) {
+  const value = params[key];
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function getValidatedParam<T extends string>(
+  value: string | undefined,
+  options: T[],
+) {
+  return value && options.includes(value as T) ? (value as T) : undefined;
+}
+
+export default async function CasesPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const rawQuery = getParam(params, "q")?.trim() ?? "";
+  const query = rawQuery.toLowerCase();
+  const category = getValidatedParam<RiskCategory>(
+    getParam(params, "category"),
+    categoryOptions,
+  );
+  const channel = getValidatedParam<CampaignChannel>(
+    getParam(params, "channel"),
+    channelOptions,
+  );
+  const outcome = getValidatedParam<CaseReviewOutcome>(
+    getParam(params, "outcome"),
+    outcomeOptions,
+  );
+
+  const filteredCases = caseLibraryItems.filter((item) => {
+    const searchableText = [
+      item.title,
+      item.summary,
+      item.relatedCampaign,
+      item.ownerName,
+      item.reviewSignal,
+      item.preventiveAction,
+      ...item.checkpoints,
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return (
+      (!query || searchableText.includes(query)) &&
+      (!category || item.category === category) &&
+      (!channel || item.channel === channel) &&
+      (!outcome || item.outcome === outcome)
+    );
+  });
+
+  const revisionCaseCount = caseLibraryItems.filter(
+    (item) => item.outcome === "approved_after_revision",
+  ).length;
+  const checkpointCount = caseLibraryItems.reduce(
+    (sum, item) => sum + item.checkpoints.length,
+    0,
+  );
+
   return (
     <AppShell activePath="/cases">
       <PageHeader
-        description="과거 유형을 학습 가능한 체크포인트로 정리하는 mock 케이스 라이브러리입니다."
+        description="과거 검토 이력을 재사용 가능한 체크포인트로 정리합니다. 모든 사례는 판정이 아니라 담당자 검토를 돕는 참고 맥락입니다."
         eyebrow="Cases"
         title="케이스 라이브러리"
       />
-      <div className="grid gap-4 px-6 py-6 sm:px-8 lg:grid-cols-3">
-        {cases.map((item) => (
-          <article
-            className="rounded-xl border border-[var(--color-hairline)] bg-white p-5"
-            key={item.title}
+
+      <div className="grid gap-6 px-6 py-6 sm:px-8">
+        <section className="grid gap-4 md:grid-cols-3">
+          <MetricCard
+            description="최근 mock 검토 사례 기준"
+            icon={BookOpenCheck}
+            title="등록 사례"
+            value={`${caseLibraryItems.length}건`}
+          />
+          <MetricCard
+            description="검토 후 문구나 소재를 조정한 사례"
+            icon={CheckCircle2}
+            title="수정 반영"
+            value={`${revisionCaseCount}건`}
+          />
+          <MetricCard
+            description="다음 캠페인에서 다시 확인할 항목"
+            icon={ListChecks}
+            title="체크포인트"
+            value={`${checkpointCount}개`}
+          />
+        </section>
+
+        <form
+          className="grid gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 md:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_180px_150px_170px_auto_auto]"
+          role="search"
+        >
+          <label className="relative">
+            <span className="sr-only">케이스 검색</span>
+            <Search
+              aria-hidden="true"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
+              size={16}
+              strokeWidth={1.8}
+            />
+            <input
+              className="h-11 w-full rounded-md border border-[var(--color-hairline)] bg-white pl-10 pr-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+              defaultValue={rawQuery}
+              name="q"
+              placeholder="케이스, 캠페인, 체크포인트 검색"
+            />
+          </label>
+
+          <SelectFilter
+            defaultValue={category}
+            label="검토 후보"
+            name="category"
           >
-            <p className="text-sm text-[var(--color-muted)]">
-              {item.category} · {item.channel}
-            </p>
-            <h2 className="mt-3 text-xl font-normal leading-tight">
-              {item.title}
-            </h2>
-            <p className="mt-4 text-sm leading-6 text-[var(--color-body)]">
-              {item.checkpoint}
-            </p>
-          </article>
-        ))}
+            <option value="">전체 후보</option>
+            {categoryOptions.map((option) => (
+              <option key={option} value={option}>
+                {getRiskCategoryLabel(option)}
+              </option>
+            ))}
+          </SelectFilter>
+
+          <SelectFilter defaultValue={channel} label="채널" name="channel">
+            <option value="">전체 채널</option>
+            {channelOptions.map((option) => (
+              <option key={option} value={option}>
+                {getChannelLabel(option)}
+              </option>
+            ))}
+          </SelectFilter>
+
+          <SelectFilter defaultValue={outcome} label="결과" name="outcome">
+            <option value="">전체 결과</option>
+            {outcomeOptions.map((option) => (
+              <option key={option} value={option}>
+                {outcomeLabels[option]}
+              </option>
+            ))}
+          </SelectFilter>
+
+          <button
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 text-sm font-medium text-white"
+            type="submit"
+          >
+            <Filter aria-hidden="true" size={16} strokeWidth={1.8} />
+            적용
+          </button>
+          <Link
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-4 text-sm font-medium text-[var(--color-body)]"
+            href="/cases"
+          >
+            <RotateCcw aria-hidden="true" size={15} strokeWidth={1.8} />
+            초기화
+          </Link>
+        </form>
+
+        <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
+          <div className="border-b border-[var(--color-hairline)] px-5 py-4">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-medium">검토 사례</h2>
+                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                  총 {filteredCases.length}건
+                </p>
+              </div>
+              <p className="text-sm text-[var(--color-muted)]">
+                사례, 후보, 결과, 재사용 체크포인트만 표시합니다.
+              </p>
+            </div>
+          </div>
+
+          {filteredCases.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] table-fixed border-collapse text-left text-sm">
+                <colgroup>
+                  <col className="w-[34%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[22%]" />
+                  <col className="w-[10%]" />
+                </colgroup>
+                <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
+                  <tr>
+                    <th className="px-5 py-3 font-medium">사례</th>
+                    <th className="px-4 py-3 font-medium">검토 후보</th>
+                    <th className="px-4 py-3 font-medium">결과</th>
+                    <th className="px-4 py-3 font-medium">체크포인트</th>
+                    <th className="px-4 py-3 font-medium">담당자</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCases.map((item) => (
+                    <tr
+                      className="border-t border-[var(--color-hairline)] align-top hover:bg-[var(--color-surface-soft)]"
+                      key={item.id}
+                    >
+                      <td className="px-5 py-4">
+                        <p className="font-medium text-[var(--color-ink)]">
+                          {item.title}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--color-muted)]">
+                          {item.summary}
+                        </p>
+                        <p className="mt-2 truncate text-xs text-[var(--color-muted)]">
+                          {item.relatedCampaign} · {getChannelLabel(item.channel)}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="grid gap-2">
+                          <span className="text-sm text-[var(--color-body)]">
+                            {getRiskCategoryLabel(item.category)}
+                          </span>
+                          <RiskBadge className="w-fit" level={item.riskLevel} />
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="grid gap-2">
+                          <OutcomeBadge outcome={item.outcome} />
+                          <span className="text-xs tabular-nums text-[var(--color-muted)]">
+                            {formatDate(item.reviewDate)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <ul className="grid gap-1.5 text-xs leading-5 text-[var(--color-body)]">
+                          {item.checkpoints.slice(0, 2).map((checkpoint) => (
+                            <li className="flex gap-2" key={checkpoint}>
+                              <span
+                                aria-hidden="true"
+                                className="mt-2 size-1.5 shrink-0 rounded-full bg-[var(--color-surface-strong)]"
+                              />
+                              <span>{checkpoint}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="block truncate" title={item.ownerName}>
+                          {item.ownerName}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="grid min-h-64 place-items-center p-8 text-center">
+              <div>
+                <p className="text-base font-medium">
+                  조건에 맞는 케이스가 없습니다.
+                </p>
+                <p className="mt-2 text-sm text-[var(--color-muted)]">
+                  검색어나 필터를 조정하면 다른 검토 사례를 확인할 수 있습니다.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </AppShell>
+  );
+}
+
+function SelectFilter({
+  children,
+  defaultValue,
+  label,
+  name,
+}: {
+  children: ReactNode;
+  defaultValue?: string;
+  label: string;
+  name: string;
+}) {
+  return (
+    <label>
+      <span className="sr-only">{label}</span>
+      <select
+        className="h-11 w-full rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm outline-none focus:border-[var(--color-info-border)]"
+        defaultValue={defaultValue}
+        name={name}
+      >
+        {children}
+      </select>
+    </label>
+  );
+}
+
+function OutcomeBadge({ outcome }: { outcome: CaseReviewOutcome }) {
+  return (
+    <span
+      className={cx(
+        "inline-flex min-h-7 w-fit items-center rounded-md px-2.5 py-1 text-xs font-medium",
+        outcomeClassNames[outcome],
+      )}
+    >
+      {outcomeLabels[outcome]}
+    </span>
   );
 }
