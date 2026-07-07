@@ -65,13 +65,19 @@ export function ApprovalWorkspace({
     campaign.currentApprovalStepId ?? "",
   );
 
-  const currentStep = useMemo(
-    () =>
-      displayedSteps.find((step) => step.id === activeStepId) ??
+  const currentStep = useMemo(() => {
+    const activeStep = displayedSteps.find((step) => step.id === activeStepId);
+
+    if (activeStep?.status === "in_progress") {
+      return activeStep;
+    }
+
+    return (
       displayedSteps.find((step) => step.status === "in_progress") ??
-      displayedSteps.find((step) => step.status === "pending"),
-    [activeStepId, displayedSteps],
-  );
+      activeStep ??
+      displayedSteps.find((step) => step.status === "pending")
+    );
+  }, [activeStepId, displayedSteps]);
   const isFinalStep = currentStep?.role === "FINAL_APPROVER";
   const transitions =
     status === "IN_APPROVAL"
