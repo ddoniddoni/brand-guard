@@ -8,6 +8,7 @@ import type {
 } from "@/features/campaign/types";
 import type {
   CampaignAsset,
+  RevisionUploadInput,
   WorkspacePatch,
 } from "@/features/campaign/local-workspace";
 import type { AnalysisResult } from "@/features/risk-analysis/types";
@@ -24,6 +25,7 @@ import { RiskFindingPanel } from "@/components/risk/RiskFindingPanel";
 import { RiskScoreCard } from "@/components/risk/RiskScoreCard";
 import { RevisionSuggestions } from "@/components/risk/RevisionSuggestions";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { RevisionUploadPanel } from "@/components/campaign/RevisionUploadPanel";
 import { ApprovalTimeline } from "@/components/workflow/ApprovalTimeline";
 import { AuditLog } from "@/components/workflow/AuditLog";
 import { CommentThread } from "@/components/workflow/CommentThread";
@@ -36,6 +38,8 @@ export function ReviewWorkspace({
   auditLogEntries,
   campaign,
   comments,
+  hasVersionComparison,
+  onRevisionSubmit,
   onWorkspaceChange,
 }: {
   analysis: AnalysisResult;
@@ -44,6 +48,8 @@ export function ReviewWorkspace({
   auditLogEntries: AuditLogEntry[];
   campaign: Campaign;
   comments: ReviewerComment[];
+  hasVersionComparison?: boolean;
+  onRevisionSubmit?: (input: RevisionUploadInput) => void;
   onWorkspaceChange?: (patch: WorkspacePatch) => void;
 }) {
   const firstFindingId = analysis.categories[0]?.id ?? "";
@@ -181,6 +187,15 @@ export function ReviewWorkspace({
         <aside className="grid content-start gap-4">
           <RiskScoreCard analysis={analysis} />
           <ReviewActions onAction={handleAction} status={status} />
+          {asset ? (
+            <RevisionUploadPanel
+              asset={asset}
+              campaignId={campaign.id}
+              hasVersionComparison={hasVersionComparison}
+              onRevisionSubmit={onRevisionSubmit}
+              status={status}
+            />
+          ) : null}
           <RevisionSuggestions suggestions={analysis.suggestions} />
           <CommentThread
             commentRole={commentRole}

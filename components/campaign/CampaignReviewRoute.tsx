@@ -7,8 +7,10 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import {
   applyWorkspacePatch,
   type CampaignWorkspace,
+  createRevisionWorkspace,
   getStoredCampaignWorkspacesServerSnapshot,
   getStoredCampaignWorkspacesSnapshot,
+  type RevisionUploadInput,
   saveCampaignWorkspace,
   subscribeCampaignWorkspaces,
   type WorkspacePatch,
@@ -37,6 +39,14 @@ export function CampaignReviewRoute({
     }
 
     saveCampaignWorkspace(applyWorkspacePatch(workspace, patch));
+  };
+
+  const handleRevisionSubmit = (input: RevisionUploadInput) => {
+    if (!workspace) {
+      return;
+    }
+
+    saveCampaignWorkspace(createRevisionWorkspace(workspace, input));
   };
 
   if (!workspace) {
@@ -85,12 +95,15 @@ export function CampaignReviewRoute({
         title={campaign.name}
       />
       <ReviewWorkspace
+        key={`${campaign.id}-${analysis.versionId}-${campaign.status}-${comments.length}-${auditLogEntries.length}`}
         analysis={analysis}
         approvalSteps={approvalSteps}
         asset={asset}
         auditLogEntries={auditLogEntries}
         campaign={campaign}
         comments={comments}
+        hasVersionComparison={Boolean(workspace.versionComparison)}
+        onRevisionSubmit={handleRevisionSubmit}
         onWorkspaceChange={handleWorkspaceChange}
       />
     </>

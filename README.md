@@ -54,6 +54,7 @@ npx @google/design.md lint DESIGN.md
 
 - AI analysis is mocked first.
 - Uploaded demo campaigns are persisted in browser `localStorage`.
+- Revision uploads create local v2 analysis and before/after comparison data.
 - AI output must remain a review assistant result, not a final judgment.
 - Human reviewers make approval, revision, and rejection decisions.
 - Final approval happens after AI first-pass review and stakeholder opinions.

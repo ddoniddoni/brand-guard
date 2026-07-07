@@ -5,6 +5,11 @@ import type {
 } from "@/features/campaign/types";
 import type { CampaignCreateInput } from "@/features/campaign/schema";
 import type {
+  CampaignVersion,
+  CopyDiffSegment,
+  VersionComparison,
+} from "@/features/campaign/version-types";
+import type {
   AnalysisResult,
   RiskFinding,
   RiskLevel,
@@ -40,9 +45,19 @@ export type CampaignWorkspace = {
   analysis: AnalysisResult;
   approvalSteps: ApprovalStep[];
   asset: CampaignAsset;
+  assetVersions?: CampaignAssetVersion[];
   auditLogEntries: AuditLogEntry[];
   campaign: Campaign;
   comments: ReviewerComment[];
+  versionComparison?: VersionComparison | null;
+};
+
+export type CampaignAssetVersion = CampaignAsset & {
+  analysis: AnalysisResult;
+  createdAt: string;
+  id: string;
+  imageNote: string;
+  label: string;
 };
 
 type CreateCampaignWorkspaceInput = Pick<
@@ -63,11 +78,23 @@ type CreateCampaignWorkspaceInput = Pick<
 export type WorkspacePatch = Partial<
   Pick<
     CampaignWorkspace,
-    "analysis" | "approvalSteps" | "asset" | "auditLogEntries" | "comments"
+    | "analysis"
+    | "approvalSteps"
+    | "asset"
+    | "assetVersions"
+    | "auditLogEntries"
+    | "comments"
+    | "versionComparison"
   >
 > & {
   campaign?: Partial<Campaign>;
   status?: CampaignStatus;
+};
+
+export type RevisionUploadInput = {
+  copy: string;
+  imageDataUrl?: string;
+  imageFileName?: string;
 };
 
 export function createCampaignWorkspace(
@@ -108,9 +135,20 @@ export function createCampaignWorkspace(
     analysis,
     approvalSteps: createApprovalSteps(campaignId, timestamp),
     asset,
+    assetVersions: [
+      {
+        ...asset,
+        analysis,
+        createdAt: timestamp,
+        id: "v1",
+        imageNote: getAssetImageNote(asset),
+        label: "v1 original",
+      },
+    ],
     auditLogEntries: createInitialAuditLog(campaignId, timestamp),
     campaign,
     comments: [],
+    versionComparison: null,
   };
 }
 
@@ -269,6 +307,86 @@ export function applyWorkspacePatch(
   };
 }
 
+export function createRevisionWorkspace(
+  workspace: CampaignWorkspace,
+  input: RevisionUploadInput,
+): CampaignWorkspace {
+  const timestamp = new Date().toISOString();
+  const previousAsset = workspace.asset;
+  const nextAsset: CampaignAsset = {
+    copy: input.copy.trim() || previousAsset.copy,
+    imageDataUrl: input.imageDataUrl ?? previousAsset.imageDataUrl,
+    imageFileName: input.imageFileName ?? previousAsset.imageFileName,
+    source: input.imageDataUrl ? "upload" : previousAsset.source,
+    usesSampleAsset: input.imageDataUrl ? false : previousAsset.usesSampleAsset,
+  };
+  const isImageReplaced = Boolean(input.imageDataUrl);
+  const nextAnalysis = createRevisionAnalysis({
+    asset: nextAsset,
+    baseAnalysis: workspace.analysis,
+    campaignId: workspace.campaign.id,
+    isImageReplaced,
+  });
+  const previousVersions =
+    workspace.assetVersions && workspace.assetVersions.length > 0
+      ? workspace.assetVersions
+      : [
+          {
+            ...previousAsset,
+            analysis: workspace.analysis,
+            createdAt: workspace.campaign.createdAt,
+            id: "v1",
+            imageNote: getAssetImageNote(previousAsset),
+            label: "v1 original",
+          },
+        ];
+  const nextAssetVersion: CampaignAssetVersion = {
+    ...nextAsset,
+    analysis: nextAnalysis,
+    createdAt: timestamp,
+    id: `v${previousVersions.length + 1}`,
+    imageNote: isImageReplaced
+      ? "수정 업로드된 대체 이미지입니다. 주요 시각 후보가 줄어든 상태로 재분석되었습니다."
+      : "이미지는 유지하고 문구를 수정한 버전입니다. 문구 맥락 중심으로 재분석되었습니다.",
+    label: `v${previousVersions.length + 1} revised`,
+  };
+  const beforeVersion = previousVersions[0];
+  const comparison = createVersionComparisonFromAssets({
+    after: nextAssetVersion,
+    before: beforeVersion,
+    campaignId: workspace.campaign.id,
+  });
+  const auditEntry: AuditLogEntry = {
+    id: `${workspace.campaign.id}-audit-revision-${timestamp}`,
+    actorName: "현재 사용자",
+    action: "수정 버전 업로드 및 재분석",
+    fromStatus: workspace.campaign.status,
+    toStatus: "AI_REVIEWED",
+    note: "v2 소재를 업로드하고 mock AI 1차 검토를 다시 실행했습니다.",
+    createdAt: timestamp,
+  };
+
+  return {
+    ...workspace,
+    analysis: nextAnalysis,
+    approvalSteps: resetApprovalStepsForRevision(
+      workspace.approvalSteps,
+      timestamp,
+    ),
+    asset: nextAsset,
+    assetVersions: [...previousVersions, nextAssetVersion],
+    auditLogEntries: [auditEntry, ...workspace.auditLogEntries],
+    campaign: {
+      ...workspace.campaign,
+      riskLevel: nextAnalysis.overallRiskLevel,
+      riskScore: nextAnalysis.overallRiskScore,
+      status: "AI_REVIEWED",
+      updatedAt: timestamp,
+    },
+    versionComparison: comparison,
+  };
+}
+
 function createInputBasedAnalysis({
   asset,
   campaignId,
@@ -324,6 +442,77 @@ function createInputBasedAnalysis({
     reviewRequired: findings.length > 0,
     categories: findings,
     suggestions: createRevisionSuggestions(hasImage, hasCopy, isFastChannel),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function createRevisionAnalysis({
+  asset,
+  baseAnalysis,
+  campaignId,
+  isImageReplaced,
+}: {
+  asset: CampaignAsset;
+  baseAnalysis: AnalysisResult;
+  campaignId: string;
+  isImageReplaced: boolean;
+}): AnalysisResult {
+  const copyFinding = createCopyFinding(campaignId, asset.copy, false);
+  const findings: RiskFinding[] = [
+    {
+      ...copyFinding,
+      id: `${campaignId}-risk-copy-revised`,
+      confidence: 0.42,
+      description:
+        "수정된 문구는 의미가 더 명확하지만, 게시 전 최종 톤 확인은 권장됩니다.",
+      evidence: [
+        "수정본에서 제품/혜택 맥락이 더 명확하게 표현되었습니다.",
+        "게시 채널과 타깃 기준의 최종 문구 톤 확인이 필요합니다.",
+      ],
+      falsePositiveNote:
+        "이 결과는 문구의 의도나 성향을 판정하지 않으며, 표현 맥락 확인을 돕는 검토 후보입니다.",
+      level: "low" as const,
+      title: "수정 문구 최종 확인 권장",
+    },
+  ];
+
+  if (!isImageReplaced) {
+    findings.unshift({
+      ...createVisualFinding(campaignId),
+      id: `${campaignId}-risk-visual-revised`,
+      confidence: 0.48,
+      description:
+        "이미지는 유지되었으므로 주요 시각 후보가 낮은 신뢰도로 남아 있습니다. 필요 시 대체 컷 비교가 권장됩니다.",
+      level: "low" as const,
+      title: "기존 이미지 후보 낮은 수준 확인",
+    });
+  }
+
+  const score = Math.max(
+    24,
+    Math.min(baseAnalysis.overallRiskScore - (isImageReplaced ? 32 : 18), 52),
+  );
+
+  return {
+    id: `analysis-${campaignId}-v2`,
+    campaignId,
+    versionId: "v2",
+    source: "mock",
+    overallRiskScore: score,
+    overallRiskLevel: getRiskLevelByScore(score),
+    summary:
+      "수정 버전에서 일부 검토 후보가 줄었습니다. 남은 후보는 최종 게시 전 담당자가 맥락을 확인해야 합니다.",
+    reviewRequired: findings.length > 0,
+    categories: findings,
+    suggestions: [
+      {
+        id: `${campaignId}-suggestion-final-review`,
+        target: "review_process",
+        title: "최종 결재 요청",
+        description:
+          "수정본 재분석 결과와 담당자 의견을 함께 확인한 뒤 최종 결재로 넘기세요.",
+      },
+    ],
     createdAt: new Date().toISOString(),
   };
 }
@@ -543,6 +732,131 @@ function createInitialAuditLog(
       createdAt: timestamp,
     },
   ];
+}
+
+function createVersionComparisonFromAssets({
+  after,
+  before,
+  campaignId,
+}: {
+  after: CampaignAssetVersion;
+  before: CampaignAssetVersion;
+  campaignId: string;
+}): VersionComparison {
+  const beforeVersion = createCampaignVersion({
+    assetVersion: before,
+    campaignId,
+    status: "NEEDS_REVISION",
+  });
+  const afterVersion = createCampaignVersion({
+    assetVersion: after,
+    campaignId,
+    status: "AI_REVIEWED",
+  });
+
+  return {
+    campaignId,
+    before: beforeVersion,
+    after: afterVersion,
+    scoreDelta: after.analysis.overallRiskScore - before.analysis.overallRiskScore,
+    copyDiff: createCopyDiff(before.copy, after.copy),
+    removedFindings: getRemovedFindings(
+      before.analysis.categories,
+      after.analysis.categories,
+    ),
+    addedFindings: after.analysis.categories,
+  };
+}
+
+function createCampaignVersion({
+  assetVersion,
+  campaignId,
+  status,
+}: {
+  assetVersion: CampaignAssetVersion;
+  campaignId: string;
+  status: CampaignVersion["status"];
+}): CampaignVersion {
+  return {
+    id: assetVersion.id,
+    campaignId,
+    label: assetVersion.label,
+    riskScore: assetVersion.analysis.overallRiskScore,
+    status,
+    createdAt: assetVersion.createdAt,
+    copy: assetVersion.copy,
+    imageNote: assetVersion.imageNote,
+    findings: assetVersion.analysis.categories,
+  };
+}
+
+function createCopyDiff(beforeCopy: string, afterCopy: string): CopyDiffSegment[] {
+  if (beforeCopy.trim() === afterCopy.trim()) {
+    return [{ type: "unchanged", text: beforeCopy || "문구 변경 없음" }];
+  }
+
+  return [
+    { type: "removed", text: beforeCopy || "기존 문구 없음" },
+    { type: "added", text: afterCopy || "수정 문구 없음" },
+  ];
+}
+
+function getRemovedFindings(
+  beforeFindings: RiskFinding[],
+  afterFindings: RiskFinding[],
+) {
+  const afterCategories = new Set(afterFindings.map((finding) => finding.category));
+
+  return beforeFindings.filter(
+    (finding) => !afterCategories.has(finding.category),
+  );
+}
+
+function getAssetImageNote(asset: CampaignAsset) {
+  if (asset.imageFileName) {
+    return `${asset.imageFileName} 업로드 소재입니다. 이미지와 카피를 함께 검토합니다.`;
+  }
+
+  if (asset.usesSampleAsset) {
+    return "샘플 홍보 소재입니다. mock 시각 후보와 OCR 문구 후보가 함께 표시됩니다.";
+  }
+
+  return "이미지 없이 문구 중심으로 등록된 소재입니다.";
+}
+
+function resetApprovalStepsForRevision(
+  steps: ApprovalStep[],
+  timestamp: string,
+) {
+  return steps.map((step) => {
+    if (step.title === "소재 등록" || step.title === "AI 1차 검토") {
+      return {
+        ...step,
+        status: "completed" as const,
+        updatedAt: timestamp,
+      };
+    }
+
+    if (step.title === "담당자 의견 취합") {
+      return {
+        ...step,
+        status: "pending" as const,
+        note: "수정본 재분석 후 담당자 확인 대기",
+        updatedAt: timestamp,
+      };
+    }
+
+    if (step.title === "최종 결재") {
+      return {
+        ...step,
+        status: "pending" as const,
+        note: undefined,
+        updatedAt: undefined,
+      };
+    }
+
+    return step;
+  });
 }
 
 function getRiskLevelByScore(score: number): RiskLevel {

@@ -79,6 +79,7 @@ export function CampaignApprovalRoute({
         title={`${campaign.name} 최종 결재`}
       />
       <ApprovalWorkspace
+        key={`${campaign.id}-${analysis.versionId}-${campaign.status}-${comments.length}-${auditLogEntries.length}`}
         analysis={analysis}
         approvalSteps={approvalSteps}
         asset={asset}
