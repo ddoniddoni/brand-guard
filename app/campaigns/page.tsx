@@ -38,9 +38,9 @@ export default async function CampaignsPage({
             새 검토 요청
           </Link>
         }
-        description="상태, 리스크 레벨, 채널을 기준으로 게시 전 검토 요청을 찾고 정렬합니다."
-        eyebrow="검토 요청"
-        title="검토 요청 목록"
+        description="내가 작성했거나 담당 중인 게시 전 검토 요청의 진행 상태를 확인합니다."
+        eyebrow="내 요청"
+        title="내 검토 요청"
       />
       <CampaignListClient
         filters={{ channel, query, risk, sort, status }}

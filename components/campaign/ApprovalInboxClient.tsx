@@ -3,8 +3,18 @@
 import { CheckCircle2, Clock3 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
-import type { Campaign, CampaignStatus } from "@/features/campaign/types";
 import {
+  getCurrentUserServerSnapshot,
+  getCurrentUserSnapshot,
+  subscribeCurrentUser,
+} from "@/features/auth/mock-users";
+import {
+  getCurrentApprovalStep,
+  isCurrentApprovalOwner,
+} from "@/features/auth/permissions";
+import type { CampaignStatus } from "@/features/campaign/types";
+import {
+  type CampaignWorkspace,
   getStoredCampaignWorkspacesServerSnapshot,
   getStoredCampaignWorkspacesSnapshot,
   subscribeCampaignWorkspaces,
@@ -22,33 +32,48 @@ const approvalQueueStatuses = new Set<CampaignStatus>([
 ]);
 
 export function ApprovalInboxClient({
-  initialCampaigns,
+  initialWorkspaces,
 }: {
-  initialCampaigns: Campaign[];
+  initialWorkspaces: CampaignWorkspace[];
 }) {
   const storedWorkspaces = useSyncExternalStore(
     subscribeCampaignWorkspaces,
     getStoredCampaignWorkspacesSnapshot,
     getStoredCampaignWorkspacesServerSnapshot,
   );
+  const currentUser = useSyncExternalStore(
+    subscribeCurrentUser,
+    getCurrentUserSnapshot,
+    getCurrentUserServerSnapshot,
+  );
 
   const approvalQueue = useMemo(() => {
-    const storedCampaigns = storedWorkspaces.map(
-      (workspace) => workspace.campaign,
+    const storedIds = new Set(
+      storedWorkspaces.map((workspace) => workspace.campaign.id),
     );
-    const storedIds = new Set(storedCampaigns.map((campaign) => campaign.id));
-    const campaigns = [
-      ...storedCampaigns,
-      ...initialCampaigns.filter((campaign) => !storedIds.has(campaign.id)),
+    const workspaces = [
+      ...storedWorkspaces,
+      ...initialWorkspaces.filter(
+        (workspace) => !storedIds.has(workspace.campaign.id),
+      ),
     ];
 
-    return campaigns.filter((campaign) =>
-      approvalQueueStatuses.has(campaign.status),
+    return workspaces.filter((workspace) =>
+      approvalQueueStatuses.has(workspace.campaign.status) &&
+      isCurrentApprovalOwner(
+        currentUser,
+        getCurrentApprovalStep(workspace.approvalSteps, workspace.campaign),
+      ),
     );
-  }, [initialCampaigns, storedWorkspaces]);
-  const finalApprovalCount = approvalQueue.filter(
-    (campaign) => campaign.currentApprovalStepId?.includes("final"),
-  ).length;
+  }, [currentUser, initialWorkspaces, storedWorkspaces]);
+  const finalApprovalCount = approvalQueue.filter((workspace) => {
+    const currentStep = getCurrentApprovalStep(
+      workspace.approvalSteps,
+      workspace.campaign,
+    );
+
+    return currentStep?.role === "FINAL_APPROVER";
+  }).length;
 
   return (
     <div className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
@@ -77,9 +102,9 @@ export function ApprovalInboxClient({
 
       <section className="overflow-hidden rounded-xl border border-[var(--color-hairline)] bg-white">
         <div className="border-b border-[var(--color-hairline)] p-5">
-          <h2 className="text-xl font-normal">결재 대기 검토 건</h2>
+          <h2 className="text-xl font-normal">내 결재 대기 건</h2>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
-            작성자 의견 확인과 결재 결정이 필요한 항목입니다.
+            {currentUser.name}님이 의견과 결재 결정을 남겨야 하는 항목입니다.
           </p>
         </div>
 
@@ -101,7 +126,14 @@ export function ApprovalInboxClient({
                 </tr>
               </thead>
               <tbody>
-                {approvalQueue.map((campaign) => (
+                {approvalQueue.map((workspace) => {
+                  const { campaign } = workspace;
+                  const currentStep = getCurrentApprovalStep(
+                    workspace.approvalSteps,
+                    campaign,
+                  );
+
+                  return (
                   <tr
                     className="border-t border-[var(--color-hairline)] align-middle hover:bg-[var(--color-surface-soft)]"
                     key={campaign.id}
@@ -128,10 +160,15 @@ export function ApprovalInboxClient({
                       </div>
                     </td>
                     <td className="px-4 py-4">
-                      <StatusBadge
-                        className="w-fit"
-                        status={campaign.status}
-                      />
+                      <div className="grid gap-1">
+                        <StatusBadge
+                          className="w-fit"
+                          status={campaign.status}
+                        />
+                        <span className="text-xs text-[var(--color-muted)]">
+                          {currentStep?.title ?? "결재 단계"}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-4 py-4 text-right">
                       <Link
@@ -146,7 +183,8 @@ export function ApprovalInboxClient({
                       </Link>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -155,7 +193,7 @@ export function ApprovalInboxClient({
             <div>
               <p className="text-base font-medium">결재 대기 항목이 없습니다.</p>
               <p className="mt-2 text-sm text-[var(--color-muted)]">
-                작성자가 검토 의견을 남기고 결재 상신하면 여기에 표시됩니다.
+                현재 선택한 역할의 결재 단계로 상신된 요청이 생기면 여기에 표시됩니다.
               </p>
             </div>
           </div>

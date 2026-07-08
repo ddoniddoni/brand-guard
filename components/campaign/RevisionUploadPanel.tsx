@@ -14,12 +14,14 @@ const maxImageSize = 2 * 1024 * 1024;
 
 export function RevisionUploadPanel({
   asset,
+  canUpload = true,
   campaignId,
   hasVersionComparison = false,
   onRevisionSubmit,
   status,
 }: {
   asset: CampaignAsset;
+  canUpload?: boolean;
   campaignId: string;
   hasVersionComparison?: boolean;
   onRevisionSubmit?: (input: RevisionUploadInput) => void;
@@ -30,7 +32,7 @@ export function RevisionUploadPanel({
   const [fileError, setFileError] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
-  const isEnabled = status === "NEEDS_REVISION";
+  const isEnabled = status === "NEEDS_REVISION" && canUpload;
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextFile = event.target.files?.[0] ?? null;
@@ -88,10 +90,15 @@ export function RevisionUploadPanel({
       </div>
 
       <div className="grid gap-4 p-4">
-        {!isEnabled ? (
+        {status !== "NEEDS_REVISION" ? (
           <div className="rounded-lg bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-body)]">
             먼저 검토 액션에서 `수정 요청`을 선택하면 2차 업로드를 진행할 수
             있습니다.
+          </div>
+        ) : null}
+        {status === "NEEDS_REVISION" && !canUpload ? (
+          <div className="rounded-lg bg-[var(--color-surface-soft)] p-4 text-sm leading-6 text-[var(--color-body)]">
+            이 요청의 작성자만 수정본을 업로드할 수 있습니다.
           </div>
         ) : null}
 

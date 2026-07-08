@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type {
-  Campaign,
-  CampaignStatus,
-  UserRole,
-} from "@/features/campaign/types";
+import type { CurrentUser } from "@/features/auth/mock-users";
+import {
+  canMakeApprovalDecision,
+  getCurrentApprovalStep,
+} from "@/features/auth/permissions";
+import type { Campaign, CampaignStatus } from "@/features/campaign/types";
 import type {
   CampaignAsset,
   WorkspacePatch,
@@ -41,6 +42,7 @@ export function ApprovalWorkspace({
   auditLogEntries,
   campaign,
   comments,
+  currentUser,
   onWorkspaceChange,
   requesterOpinion,
 }: {
@@ -50,6 +52,7 @@ export function ApprovalWorkspace({
   auditLogEntries: AuditLogEntry[];
   campaign: Campaign;
   comments: ReviewerComment[];
+  currentUser: CurrentUser;
   onWorkspaceChange?: (patch: WorkspacePatch) => void;
   requesterOpinion?: RequesterOpinion | null;
 }) {
@@ -57,7 +60,6 @@ export function ApprovalWorkspace({
   const [selectedFindingId, setSelectedFindingId] = useState(firstFindingId);
   const [status, setStatus] = useState<CampaignStatus>(campaign.status);
   const [commentDraft, setCommentDraft] = useState("");
-  const [commentRole, setCommentRole] = useState<UserRole>("FINAL_APPROVER");
   const [reviewComments, setReviewComments] = useState(comments);
   const [auditEntries, setAuditEntries] = useState(auditLogEntries);
   const [displayedSteps, setDisplayedSteps] = useState(approvalSteps);
@@ -66,19 +68,18 @@ export function ApprovalWorkspace({
   );
 
   const currentStep = useMemo(() => {
-    const activeStep = displayedSteps.find((step) => step.id === activeStepId);
-
-    if (activeStep?.status === "in_progress") {
-      return activeStep;
-    }
-
-    return (
-      displayedSteps.find((step) => step.status === "in_progress") ??
-      activeStep ??
-      displayedSteps.find((step) => step.status === "pending")
-    );
-  }, [activeStepId, displayedSteps]);
+    return getCurrentApprovalStep(displayedSteps, {
+      ...campaign,
+      currentApprovalStepId: activeStepId || campaign.currentApprovalStepId,
+      status,
+    });
+  }, [activeStepId, campaign, displayedSteps, status]);
   const isFinalStep = currentStep?.role === "FINAL_APPROVER";
+  const canDecide = canMakeApprovalDecision({
+    campaign: { ...campaign, status },
+    currentStep,
+    user: currentUser,
+  });
   const transitions =
     status === "IN_APPROVAL"
       ? approvalActions.map((action) => ({
@@ -100,6 +101,10 @@ export function ApprovalWorkspace({
   };
 
   const handleAction = (action: ReviewAction) => {
+    if (!canDecide) {
+      return;
+    }
+
     const timestamp = new Date().toISOString();
     const decisionComment = commentDraft.trim();
     const nextStepId = getNextApprovalStepId(displayedSteps, currentStep?.id);
@@ -137,7 +142,7 @@ export function ApprovalWorkspace({
     });
     const auditEntry = createAuditEntry({
       action: getDecisionAuditAction(action, Boolean(isFinalStep)),
-      actorName: "윤지수",
+      actorName: currentUser.name,
       campaignId: campaign.id,
       fromStatus: status,
       message:
@@ -154,10 +159,10 @@ export function ApprovalWorkspace({
           {
             id: `comment-${timestamp}`,
             campaignId: campaign.id,
-            authorName: currentStep.ownerName,
+            authorName: currentUser.name,
             body: decisionComment,
             createdAt: timestamp,
-            role: currentStep.role,
+            role: currentUser.role,
           },
           ...reviewComments,
         ]
@@ -182,6 +187,10 @@ export function ApprovalWorkspace({
   };
 
   const handleAddComment = () => {
+    if (!canDecide) {
+      return;
+    }
+
     const body = commentDraft.trim();
 
     if (!body) {
@@ -193,14 +202,14 @@ export function ApprovalWorkspace({
     const nextComment = {
       id: `comment-${timestamp}`,
       campaignId: campaign.id,
-      authorName: "윤지수",
+      authorName: currentUser.name,
       body,
       createdAt: timestamp,
-      role: commentRole,
+      role: currentUser.role,
     };
     const auditEntry = createAuditEntry({
       action: "comment_added",
-      actorName: "윤지수",
+      actorName: currentUser.name,
       campaignId: campaign.id,
       message: body,
     });
@@ -238,6 +247,12 @@ export function ApprovalWorkspace({
             현재 단계는 {currentStep?.title ?? "결재 단계"}입니다. 수정 요청과
             반려는 의견 입력 후 처리할 수 있습니다.
           </p>
+          {!canDecide ? (
+            <p className="mt-3 rounded-lg bg-white p-3 text-xs leading-5 text-[var(--color-muted)]">
+              {currentUser.name}님은 현재 결재 단계 담당자가 아니어서 결재
+              액션을 실행할 수 없습니다.
+            </p>
+          ) : null}
           <div className="mt-4 grid gap-2">
             {transitions.length > 0 ? (
               transitions.map((transition, index) => (
@@ -248,6 +263,7 @@ export function ApprovalWorkspace({
                       : "min-h-11 whitespace-nowrap rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
                   }
                   disabled={
+                    !canDecide ||
                     (transition.action === "REQUEST_REVISION" ||
                       transition.action === "REJECT") &&
                     !commentDraft.trim()
@@ -291,12 +307,17 @@ export function ApprovalWorkspace({
           <RequesterOpinionSummary opinion={requesterOpinion} />
           <RevisionSuggestions suggestions={analysis.suggestions} />
           <CommentThread
+            authorName={currentUser.name}
+            authorRole={currentUser.role}
             commentDraft={commentDraft}
-            commentRole={commentRole}
             comments={reviewComments}
+            disabledReason={
+              canDecide
+                ? undefined
+                : "현재 결재 단계 담당자만 결재 의견을 추가할 수 있습니다."
+            }
             onAddComment={handleAddComment}
             onCommentDraftChange={setCommentDraft}
-            onCommentRoleChange={setCommentRole}
           />
           <AuditLog entries={auditEntries} />
         </aside>

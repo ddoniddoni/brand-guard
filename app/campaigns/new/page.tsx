@@ -6,7 +6,6 @@ export default function CampaignNewPage() {
   return (
     <AppShell activePath="/campaigns/new">
       <PageHeader
-        description="이미지와 문구 중 하나 이상을 입력하면 모의 AI 1차 검토 플로우를 시작할 수 있습니다."
         eyebrow="소재 검토 요청"
         title="새 검토 요청"
       />

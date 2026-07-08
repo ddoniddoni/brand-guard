@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { CurrentUser } from "@/features/auth/mock-users";
+import { isRequesterForCampaign } from "@/features/auth/permissions";
 import type {
   Campaign,
   CampaignStatus,
-  UserRole,
 } from "@/features/campaign/types";
 import type {
   CampaignAsset,
@@ -40,6 +41,7 @@ export function ReviewWorkspace({
   auditLogEntries,
   campaign,
   comments,
+  currentUser,
   hasVersionComparison,
   onRevisionSubmit,
   onWorkspaceChange,
@@ -51,6 +53,7 @@ export function ReviewWorkspace({
   auditLogEntries: AuditLogEntry[];
   campaign: Campaign;
   comments: ReviewerComment[];
+  currentUser: CurrentUser;
   hasVersionComparison?: boolean;
   onRevisionSubmit?: (input: RevisionUploadInput) => void;
   onWorkspaceChange?: (patch: WorkspacePatch) => void;
@@ -60,7 +63,6 @@ export function ReviewWorkspace({
   const [selectedFindingId, setSelectedFindingId] = useState(firstFindingId);
   const [status, setStatus] = useState<CampaignStatus>(campaign.status);
   const [commentDraft, setCommentDraft] = useState("");
-  const [commentRole, setCommentRole] = useState<UserRole>("BRAND_MANAGER");
   const [reviewComments, setReviewComments] = useState(comments);
   const [auditEntries, setAuditEntries] = useState(auditLogEntries);
   const [opinionBody, setOpinionBody] = useState(requesterOpinion?.body ?? "");
@@ -78,6 +80,7 @@ export function ReviewWorkspace({
       analysis.categories[0],
     [analysis.categories, selectedFindingId],
   );
+  const canRequesterReview = isRequesterForCampaign(currentUser, campaign);
 
   const createAuditEntry = (
     entry: Omit<AuditLogEntry, "id" | "createdAt">,
@@ -92,6 +95,10 @@ export function ReviewWorkspace({
   };
 
   const handleAction = (action: ReviewAction) => {
+    if (!canRequesterReview) {
+      return;
+    }
+
     if (action === "SUBMIT_FOR_APPROVAL" && !savedRequesterOpinion) {
       return;
     }
@@ -104,7 +111,7 @@ export function ReviewWorkspace({
 
     const auditEntry = createAuditEntry({
       action: getWorkflowAuditAction(action),
-      actorName: "현재 검토자",
+      actorName: currentUser.name,
       campaignId: campaign.id,
       fromStatus: status,
       message: selectedFinding
@@ -115,10 +122,20 @@ export function ReviewWorkspace({
       toStatus: nextStatus,
     });
     const nextAuditEntries = [auditEntry, ...auditEntries];
+    const nextApprovalSteps =
+      nextStatus === "IN_APPROVAL"
+        ? approvalSteps.map((step) =>
+            step.id === `${campaign.id}-step-marketing` ||
+            step.title === "마케팅 리더"
+              ? { ...step, status: "in_progress" as const }
+              : step,
+          )
+        : approvalSteps;
 
     setStatus(nextStatus);
     setAuditEntries(nextAuditEntries);
     onWorkspaceChange?.({
+      approvalSteps: nextApprovalSteps,
       auditLogEntries: nextAuditEntries,
       campaign:
         nextStatus === "IN_APPROVAL"
@@ -129,6 +146,10 @@ export function ReviewWorkspace({
   };
 
   const handleSaveRequesterOpinion = () => {
+    if (!canRequesterReview) {
+      return;
+    }
+
     const body = opinionBody.trim();
 
     if (!body) {
@@ -139,7 +160,7 @@ export function ReviewWorkspace({
     const nextOpinion: RequesterOpinion = {
       id: `requester-opinion-${timestamp}`,
       campaignId: campaign.id,
-      authorName: campaign.requesterName,
+      authorName: currentUser.name,
       body,
       conclusion: opinionConclusion,
       createdAt: timestamp,
@@ -166,7 +187,7 @@ export function ReviewWorkspace({
     });
     const auditEntry = createAuditEntry({
       action: "requester_opinion_added",
-      actorName: campaign.requesterName,
+      actorName: currentUser.name,
       campaignId: campaign.id,
       fromStatus: status,
       message: body,
@@ -195,14 +216,14 @@ export function ReviewWorkspace({
     const nextComment = {
       id: `comment-${timestamp}`,
       campaignId: campaign.id,
-      authorName: "현재 검토자",
+      authorName: currentUser.name,
       body,
       createdAt: timestamp,
-      role: commentRole,
+      role: currentUser.role,
     };
     const auditEntry = createAuditEntry({
       action: "comment_added",
-      actorName: "현재 검토자",
+      actorName: currentUser.name,
       campaignId: campaign.id,
       message: body,
     });
@@ -265,6 +286,7 @@ export function ReviewWorkspace({
         <aside className="grid content-start gap-4">
           <RiskScoreCard analysis={analysis} />
           <RequesterOpinionPanel
+            canEdit={canRequesterReview}
             conclusion={opinionConclusion}
             draft={opinionBody}
             onConclusionChange={setOpinionConclusion}
@@ -274,12 +296,10 @@ export function ReviewWorkspace({
           />
           <ReviewActions
             disabledActionReasons={
-              savedRequesterOpinion
-                ? undefined
-                : {
-                    SUBMIT_FOR_APPROVAL:
-                      "작성자 검토 의견을 저장한 뒤 결재 상신할 수 있습니다.",
-                  }
+              getReviewActionDisabledReasons({
+                canRequesterReview,
+                savedRequesterOpinion,
+              })
             }
             onAction={handleAction}
             status={status}
@@ -287,6 +307,7 @@ export function ReviewWorkspace({
           {asset ? (
             <RevisionUploadPanel
               asset={asset}
+              canUpload={canRequesterReview}
               campaignId={campaign.id}
               hasVersionComparison={hasVersionComparison}
               onRevisionSubmit={onRevisionSubmit}
@@ -295,12 +316,12 @@ export function ReviewWorkspace({
           ) : null}
           <RevisionSuggestions suggestions={analysis.suggestions} />
           <CommentThread
-            commentRole={commentRole}
+            authorName={currentUser.name}
+            authorRole={currentUser.role}
             commentDraft={commentDraft}
             comments={reviewComments}
             onAddComment={handleAddComment}
             onCommentDraftChange={setCommentDraft}
-            onCommentRoleChange={setCommentRole}
           />
           <AuditLog entries={auditEntries} />
         </aside>
@@ -343,7 +364,28 @@ function getWorkflowAuditAction(
   return labels[action];
 }
 
+function getReviewActionDisabledReasons({
+  canRequesterReview,
+  savedRequesterOpinion,
+}: {
+  canRequesterReview: boolean;
+  savedRequesterOpinion: RequesterOpinion | null;
+}) {
+  const disabledReasons: Partial<Record<ReviewAction, string>> = {};
+
+  if (!canRequesterReview) {
+    disabledReasons.SUBMIT_FOR_APPROVAL =
+      "이 요청의 작성자만 결재 상신할 수 있습니다.";
+  } else if (!savedRequesterOpinion) {
+    disabledReasons.SUBMIT_FOR_APPROVAL =
+      "작성자 검토 의견을 저장한 뒤 결재 상신할 수 있습니다.";
+  }
+
+  return disabledReasons;
+}
+
 function RequesterOpinionPanel({
+  canEdit,
   conclusion,
   draft,
   onConclusionChange,
@@ -351,6 +393,7 @@ function RequesterOpinionPanel({
   onSave,
   savedOpinion,
 }: {
+  canEdit: boolean;
   conclusion: RequesterOpinionConclusion;
   draft: string;
   onConclusionChange: (value: RequesterOpinionConclusion) => void;
@@ -381,6 +424,12 @@ function RequesterOpinionPanel({
           </p>
         </div>
       ) : null}
+      {!canEdit ? (
+        <p className="mt-4 rounded-lg bg-[var(--color-surface-soft)] p-3 text-xs leading-5 text-[var(--color-muted)]">
+          현재 사용자는 이 요청의 작성자가 아니어서 작성자 의견을 수정할 수
+          없습니다.
+        </p>
+      ) : null}
       <div className="mt-4 grid gap-3">
         <label
           className="text-sm font-medium text-[var(--color-ink)]"
@@ -390,6 +439,7 @@ function RequesterOpinionPanel({
         </label>
         <textarea
           className="min-h-28 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+          disabled={!canEdit}
           id="requester-opinion"
           onChange={(event) => onDraftChange(event.target.value)}
           placeholder="AI 결과가 실제 소재 맥락과 맞는지, 오탐 가능성은 있는지 작성하세요."
@@ -407,6 +457,7 @@ function RequesterOpinionPanel({
               >
                 <input
                   checked={conclusion === option.value}
+                  disabled={!canEdit}
                   name="requester-opinion-conclusion"
                   onChange={() => onConclusionChange(option.value)}
                   type="radio"
@@ -418,7 +469,7 @@ function RequesterOpinionPanel({
         </div>
         <button
           className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={!draft.trim()}
+          disabled={!canEdit || !draft.trim()}
           onClick={onSave}
           type="button"
         >

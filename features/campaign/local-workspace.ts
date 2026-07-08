@@ -74,6 +74,7 @@ type CreateCampaignWorkspaceInput = Pick<
 > & {
   imageDataUrl?: string;
   imageFileName?: string;
+  requesterName: string;
   usesSampleAsset: boolean;
 };
 
@@ -129,14 +130,14 @@ export function createCampaignWorkspace(
     status: "AI_REVIEWED",
     riskScore: analysis.overallRiskScore,
     riskLevel: analysis.overallRiskLevel,
-    requesterName: "현재 사용자",
+    requesterName: input.requesterName,
     createdAt: timestamp,
     updatedAt: timestamp,
   };
 
   return {
     analysis,
-    approvalSteps: createApprovalSteps(campaignId, timestamp),
+    approvalSteps: createApprovalSteps(campaignId, timestamp, input.requesterName),
     asset,
     assetVersions: [
       {
@@ -148,7 +149,11 @@ export function createCampaignWorkspace(
         label: "1차 원본",
       },
     ],
-    auditLogEntries: createInitialAuditLog(campaignId, timestamp),
+    auditLogEntries: createInitialAuditLog(
+      campaignId,
+      timestamp,
+      input.requesterName,
+    ),
     campaign,
     comments: [],
     requesterOpinion: null,
@@ -314,6 +319,7 @@ export function applyWorkspacePatch(
 export function createRevisionWorkspace(
   workspace: CampaignWorkspace,
   input: RevisionUploadInput,
+  actorName = workspace.campaign.requesterName,
 ): CampaignWorkspace {
   const timestamp = new Date().toISOString();
   const previousAsset = workspace.asset;
@@ -363,7 +369,7 @@ export function createRevisionWorkspace(
   const auditEntry: AuditLogEntry = {
     id: `${workspace.campaign.id}-audit-revision-${timestamp}`,
     campaignId: workspace.campaign.id,
-    actorName: "현재 사용자",
+    actorName,
     action: "revision_uploaded",
     fromStatus: workspace.campaign.status,
     toStatus: "AI_REVIEWED",
@@ -664,6 +670,7 @@ function createRevisionSuggestions(
 function createApprovalSteps(
   campaignId: string,
   timestamp: string,
+  requesterName: string,
 ): ApprovalStep[] {
   return [
     {
@@ -671,7 +678,7 @@ function createApprovalSteps(
       campaignId,
       order: 1,
       title: "소재 등록",
-      ownerName: "현재 사용자",
+      ownerName: requesterName,
       role: "REQUESTER",
       status: "approved",
       description: "이미지와 광고 카피를 등록했습니다.",
@@ -697,7 +704,7 @@ function createApprovalSteps(
       campaignId,
       order: 3,
       title: "작성자 의견",
-      ownerName: "현재 사용자",
+      ownerName: requesterName,
       role: "REQUESTER",
       status: "in_progress",
       description: "AI 결과가 실제 소재 맥락과 맞는지 작성자가 의견을 남깁니다.",
@@ -728,12 +735,13 @@ function createApprovalSteps(
 function createInitialAuditLog(
   campaignId: string,
   timestamp: string,
+  actorName = "현재 사용자",
 ): AuditLogEntry[] {
   return [
     {
       id: `${campaignId}-audit-created`,
       campaignId,
-      actorName: "현재 사용자",
+      actorName,
       action: "campaign_created",
       toStatus: "DRAFT",
       message: "검토 요청을 생성하고 소재를 등록했습니다.",
@@ -742,7 +750,7 @@ function createInitialAuditLog(
     {
       id: `${campaignId}-audit-analysis-started`,
       campaignId,
-      actorName: "현재 사용자",
+      actorName,
       action: "analysis_started",
       fromStatus: "DRAFT",
       toStatus: "ANALYZING",

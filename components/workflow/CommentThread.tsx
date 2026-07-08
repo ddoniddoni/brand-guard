@@ -3,36 +3,24 @@
 import { Send } from "lucide-react";
 import type { UserRole } from "@/features/campaign/types";
 import type { ReviewerComment } from "@/features/review-workflow/types";
-import { AdaptiveSelect } from "@/components/ui/AdaptiveSelect";
 import { formatDate, getUserRoleLabel } from "@/lib/format";
 
-const reviewerRoles: UserRole[] = [
-  "MARKETING_REVIEWER",
-  "BRAND_MANAGER",
-  "PR_REVIEWER",
-  "LEGAL_REVIEWER",
-  "FINAL_APPROVER",
-];
-
-const reviewerRoleOptions = reviewerRoles.map((role) => ({
-  label: getUserRoleLabel(role),
-  value: role,
-}));
-
 export function CommentThread({
+  authorName,
+  authorRole,
   comments,
   commentDraft,
-  commentRole,
+  disabledReason,
   onAddComment,
   onCommentDraftChange,
-  onCommentRoleChange,
 }: {
+  authorName: string;
+  authorRole: UserRole;
   comments: ReviewerComment[];
   commentDraft: string;
-  commentRole: UserRole;
+  disabledReason?: string;
   onAddComment: () => void;
   onCommentDraftChange: (value: string) => void;
-  onCommentRoleChange: (value: UserRole) => void;
 }) {
   return (
     <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
@@ -67,17 +55,17 @@ export function CommentThread({
 
         <div className="grid gap-2">
           <span className="text-sm font-medium text-[var(--color-ink)]">
-            결재 역할
+            의견 작성자
           </span>
-          <AdaptiveSelect
-            ariaLabel="결재 역할"
-            label="결재 역할"
-            onValueChange={(nextValue) =>
-              onCommentRoleChange(nextValue as UserRole)
-            }
-            options={reviewerRoleOptions}
-            value={commentRole}
-          />
+          <div className="rounded-md border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-3 py-2 text-sm">
+            <span className="font-medium text-[var(--color-ink)]">
+              {authorName}
+            </span>
+            <span className="text-[var(--color-muted)]">
+              {" "}
+              · {getUserRoleLabel(authorRole)}
+            </span>
+          </div>
           <label
             className="text-sm font-medium text-[var(--color-ink)]"
             htmlFor="review-comment"
@@ -87,19 +75,27 @@ export function CommentThread({
           <textarea
             className="min-h-28 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             id="review-comment"
+            disabled={Boolean(disabledReason)}
             onChange={(event) => onCommentDraftChange(event.target.value)}
-            placeholder="결재 의견을 입력하세요…"
+            placeholder={
+              disabledReason ?? "결재 의견을 입력하세요. 예: 확인한 바 이상 없습니다."
+            }
             value={commentDraft}
           />
           <button
             className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={!commentDraft.trim()}
+            disabled={Boolean(disabledReason) || !commentDraft.trim()}
             onClick={onAddComment}
             type="button"
           >
             <Send aria-hidden="true" size={15} strokeWidth={1.8} />
             의견 추가
           </button>
+          {disabledReason ? (
+            <p className="text-xs leading-5 text-[var(--color-muted)]">
+              {disabledReason}
+            </p>
+          ) : null}
         </div>
       </div>
     </section>

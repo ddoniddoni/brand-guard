@@ -8,7 +8,7 @@ export default function CampaignsError({ reset }: { reset: () => void }) {
       <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
         <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
           <p className="text-sm font-medium text-[var(--color-risk-high-text)]">
-            검토 요청 목록을 불러오지 못했습니다.
+            내 요청 목록을 불러오지 못했습니다.
           </p>
           <p className="mt-2 text-sm text-[var(--color-body)]">
             모의 데이터 필터링 중 문제가 발생했습니다.

@@ -3,6 +3,12 @@
 import { Filter, Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
+import {
+  getCurrentUserServerSnapshot,
+  getCurrentUserSnapshot,
+  subscribeCurrentUser,
+} from "@/features/auth/mock-users";
+import { isRequesterForCampaign } from "@/features/auth/permissions";
 import type {
   Campaign,
   CampaignChannel,
@@ -96,6 +102,11 @@ export function CampaignListClient({
     getStoredCampaignWorkspacesSnapshot,
     getStoredCampaignWorkspacesServerSnapshot,
   );
+  const currentUser = useSyncExternalStore(
+    subscribeCurrentUser,
+    getCurrentUserSnapshot,
+    getCurrentUserServerSnapshot,
+  );
 
   const campaigns = useMemo(() => {
     const storedCampaigns = storedWorkspaces.map(
@@ -112,6 +123,7 @@ export function CampaignListClient({
   const filteredCampaigns = useMemo(
     () =>
       campaigns
+        .filter((campaign) => isRequesterForCampaign(currentUser, campaign))
         .filter((campaign) => {
           const matchesQuery =
             !filters.query ||
@@ -143,7 +155,7 @@ export function CampaignListClient({
             new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
           );
         }),
-    [campaigns, filters],
+    [campaigns, currentUser, filters],
   );
 
   return (
@@ -154,7 +166,7 @@ export function CampaignListClient({
       >
         <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(260px,1.4fr)_repeat(4,minmax(0,1fr))]">
           <label className="relative min-w-0">
-            <span className="sr-only">검토 요청 검색</span>
+            <span className="sr-only">내 검토 요청 검색</span>
             <Search
               aria-hidden="true"
               className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
@@ -165,7 +177,7 @@ export function CampaignListClient({
               className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] bg-white pl-10 pr-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
               defaultValue={filters.query}
               name="q"
-              placeholder="검토 요청, 브랜드, 작성자 검색…"
+              placeholder="내 요청, 브랜드, 작성자 검색..."
             />
           </label>
 
@@ -213,13 +225,13 @@ export function CampaignListClient({
         <div className="border-b border-[var(--color-hairline)] px-5 py-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-lg font-medium">검토 요청 건</h2>
+              <h2 className="text-lg font-medium">내 요청 건</h2>
               <p className="mt-1 text-sm text-[var(--color-muted)]">
-                총 {filteredCampaigns.length}개
+                {currentUser.name}님 기준 총 {filteredCampaigns.length}개
               </p>
             </div>
             <p className="text-sm text-[var(--color-muted)]">
-              검토 요청 정보, 리스크, 진행 상태만 표시합니다.
+              작성자 기준 진행 상태와 리스크 후보를 표시합니다.
             </p>
           </div>
         </div>
@@ -287,7 +299,7 @@ export function CampaignListClient({
           <div className="grid min-h-64 place-items-center p-8 text-center">
             <div>
               <p className="text-base font-medium">
-                조건에 맞는 검토 요청이 없습니다.
+                조건에 맞는 내 요청이 없습니다.
               </p>
               <p className="mt-2 text-sm text-[var(--color-muted)]">
                 검색어나 필터를 조정하거나 새 검토 요청을 생성하세요.

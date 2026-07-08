@@ -5,6 +5,11 @@ import { useSyncExternalStore } from "react";
 import { ReviewWorkspace } from "@/components/campaign/ReviewWorkspace";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
+  getCurrentUserServerSnapshot,
+  getCurrentUserSnapshot,
+  subscribeCurrentUser,
+} from "@/features/auth/mock-users";
+import {
   applyWorkspacePatch,
   type CampaignWorkspace,
   createRevisionWorkspace,
@@ -29,6 +34,11 @@ export function CampaignReviewRoute({
     getStoredCampaignWorkspacesSnapshot,
     getStoredCampaignWorkspacesServerSnapshot,
   );
+  const currentUser = useSyncExternalStore(
+    subscribeCurrentUser,
+    getCurrentUserSnapshot,
+    getCurrentUserServerSnapshot,
+  );
   const workspace =
     storedWorkspaces.find((item) => item.campaign.id === campaignId) ??
     initialWorkspace;
@@ -46,7 +56,7 @@ export function CampaignReviewRoute({
       return;
     }
 
-    saveCampaignWorkspace(createRevisionWorkspace(workspace, input));
+    saveCampaignWorkspace(createRevisionWorkspace(workspace, input, currentUser.name));
   };
 
   if (!workspace) {
@@ -109,6 +119,7 @@ export function CampaignReviewRoute({
         auditLogEntries={auditLogEntries}
         campaign={campaign}
         comments={comments}
+        currentUser={currentUser}
         hasVersionComparison={Boolean(workspace.versionComparison)}
         onRevisionSubmit={handleRevisionSubmit}
         onWorkspaceChange={handleWorkspaceChange}
@@ -123,7 +134,7 @@ function MissingCampaignActions() {
     <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
       <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
         <p className="text-sm leading-6 text-[var(--color-body)]">
-          새 검토 요청을 생성하거나 검토 요청 목록에서 대상을 다시 선택하세요.
+          새 검토 요청을 생성하거나 내 요청에서 대상을 다시 선택하세요.
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link
@@ -136,7 +147,7 @@ function MissingCampaignActions() {
             className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             href="/campaigns"
           >
-            검토 요청 목록
+            내 요청
           </Link>
         </div>
       </div>

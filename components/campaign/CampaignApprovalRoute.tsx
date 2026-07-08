@@ -5,6 +5,11 @@ import { useSyncExternalStore } from "react";
 import { ApprovalWorkspace } from "@/components/campaign/ApprovalWorkspace";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
+  getCurrentUserServerSnapshot,
+  getCurrentUserSnapshot,
+  subscribeCurrentUser,
+} from "@/features/auth/mock-users";
+import {
   applyWorkspacePatch,
   type CampaignWorkspace,
   getStoredCampaignWorkspacesServerSnapshot,
@@ -26,6 +31,11 @@ export function CampaignApprovalRoute({
     subscribeCampaignWorkspaces,
     getStoredCampaignWorkspacesSnapshot,
     getStoredCampaignWorkspacesServerSnapshot,
+  );
+  const currentUser = useSyncExternalStore(
+    subscribeCurrentUser,
+    getCurrentUserSnapshot,
+    getCurrentUserServerSnapshot,
   );
   const workspace =
     storedWorkspaces.find((item) => item.campaign.id === campaignId) ??
@@ -93,6 +103,7 @@ export function CampaignApprovalRoute({
         auditLogEntries={auditLogEntries}
         campaign={campaign}
         comments={comments}
+        currentUser={currentUser}
         onWorkspaceChange={handleWorkspaceChange}
         requesterOpinion={requesterOpinion}
       />
@@ -105,14 +116,14 @@ function MissingCampaignActions() {
     <div className="mx-auto w-full max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
       <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-6">
         <p className="text-sm leading-6 text-[var(--color-body)]">
-          새 검토 요청을 생성하거나 결재함에서 대상을 다시 선택하세요.
+          새 검토 요청을 생성하거나 내 결재함에서 대상을 다시 선택하세요.
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link
             className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             href="/approvals"
           >
-            결재함
+            내 결재함
           </Link>
           <Link
             className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"

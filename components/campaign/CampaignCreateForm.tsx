@@ -5,14 +5,18 @@ import {
   FileImage,
   FileText,
   LoaderCircle,
-  Sparkles,
   Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  getCurrentUserServerSnapshot,
+  getCurrentUserSnapshot,
+  subscribeCurrentUser,
+} from "@/features/auth/mock-users";
 import {
   campaignCreateSchema,
   type CampaignCreateInput,
@@ -45,7 +49,7 @@ const analysisSteps = [
   },
   {
     title: "이미지 후보 영역 확인",
-    description: "시각 패턴 후보와 오브젝트 영역을 모의 좌표로 구조화합니다.",
+    description: "시각 패턴 후보와 오브젝트 영역을 구조화합니다.",
   },
   {
     title: "OCR 문구 후보 확인",
@@ -65,19 +69,22 @@ type AnalysisState = "idle" | "running" | "complete";
 
 export function CampaignCreateForm() {
   const router = useRouter();
+  const currentUser = useSyncExternalStore(
+    subscribeCurrentUser,
+    getCurrentUserSnapshot,
+    getCurrentUserServerSnapshot,
+  );
   const [analysisState, setAnalysisState] = useState<AnalysisState>("idle");
   const [activeAnalysisStep, setActiveAnalysisStep] = useState(0);
   const [createdCampaignId, setCreatedCampaignId] = useState("");
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [imageFileName, setImageFileName] = useState("");
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
-  const [usesSampleAsset, setUsesSampleAsset] = useState(false);
   const {
     formState: { errors, isSubmitting },
     control,
     handleSubmit,
     register,
-    setValue,
   } = useForm<CampaignCreateInput>({
     resolver: zodResolver(campaignCreateSchema),
     defaultValues: {
@@ -107,29 +114,6 @@ export function CampaignCreateForm() {
     setImagePreviewUrl(URL.createObjectURL(file));
     setImageFileName(file.name);
     setSelectedImageFile(file);
-    setUsesSampleAsset(false);
-    setCreatedCampaignId("");
-    setAnalysisState("idle");
-  };
-
-  const fillSampleAsset = () => {
-    setValue("name", "여름 신제품 메인 비주얼", { shouldValidate: true });
-    setValue("brandName", "노스스타", { shouldValidate: true });
-    setValue("channel", "instagram", { shouldValidate: true });
-    setValue("publishDate", "2026-07-18", { shouldValidate: true });
-    setValue("targetAudience", "20대 여성, 신규 제품 관심군", {
-      shouldValidate: true,
-    });
-    setValue("industry", "화장품", { shouldValidate: true });
-    setValue(
-      "copy",
-      "여름의 산뜻함을 먼저 만나보세요.\n신제품 공개 전 브랜드 리스크를 함께 확인합니다.",
-      { shouldValidate: true },
-    );
-    setImagePreviewUrl(null);
-    setImageFileName("브랜드가드 샘플 비주얼");
-    setSelectedImageFile(null);
-    setUsesSampleAsset(true);
     setCreatedCampaignId("");
     setAnalysisState("idle");
   };
@@ -156,8 +140,9 @@ export function CampaignCreateForm() {
       industry: input.industry,
       name: input.name,
       publishDate: input.publishDate,
+      requesterName: currentUser.name,
       targetAudience: input.targetAudience,
-      usesSampleAsset,
+      usesSampleAsset: false,
     });
 
     saveCampaignWorkspace(workspace);
@@ -169,34 +154,64 @@ export function CampaignCreateForm() {
 
   return (
     <form className="grid gap-6" onSubmit={onSubmit}>
-      <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-sm font-medium">데모 소재 빠른 시작</p>
-          <p className="mt-1 text-sm leading-6 text-[var(--color-body)]">
-            샘플 홍보 소재를 채운 뒤 AI 1차 검토 흐름을 바로 확인할 수 있습니다.
-          </p>
+      <div className="flex min-w-0 flex-col gap-3 border-b border-[var(--color-hairline)] pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-[var(--color-muted)]">
+          작성자{" "}
+          <span className="font-medium text-[var(--color-ink)]">
+            {currentUser.name}
+          </span>
+        </p>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          <button
+            className="min-h-11 w-full whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] sm:w-auto"
+            type="button"
+          >
+            초안 저장
+          </button>
+          <button
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-5 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+            disabled={isSubmitting || analysisState === "running"}
+            type="submit"
+          >
+            {isSubmitting || analysisState === "running" ? (
+              <LoaderCircle
+                aria-hidden="true"
+                className="animate-spin"
+                size={16}
+                strokeWidth={1.8}
+              />
+            ) : null}
+            AI 1차 검토 시작
+          </button>
         </div>
-        <button
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-          onClick={fillSampleAsset}
-          type="button"
-        >
-          <Sparkles aria-hidden="true" size={16} strokeWidth={1.8} />
-          샘플 소재 사용
-        </button>
       </div>
 
       <div className="grid gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-6 md:grid-cols-2">
-        <Field label="검토 요청명" error={errors.name?.message}>
+        <div className="md:col-span-2">
+          <h2 className="text-base font-medium text-[var(--color-ink)]">
+            기본 정보
+          </h2>
+        </div>
+        <Field
+          fieldId="campaign-name"
+          label="검토 요청명"
+          error={errors.name?.message}
+        >
           <input
             className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+            id="campaign-name"
             placeholder="예: 여름 신제품 메인 비주얼…"
             {...register("name")}
           />
         </Field>
-        <Field label="브랜드명" error={errors.brandName?.message}>
+        <Field
+          fieldId="campaign-brand-name"
+          label="브랜드명"
+          error={errors.brandName?.message}
+        >
           <input
             className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+            id="campaign-brand-name"
             placeholder="예: 노스스타…"
             {...register("brandName")}
           />
@@ -215,23 +230,38 @@ export function CampaignCreateForm() {
             )}
           />
         </Field>
-        <Field label="게시 예정일" error={errors.publishDate?.message}>
+        <Field
+          fieldId="campaign-publish-date"
+          label="게시 예정일"
+          error={errors.publishDate?.message}
+        >
           <input
             className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+            id="campaign-publish-date"
             type="date"
             {...register("publishDate")}
           />
         </Field>
-        <Field label="타깃" error={errors.targetAudience?.message}>
+        <Field
+          fieldId="campaign-target-audience"
+          label="타깃"
+          error={errors.targetAudience?.message}
+        >
           <input
             className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+            id="campaign-target-audience"
             placeholder="예: 신규 고객, 멤버십 고객…"
             {...register("targetAudience")}
           />
         </Field>
-        <Field label="업종" error={errors.industry?.message}>
+        <Field
+          fieldId="campaign-industry"
+          label="업종"
+          error={errors.industry?.message}
+        >
           <input
             className="h-11 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 text-sm outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+            id="campaign-industry"
             placeholder="예: 화장품…"
             {...register("industry")}
           />
@@ -240,20 +270,34 @@ export function CampaignCreateForm() {
 
       <div className="grid gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="grid gap-4">
-          <Field label="광고 카피" error={errors.copy?.message}>
+          <div>
+            <h2 className="text-base font-medium text-[var(--color-ink)]">
+              검토 소재
+            </h2>
+          </div>
+          <Field
+            fieldId="campaign-copy"
+            label="광고 카피"
+            error={errors.copy?.message}
+          >
             <textarea
               className="min-h-36 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+              id="campaign-copy"
               placeholder="검토할 광고 문구를 입력하세요…"
               {...register("copy")}
             />
           </Field>
 
           <Field
+            fieldId="campaign-image"
             label="이미지 파일"
-            description="jpg, png, webp 파일을 지원합니다. 모의 단계에서는 브라우저 미리보기만 사용합니다."
+            description="jpg, png, webp 파일을 지원합니다."
             error={errors.image?.message}
           >
-            <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-6 text-center hover:border-[var(--color-info-border)] focus-within:ring-2 focus-within:ring-[var(--color-info-border)]">
+            <label
+              className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-6 text-center hover:border-[var(--color-info-border)] focus-within:ring-2 focus-within:ring-[var(--color-info-border)]"
+              htmlFor="campaign-image"
+            >
               <Upload aria-hidden="true" size={22} strokeWidth={1.8} />
               <span className="mt-3 text-sm font-medium">이미지 선택</span>
               <span className="mt-1 text-xs text-[var(--color-muted)]">
@@ -262,6 +306,7 @@ export function CampaignCreateForm() {
               <input
                 accept="image/jpeg,image/png,image/webp"
                 className="sr-only"
+                id="campaign-image"
                 type="file"
                 {...register("image", { onChange: handleImageChange })}
               />
@@ -272,7 +317,6 @@ export function CampaignCreateForm() {
         <AssetPreview
           imageFileName={imageFileName}
           imagePreviewUrl={imagePreviewUrl}
-          usesSampleAsset={usesSampleAsset}
         />
       </div>
 
@@ -281,30 +325,6 @@ export function CampaignCreateForm() {
         createdCampaignId={createdCampaignId}
         state={analysisState}
       />
-
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <button
-          className="min-h-12 w-full whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-5 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] sm:w-auto"
-          type="button"
-        >
-          초안 저장
-        </button>
-        <button
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-5 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
-          disabled={isSubmitting || analysisState === "running"}
-          type="submit"
-        >
-          {isSubmitting || analysisState === "running" ? (
-            <LoaderCircle
-              aria-hidden="true"
-              className="animate-spin"
-              size={16}
-              strokeWidth={1.8}
-            />
-          ) : null}
-          AI 1차 검토 시작
-        </button>
-      </div>
     </form>
   );
 }
@@ -312,11 +332,9 @@ export function CampaignCreateForm() {
 function AssetPreview({
   imageFileName,
   imagePreviewUrl,
-  usesSampleAsset,
 }: {
   imageFileName: string;
   imagePreviewUrl: string | null;
-  usesSampleAsset: boolean;
 }) {
   return (
     <aside className="grid min-w-0 content-start gap-3">
@@ -336,8 +354,6 @@ function AssetPreview({
           <div className="absolute inset-x-0 bottom-0 truncate bg-white/90 p-3 text-xs font-medium text-[var(--color-ink)]">
             {imageFileName}
           </div>
-        ) : usesSampleAsset ? (
-          <SampleVisual />
         ) : (
           <div className="grid h-full place-items-center p-6 text-center">
             <div>
@@ -349,7 +365,7 @@ function AssetPreview({
               />
               <p className="mt-3 text-sm font-medium">이미지 대기 중</p>
               <p className="mt-2 text-xs leading-5 text-[var(--color-muted)]">
-                업로드한 소재 또는 샘플 소재가 여기에 표시됩니다.
+                업로드한 이미지가 여기에 표시됩니다.
               </p>
             </div>
           </div>
@@ -361,32 +377,6 @@ function AssetPreview({
         </p>
       ) : null}
     </aside>
-  );
-}
-
-function SampleVisual() {
-  return (
-    <div className="relative h-full bg-[var(--color-signature-cream)] p-5">
-      <div className="absolute right-6 top-8 size-24 rounded-full bg-[var(--color-signature-peach)]" />
-      <div className="relative grid h-full content-between">
-        <div>
-          <p className="text-sm font-medium text-[var(--color-ink)]">
-            노스스타
-          </p>
-          <h3 className="mt-4 text-3xl font-normal leading-tight text-[var(--color-ink)]">
-            여름의 산뜻함,
-            <br />
-            먼저 검토합니다.
-          </h3>
-        </div>
-        <div className="rounded-xl border border-[var(--color-hairline)] bg-[var(--color-panel)] p-4 shadow-sm">
-          <p className="text-sm leading-6 text-[var(--color-body)]">
-            신제품 공개 전 이미지와 문구의 검토 후보를 확인하는 샘플 홍보
-            소재입니다.
-          </p>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -412,8 +402,7 @@ function AnalysisProgress({
           </p>
           <h2 className="mt-2 text-xl font-normal">AI 1차 검토 진행</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-            분석은 모의 데이터로 진행되며, 결과는 작성자와 결재자 검토를 위한 후보로만
-            표시됩니다.
+            결과는 작성자와 결재자 검토를 위한 후보로만 표시됩니다.
           </p>
         </div>
         {state === "complete" ? (
@@ -482,8 +471,8 @@ function AnalysisProgress({
             AI 1차 검토가 완료되었습니다.
           </p>
           <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-            모의 결과가 생성되었습니다. 이제 작성자가 이미지, 문구, AI 의견을
-            다시 확인하고 결재 상신 의견을 남길 수 있습니다.
+            검토 결과가 생성되었습니다. 이제 작성자가 이미지, 문구, AI 의견을 다시
+            확인하고 결재 상신 의견을 남길 수 있습니다.
           </p>
           <Link
             className="mt-4 inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] sm:hidden"
@@ -518,16 +507,18 @@ function Field({
   children,
   description,
   error,
+  fieldId,
   label,
 }: {
   children: React.ReactNode;
   description?: string;
   error?: string;
+  fieldId?: string;
   label: string;
 }) {
   return (
     <div className="grid min-w-0 gap-2 text-sm font-medium text-[var(--color-ink)]">
-      <span>{label}</span>
+      {fieldId ? <label htmlFor={fieldId}>{label}</label> : <span>{label}</span>}
       {children}
       {description ? (
         <span className="text-xs font-normal leading-5 text-[var(--color-muted)]">
