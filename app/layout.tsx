@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "BrandGuard",
   description:
-    "마케팅 소재 공개 전 AI 1차 검토와 사람 중심 결재를 연결하는 브랜드 리스크 검토 SaaS입니다.",
+    "영상 대본, 광고 문구, 이미지 속 텍스트를 브랜드 정책 사전 기준으로 검수하는 콘텐츠 사전 검수 SaaS입니다.",
 };
 
 export default function RootLayout({

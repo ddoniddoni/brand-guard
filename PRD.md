@@ -8,86 +8,105 @@
 
 ### 한 줄 설명
 
-마케팅 소재 공개 전, AI 1차 검토와 사람 중심 결재 라인을 통해 이미지와 문구의 브랜드 리스크 후보를 검토하는 B2B SaaS.
+기업과 브랜드 마케팅 담당자가 영상 대본, 광고 문구, 이미지 속 텍스트를 공개 전에 검수할 수 있도록 돕는 브랜드 정책 기반 콘텐츠 사전 검수 SaaS.
 
 ### 핵심 포지션
 
-BrandGuard는 특정 사상, 성향, 의도, 정치적 입장, 커뮤니티 소속을 판정하는 도구가 아니다.
+BrandGuard는 브랜드가 사전에 등록한 금지어, 주의어, 제한 표현, 대체 표현 정책을 기준으로 마케팅 콘텐츠의 **검토 후보**를 찾아주는 도구다.
 
-광고 이미지와 문구에서 논란으로 해석될 가능성이 있는 **검토 후보**를 AI가 1차로 정리하고, 작성자와 결재자가 의견을 남겨 최종 승인 여부를 결정하는 **마케팅 소재 결재 보조 도구**다.
+사용자는 영상 대본이나 광고 문구를 붙여넣고, 이미지를 업로드할 수 있다. 시스템은 텍스트를 문장/줄 단위로 나누어 브랜드 정책 사전과 비교하고, 이미지의 경우 Tesseract.js OCR로 이미지 속 문구를 추출한 뒤 동일한 기준으로 검사한다.
+
+AI 이미지 분석은 기본 MVP의 필수 기능이 아니라 확장 기능이다. 기본 기능은 AI 없이도 동작해야 하며, 추후 API Key를 연결하면 이미지의 시각 요소와 장면 구성까지 분석할 수 있도록 provider 구조를 준비한다.
+
+BrandGuard는 특정 사상, 성향, 의도, 정치적 입장, 커뮤니티 소속을 판정하는 도구가 아니다. 또한 자동 승인, 자동 반려, 자동 게시를 수행하지 않는다.
 
 ### 가장 중요한 제품 흐름
 
 ```txt
-디자인/마케팅 담당자가 소재 업로드
-→ AI가 이미지와 문구를 1차 검토
-→ 작성자가 AI 결과를 확인하고 본인 검토 의견 작성
-→ 작성자가 결재 상신
-→ 다음 결재자가 AI 결과 + 작성자 의견 확인
-→ 결재자 의견 작성 후 승인/수정요청/반려
-→ 최종 결재자 승인
-→ 소재 게시 가능 상태 전환
+브랜드 정책 사전 등록
+→ 영상 대본/광고 문구/SNS 카피 붙여넣기
+→ 문장/줄 단위 분리
+→ 금지어·주의어·제한 표현 검사
+→ 이미지 업로드
+→ Tesseract.js OCR로 이미지 속 문구 추출
+→ OCR 문구를 동일한 정책 사전으로 검사
+→ 검토 후보, 근거, 위치, 심각도, 수정 제안 확인
+→ 검수 메모 작성
+→ 검수 리포트 저장
+→ API Key 연결 시 AI 이미지 분석 확장
 ```
 
-이 프로젝트의 핵심은 여러 부가 기능이 아니라 **AI 1차 검토 결과를 사람이 확인하고, 작성자 의견을 붙여 결재 라인을 타는 과정**이다.
+이 프로젝트의 핵심은 여러 부가 기능이 아니라 **브랜드 정책 사전 + 대본/문구 검사 + 이미지 OCR 검사 + AI 확장 구조**다.
 
 ---
 
 ## 2. 제품 원칙
 
-- AI는 최종 판정자가 아니라 1차 검토 보조자다.
-- AI 결과만으로 캠페인을 자동 승인, 자동 반려, 자동 게시하지 않는다.
-- 리스크는 "확정"이 아니라 "검토 필요 후보"로 표현한다.
-- 작성자는 AI 결과를 그대로 넘기는 것이 아니라, 본인의 검토 의견을 반드시 남긴다.
-- 결재자는 AI 결과와 작성자 의견을 함께 보고 승인, 수정 요청, 반려를 결정한다.
-- 최종 승인된 소재만 게시 가능 상태가 된다.
-- 모든 주요 행동은 감사 로그로 남긴다.
+- 브랜드 정책 사전이 검수 기준의 중심이다.
+- 사용자가 등록한 금지어, 주의어, 제한 표현을 기준으로 검토 후보를 찾는다.
+- AI 없이도 대본/문구 검사와 이미지 OCR 검사는 완성된 기능처럼 동작해야 한다.
+- 이미지 속 문구는 Tesseract.js OCR로 추출한다.
+- OCR 결과는 원문 텍스트와 동일한 정책 필터 엔진으로 검사한다.
+- AI 이미지 분석은 API Key 연결 후 사용할 수 있는 확장 기능으로 분리한다.
+- 결과는 "위반 확정"이 아니라 "검토 후보"로 표현한다.
+- 시스템은 특정 사상, 의도, 성향, 커뮤니티 소속을 판정하지 않는다.
+- 최종 판단과 수정 여부는 마케팅 담당자가 결정한다.
+- API Key는 반드시 서버 사이드에서만 사용한다.
 
 ---
 
 ## 3. 문제 정의
 
-마케팅팀에서는 광고 이미지나 문구를 제작한 뒤 게시 전에 내부 검토와 결재를 거친다. 하지만 실제 현업에서는 다음 문제가 자주 발생한다.
+기업과 브랜드의 마케팅팀은 영상, SNS, 배너, 이벤트 페이지, 광고 이미지 등을 공개하기 전에 내부 정책에 맞는지 검토해야 한다. 하지만 실제 작업 과정에서는 다음 문제가 자주 발생한다.
 
-- 디자인/문구 작성자가 논란 가능성을 혼자 판단하기 어렵다.
-- 이미지 속 손동작, 문구, 날짜, 숫자, 표현 등이 의도와 다르게 해석될 수 있다.
-- AI나 자동 도구의 결과가 있더라도, 누가 그 결과를 확인했고 어떤 의견을 냈는지 남지 않는다.
-- 결재자는 원본 소재, AI 검토 결과, 작성자 의견을 한 번에 보기 어렵다.
-- 승인, 수정 요청, 반려 이력이 흩어져 있어 나중에 추적하기 어렵다.
+- 영상 대본이나 광고 문구가 길면 금지어와 제한 표현을 사람이 일일이 찾기 어렵다.
+- 브랜드마다 쓰면 안 되는 표현, 주의해야 하는 표현, 대체해야 하는 표현이 다르다.
+- 이미지 안에 들어간 문구는 텍스트 검색만으로 검수하기 어렵다.
+- 디자이너가 만든 이미지 속 작은 문구, 배너 문장, 이벤트 조건 문구가 누락될 수 있다.
+- AI 이미지 분석을 바로 붙이기 전에도 동작하는 실용적인 검수 도구가 필요하다.
+- 추후 AI API Key를 연결했을 때 구조를 갈아엎지 않고 이미지 분석 기능을 확장하고 싶다.
 
-BrandGuard는 이 문제를 **소재 업로드 → AI 1차 검토 → 작성자 의견 → 결재 라인 → 최종 승인**이라는 단순하고 명확한 워크플로우로 해결한다.
+BrandGuard는 이 문제를 **정책 사전 등록 → 대본/문구 검사 → 이미지 OCR 검사 → 검수 리포트**라는 단순하고 명확한 흐름으로 해결한다.
 
 ---
 
 ## 4. 타깃 사용자
 
-### 4.1 작성자 / 결재 상신자
+### 4.1 브랜드 마케팅 담당자
 
-예: 디자이너, 마케팅 사원, 콘텐츠 담당자
+예: 브랜드 마케터, 콘텐츠 마케터, SNS 운영자, 퍼포먼스 마케터
 
-- 캠페인 이미지와 문구를 업로드한다.
-- AI 1차 검토 결과를 확인한다.
-- AI 결과가 실제 맥락과 맞는지 본인 의견을 작성한다.
-- 결재 라인을 선택하고 결재를 상신한다.
-- 수정 요청을 받으면 소재를 수정해 다시 검토를 시작한다.
+- 영상 대본, SNS 카피, 광고 문구를 붙여넣는다.
+- 캠페인 이미지나 배너 이미지를 업로드한다.
+- 브랜드 정책 위반 가능성이 있는 문장을 확인한다.
+- 수정 제안을 참고해 문구를 다듬는다.
+- 검수 리포트를 저장한다.
 
-### 4.2 중간 결재자
+### 4.2 브랜드 매니저 / 캠페인 책임자
 
-예: 마케팅 리더, 브랜드 매니저, PR 담당자
+예: 브랜드 매니저, 마케팅 리더, 캠페인 오너
 
-- AI 결과와 작성자 의견을 함께 확인한다.
-- 본인 검토 의견을 남긴다.
-- 승인, 수정 요청, 반려 중 하나를 선택한다.
-- 승인 시 다음 결재 단계로 넘긴다.
+- 브랜드별 금지어와 주의어를 관리한다.
+- 검수 기준과 대체 표현을 정리한다.
+- 검수 리포트를 보고 캠페인 공개 전 수정 여부를 판단한다.
+- 반복적으로 문제가 되는 표현을 정책 사전에 추가한다.
 
-### 4.3 최종 결재자
+### 4.3 콘텐츠 제작자 / 디자이너
 
-예: 팀장, 브랜드 책임자, 법무/컴플라이언스 담당자
+예: 디자이너, 영상 편집자, 카피라이터
 
-- 최종 게시 가능 여부를 결정한다.
-- 모든 의견과 검토 이력을 확인한다.
-- 최종 승인, 수정 요청, 반려를 선택한다.
-- 최종 승인 시 소재는 게시 가능 상태가 된다.
+- 제작한 이미지와 문구를 업로드한다.
+- 이미지 속 텍스트가 OCR로 잘 추출되었는지 확인한다.
+- 문제가 되는 문구의 위치를 이미지 위에서 확인한다.
+- 수정해야 할 문장이나 이미지 문구를 빠르게 파악한다.
+
+### 4.4 관리자
+
+예: 팀 관리자, 운영 관리자
+
+- 브랜드 정책 사전을 관리한다.
+- AI API Key 연결 상태를 관리한다.
+- 저장된 검수 기록을 확인한다.
 
 ---
 
@@ -95,26 +114,32 @@ BrandGuard는 이 문제를 **소재 업로드 → AI 1차 검토 → 작성자 
 
 ### 5.1 사용자 목표
 
-1. 마케팅 소재를 쉽게 업로드한다.
-2. AI 1차 검토로 놓칠 수 있는 리스크 후보를 빠르게 확인한다.
-3. 작성자가 AI 결과에 대한 본인 판단과 맥락 의견을 남긴다.
-4. 결재자가 원본, AI 결과, 작성자 의견, 이전 결재 의견을 한 화면에서 확인한다.
-5. 최종 승인된 소재만 게시 가능하도록 한다.
-6. 누가 언제 어떤 판단을 했는지 감사 로그로 남긴다.
+1. 브랜드별 금지어와 주의어를 쉽게 등록한다.
+2. 긴 영상 대본이나 광고 문구를 붙여넣고 빠르게 검사한다.
+3. 문제가 될 수 있는 문장과 단어를 문장 단위로 확인한다.
+4. 이미지 속 문구를 OCR로 추출해 동일한 기준으로 검사한다.
+5. 이미지 위에서 OCR 문구 위치와 검토 후보를 확인한다.
+6. 검출 사유와 대체 표현을 확인하고 수정 방향을 잡는다.
+7. AI API Key 연결 전에도 실사용 가능한 검수 흐름을 제공한다.
+8. API Key 연결 후 이미지의 시각적 요소까지 확장 분석한다.
 
 ### 5.2 포트폴리오 목표
 
 이 프로젝트는 프론트엔드 포트폴리오에서 다음 역량을 보여주는 것을 목표로 한다.
 
-- 파일 업로드와 미리보기 UX
-- AI 분석 진행 상태 UI
-- 이미지 위 리스크 후보 오버레이 시각화
-- 오른쪽 패널과 이미지 오버레이 동기화
-- 작성자 의견 작성 플로우
-- 결재 라인 타임라인
-- 승인/수정요청/반려 상태 전이
-- 감사 로그 UI
-- TypeScript 기반 도메인 모델링
+- 브랜드 정책 사전 기반 도메인 모델링
+- 긴 텍스트 입력과 문장/줄 단위 분석 UX
+- 룰 기반 필터링 엔진 설계
+- 파일 업로드와 이미지 미리보기 UX
+- Tesseract.js OCR 연동
+- OCR 진행 상태 UI
+- OCR 결과 텍스트 패널
+- 이미지 위 OCR bounding box overlay
+- 결과 리스트와 이미지 overlay 동기화
+- 심각도/카테고리/출처별 필터링
+- AI provider 확장 구조
+- 서버 사이드 API Key 관리 구조
+- TypeScript 기반 데이터 모델링
 - mock API 기반 실제 SaaS 같은 흐름 구현
 - E2E 테스트 가능한 핵심 사용자 플로우
 
@@ -124,137 +149,180 @@ BrandGuard는 이 문제를 **소재 업로드 → AI 1차 검토 → 작성자 
 
 ### 6.1 반드시 포함
 
-- 캠페인 생성
-- 이미지/문구 업로드
-- 업로드 소재 미리보기
-- AI 1차 검토 시작 버튼
-- AI 1차 검토 진행 단계 표시
-- mock 분석 결과 생성
-- 리뷰 화면에서 AI 결과 확인
-- 이미지 위 리스크 후보 영역 표시
-- OCR 텍스트 후보 영역 표시
-- 리스크 점수, 근거, 오탐 가능성, 수정 제안 표시
-- 작성자 검토 의견 작성
-- 결재 라인 선택 또는 mock 결재 라인 표시
-- 결재 상신
-- 결재자 검토 화면
-- 결재자 의견 작성
-- 승인/수정요청/반려
-- 최종 승인 후 게시 가능 상태 표시
-- 감사 로그
+- 브랜드 정책 사전 관리
+- 금지어 등록
+- 주의어 등록
+- 카테고리, 심각도, 매칭 방식 설정
+- 대체 표현 입력
+- 검수 생성 화면
+- 영상 대본/광고 문구/SNS 카피 붙여넣기
+- 텍스트 정규화
+- 문장/줄 단위 분리
+- 금지어/주의어 매칭
+- 검토 후보 문장 하이라이트
+- 이미지 업로드
+- 이미지 미리보기
+- Tesseract.js OCR 실행
+- OCR 진행 상태 표시
+- OCR 전체 텍스트 표시
+- OCR confidence 표시
+- OCR region overlay
+- OCR 텍스트 정책 검사
+- 검토 후보 목록
+- 검토 후보 상세 패널
+- 출처별 필터: 붙여넣은 텍스트 / 이미지 OCR / AI 이미지 분석
+- 심각도별 필터
+- 수정 제안 표시
+- 검수 메모
+- 검수 리포트 저장
+- 검수 기록 목록
+- AI 이미지 분석 미연결 상태 UI
+- AI API Key 설정 화면
+- disabled/mock vision provider 구조
 
 ### 6.2 MVP에서 제외 또는 후순위
 
 아래 기능은 있으면 좋지만, 핵심 플로우보다 우선하지 않는다.
 
+- 결재 라인
+- 최종 승인/반려 워크플로우
 - 복잡한 대시보드
-- 고급 캠페인 필터/정렬
+- 고급 통계
 - 버전 비교
-- 리스크 사전 관리
 - 케이스 라이브러리
-- 팀/권한 설정 화면
-- 실제 AI 모델 학습
-- 실제 OCR/Vision/LLM 연동
+- 팀 권한 관리
 - 실제 광고 플랫폼 게시 연동
 - 실제 결제/구독
-- 실제 기업 데이터 연동
+- 고급 NLP 유사어 탐지
+- 실시간 공동 편집
+- 실제 AI 이미지 분석 provider
+
+기존 결재 기능을 이미 일부 구현했다면 완전히 삭제하지 말고 후속 기능 또는 `/settings/workflow` 하위 기능으로 숨긴다. 메인 플로우에서는 보여주지 않는다.
 
 ---
 
 ## 7. 핵심 사용자 플로우
 
-## Flow 1. 소재 업로드와 AI 1차 검토
+## Flow 1. 브랜드 정책 사전 등록
 
-1. 작성자가 `/campaigns/new`로 이동한다.
-2. 캠페인명, 브랜드명, 채널, 게시 예정일, 타깃, 업종을 입력한다.
-3. 광고 이미지와 문구를 업로드한다.
-4. 업로드한 이미지와 문구를 미리보기로 확인한다.
-5. 결재 라인을 선택하거나 기본 결재 라인을 확인한다.
-6. `AI 1차 검토 시작` 버튼을 클릭한다.
-7. 시스템은 캠페인 상태를 `ANALYZING`으로 변경한다.
-8. 분석 진행 단계가 순차적으로 표시된다.
-9. mock 분석 결과가 생성된다.
-10. 캠페인 상태가 `AI_REVIEWED`로 변경된다.
-11. 작성자는 리뷰 화면으로 이동한다.
+1. 사용자가 `/dictionaries`로 이동한다.
+2. 브랜드명 또는 기본 브랜드 정책 세트를 선택한다.
+3. 금지어 또는 주의어를 추가한다.
+4. 카테고리와 심각도를 선택한다.
+5. 매칭 방식을 선택한다.
+6. 검출 사유를 입력한다.
+7. 대체 표현을 입력한다.
+8. 정책을 저장한다.
 
-분석 단계 예시:
+정책 예시:
 
 ```txt
-소재 접수
-→ 이미지 후보 영역 확인
-→ OCR 문구 후보 확인
-→ 리스크 후보 정리
-→ 담당자 검토용 요약 생성
+표현: 무료 보장
+유형: 금지어
+카테고리: 확정/보장 표현
+심각도: high
+매칭 방식: contains
+검출 사유: 객관적 조건 없이 보장성 표현 사용 제한
+대체 표현: 조건 충족 시 제공
 ```
 
 ---
 
-## Flow 2. 작성자 검토 의견 작성 및 결재 상신
+## Flow 2. 대본/문구 붙여넣기 검사
 
-1. 작성자는 `/campaigns/[id]/review`에서 AI 1차 검토 결과를 확인한다.
-2. 왼쪽 이미지 영역에서 bounding box overlay를 확인한다.
-3. 오른쪽 패널에서 리스크 후보, 감지 근거, 신뢰도, 오탐 가능성, 수정 제안을 확인한다.
-4. AI 결과가 실제 소재 맥락과 맞는지 작성자가 직접 판단한다.
-5. 작성자는 검토 의견을 작성한다.
-6. 작성자는 다음 중 하나의 결론을 선택한다.
-   - 결재 상신
-   - 수정 후 재검토 필요
-   - 오탐 가능성이 높음
-7. `검토 의견 작성 후 결재 상신` 버튼을 클릭한다.
-8. 캠페인 상태가 `IN_APPROVAL`로 변경된다.
-9. 감사 로그에 작성자 의견과 결재 상신 이벤트가 기록된다.
+1. 사용자가 `/reviews/new`로 이동한다.
+2. 검수 제목, 브랜드명, 콘텐츠 유형, 채널을 입력한다.
+3. 영상 대본, 광고 문구, SNS 카피 중 하나를 붙여넣는다.
+4. 적용할 브랜드 정책 사전을 선택한다.
+5. `콘텐츠 검수 시작` 버튼을 클릭한다.
+6. 시스템은 텍스트를 정규화한다.
+7. 시스템은 텍스트를 줄 또는 문장 단위로 나눈다.
+8. 정책 사전의 금지어/주의어와 매칭한다.
+9. 검토 후보 문장과 검출 표현을 생성한다.
+10. 결과 화면으로 이동한다.
 
-작성자 의견 예시:
+진행 단계 예시:
 
 ```txt
-AI가 손동작 후보를 표시했지만, 실제로는 제품을 집는 장면입니다.
-다만 SNS 게시 이미지로 오해 가능성이 있을 수 있어 PR 검토가 필요하다고 판단했습니다.
+콘텐츠 접수
+→ 대본/문구 문장 분리
+→ 브랜드 금지어 사전 매칭
+→ 검토 후보 정리
+→ 검수 리포트 생성
 ```
 
 ---
 
-## Flow 3. 중간 결재자 검토
+## Flow 3. 이미지 OCR 검사
 
-1. 중간 결재자는 `/campaigns/[id]/approval`에서 결재 대상을 확인한다.
-2. 결재자는 다음 정보를 한 화면에서 본다.
-   - 원본 이미지와 문구
-   - AI 1차 검토 요약
-   - 리스크 후보와 근거
-   - 작성자 검토 의견
-   - 이전 결재자 의견
-   - 감사 로그
-3. 결재자는 본인 의견을 작성한다.
-4. 결재자는 다음 중 하나를 선택한다.
-   - 승인
-   - 수정 요청
-   - 반려
-5. 승인 시 다음 결재 단계로 넘어간다.
-6. 수정 요청 시 작성자에게 돌아간다.
-7. 반려 시 캠페인은 종료된다.
+1. 사용자가 `/reviews/new`에서 이미지를 업로드한다.
+2. 이미지 미리보기가 표시된다.
+3. `콘텐츠 검수 시작` 버튼을 클릭한다.
+4. Tesseract.js OCR이 실행된다.
+5. OCR 진행률이 표시된다.
+6. 이미지에서 추출된 텍스트가 표시된다.
+7. OCR confidence가 표시된다.
+8. OCR region 정보가 있으면 이미지 위에 overlay가 표시된다.
+9. OCR 텍스트도 동일한 정책 사전으로 검사된다.
+10. 이미지 OCR 출처의 검토 후보가 생성된다.
 
----
+진행 단계 예시:
 
-## Flow 4. 최종 결재와 게시 가능 처리
-
-1. 최종 결재자는 동일한 승인 화면에서 전체 검토 내용을 확인한다.
-2. AI 결과, 작성자 의견, 중간 결재자 의견, 감사 로그를 모두 확인한다.
-3. 최종 결재자는 최종 승인, 수정 요청, 반려 중 하나를 선택한다.
-4. 최종 승인 시 캠페인 상태가 `APPROVED`가 된다.
-5. 승인된 소재는 `READY_TO_PUBLISH` 상태로 표시할 수 있다.
-6. 이 상태가 된 소재만 실제 게시 가능한 것으로 표현한다.
+```txt
+이미지 접수
+→ OCR 엔진 준비
+→ 이미지 문구 추출
+→ OCR 문구 정리
+→ OCR 문구 정책 검사
+→ 이미지 검토 후보 생성
+```
 
 ---
 
-## Flow 5. 수정 요청 후 재검토
+## Flow 4. 검수 결과 확인
 
-1. 결재자가 수정 요청을 남긴다.
-2. 캠페인 상태가 `NEEDS_REVISION`이 된다.
-3. 작성자는 이미지나 문구를 수정한다.
-4. 작성자는 다시 AI 1차 검토를 시작한다.
-5. 상태는 `ANALYZING → AI_REVIEWED`로 이동한다.
-6. 작성자는 새 검토 의견을 작성하고 다시 결재 상신한다.
+1. 사용자가 `/reviews/[id]`에서 검수 결과를 확인한다.
+2. 상단 요약 카드에서 전체 검토 후보 수를 본다.
+3. 출처별 후보 수를 확인한다.
+   - 붙여넣은 텍스트
+   - 이미지 OCR
+   - AI 이미지 분석
+4. 왼쪽에는 원문 텍스트와 이미지 미리보기를 본다.
+5. 오른쪽에는 검토 후보 리스트와 상세 패널을 본다.
+6. 검토 후보를 클릭하면 해당 문장 또는 OCR region이 강조된다.
+7. 수정 제안을 확인한다.
+8. 검수 메모를 작성한다.
+9. `검수 리포트 저장`을 클릭한다.
+10. 검수 기록에 저장된다.
 
-MVP에서는 버전 비교 화면까지 깊게 만들지 않아도 된다. 단, 수정 요청 후 다시 AI 검토를 시작할 수 있는 흐름은 상태 모델에 포함한다.
+결과 예시:
+
+```txt
+검토 후보 6개 발견
+
+붙여넣은 텍스트: 4개
+이미지 OCR: 2개
+AI 이미지 분석: 미연결
+```
+
+---
+
+## Flow 5. AI 이미지 분석 확장
+
+1. 관리자가 `/settings/ai`로 이동한다.
+2. AI 이미지 분석 연결 상태를 확인한다.
+3. API Key를 입력한다.
+4. 서버 사이드에서 연결 테스트를 수행한다.
+5. 연결 성공 시 이후 검수부터 AI 이미지 분석이 함께 실행된다.
+6. 연결 실패 시 기본 OCR 기반 검수는 계속 사용할 수 있다.
+
+AI 미연결 상태 문구:
+
+```txt
+AI 이미지 분석이 아직 연결되지 않았습니다.
+현재는 대본/문구 검사와 Tesseract.js OCR 기반 이미지 문구 검사가 가능합니다.
+API Key를 연결하면 이미지의 시각 요소와 장면 구성까지 추가로 검토할 수 있습니다.
+```
 
 ---
 
@@ -263,22 +331,21 @@ MVP에서는 버전 비교 화면까지 깊게 만들지 않아도 된다. 단, 
 ### 핵심 라우트
 
 ```txt
-/campaigns/new
-/campaigns/[id]/review
-/campaigns/[id]/approval
-/approvals
+/reviews/new
+/reviews/[id]
+/dictionaries
+/settings/ai
+/history
 ```
 
 ### 선택 라우트
 
 ```txt
-/campaigns
 /dashboard
-/campaigns/[id]/versions
-/risk-dictionary
-/cases
+/reports
 /settings/team
 /settings/profile
+/cases
 ```
 
 MVP에서는 핵심 라우트를 우선 구현한다.
@@ -287,149 +354,210 @@ MVP에서는 핵심 라우트를 우선 구현한다.
 
 ## 9. 페이지 요구사항
 
-## 9.1 Campaign Create
+## 9.1 Dictionary Page
 
 ### 목적
 
-작성자가 마케팅 소재를 업로드하고 AI 1차 검토를 시작한다.
+브랜드 정책 사전을 관리한다.
 
 ### 주요 요소
 
-- 캠페인 기본 정보 입력
-- 이미지 업로드
-- 광고 문구 입력
-- 이미지/문구 미리보기
-- 기본 결재 라인 표시 또는 선택
-- AI 1차 검토 시작 버튼
-- 분석 진행 상태 표시
-- 분석 완료 후 리뷰 화면 이동
+- 정책 사전 목록
+- 금지어/주의어 테이블
+- 검색
+- 카테고리 필터
+- 심각도 필터
+- 활성/비활성 토글
+- 금지어 추가 버튼
+- 금지어 수정 drawer 또는 dialog
+- 대체 표현 표시
 
 ### 필수 입력
 
-- 캠페인명
-- 브랜드명
-- 채널
-- 게시 예정일
-- 타깃
-- 업종
-- 이미지 또는 문구 중 하나 이상
-- 결재 라인
+- 표현
+- 유형: 금지어 / 주의어
+- 카테고리
+- 심각도
+- 매칭 방식
+- 검출 사유
 
 ### 검증
 
-- 캠페인명은 비어 있을 수 없다.
-- 게시 예정일은 유효한 날짜여야 한다.
-- 이미지는 jpg, png, webp만 허용한다.
-- 이미지 또는 문구 중 하나 이상이 있어야 한다.
-- 결재자가 최소 1명 이상 있어야 한다.
+- 표현은 비어 있을 수 없다.
+- 카테고리는 필수다.
+- 심각도는 필수다.
+- 정규식 매칭을 선택한 경우 유효한 정규식이어야 한다.
 
 ---
 
-## 9.2 Review Page
+## 9.2 Review Create Page
 
 ### 목적
 
-작성자가 AI 1차 검토 결과를 확인하고, 본인 의견을 작성한 뒤 결재 상신한다.
+사용자가 대본/문구와 이미지를 입력하고 검수를 시작한다.
+
+### 주요 요소
+
+- 검수 제목
+- 브랜드명
+- 콘텐츠 유형
+- 채널
+- 적용 정책 사전 선택
+- 대본/문구 붙여넣기 textarea
+- 이미지 업로드
+- 이미지 미리보기
+- AI 이미지 분석 연결 상태
+- 콘텐츠 검수 시작 버튼
+- 분석 진행 상태
+
+### 필수 입력
+
+- 검수 제목
+- 브랜드명
+- 콘텐츠 유형
+- 채널
+- 정책 사전
+- 대본/문구 또는 이미지 중 하나 이상
+
+### 검증
+
+- 검수 제목은 비어 있을 수 없다.
+- 브랜드명은 비어 있을 수 없다.
+- 이미지 파일은 jpg, png, webp만 허용한다.
+- 대본/문구와 이미지가 모두 없으면 검수를 시작할 수 없다.
+
+---
+
+## 9.3 Review Result Page
+
+### 목적
+
+검수 결과를 확인하고 리포트를 저장한다.
 
 ### 레이아웃
 
-왼쪽에는 원본 이미지와 오버레이를 보여준다. 오른쪽에는 AI 결과와 작성자 의견 입력 영역을 보여준다.
-
-### 왼쪽 영역
-
-- 이미지 미리보기
-- bounding box overlay
-- hand landmark mock overlay
-- OCR 영역 overlay
-- zoom in/out
-- 영역 클릭 시 오른쪽 패널 해당 항목 강조
-
-### 오른쪽 영역
-
-- 종합 리스크 점수
-- 리스크 레벨
-- AI 검토 요약
-- 카테고리별 검토 후보
-- 감지 근거
-- 오탐 가능성 안내
-- 수정 제안
-- 작성자 검토 의견 입력
-- 결재 상신 버튼
-- 감사 로그
-
-### 핵심 액션
+추천 구조:
 
 ```txt
-검토 의견 작성 후 결재 상신
+상단: 검수 요약 카드
+좌측: 원문 텍스트 / 이미지 OCR preview
+우측: 검토 후보 리스트 / 상세 패널
+하단 또는 우측 하단: 검수 메모 / 리포트 저장
 ```
 
-작성자 의견이 없으면 결재 상신할 수 없다.
+### 탭 구조
+
+```txt
+전체 요약
+대본/문구 검사
+이미지 OCR 검사
+AI 이미지 분석
+검수 메모
+```
+
+### 상단 요약
+
+- 전체 검토 후보 수
+- high/medium/low 개수
+- 붙여넣은 텍스트 후보 수
+- 이미지 OCR 후보 수
+- AI 이미지 분석 연결 상태
+
+### 대본/문구 검사 영역
+
+- 원문 텍스트 표시
+- 문장/줄 단위 하이라이트
+- 검출 표현 강조
+- 검출 사유
+- 대체 표현
+- false positive 가능성 안내
+
+### 이미지 OCR 검사 영역
+
+- 이미지 미리보기
+- OCR bounding box overlay
+- OCR 전체 텍스트
+- OCR confidence
+- OCR 검토 후보
+- 클릭 시 이미지 region과 후보 상세 동기화
+
+### AI 이미지 분석 영역
+
+API Key가 없을 때:
+
+```txt
+AI 이미지 분석이 아직 연결되지 않았습니다.
+현재는 이미지 속 문구만 OCR로 추출해 검사합니다.
+API Key를 연결하면 이미지의 시각 요소와 장면 구성까지 추가로 검토할 수 있습니다.
+```
+
+API Key가 있을 때:
+
+```txt
+AI 이미지 분석 결과
+- 시각 요소 후보
+- 장면 맥락 요약
+- 브랜드 톤 불일치 후보
+- 사람 검토 권장 사항
+```
 
 ---
 
-## 9.3 Approval Page
+## 9.4 AI Settings Page
 
 ### 목적
 
-결재자가 AI 결과와 작성자 의견을 보고 승인, 수정 요청, 반려를 결정한다.
+AI 이미지 분석 연결 상태를 관리한다.
 
 ### 주요 요소
 
-- 결재 단계 타임라인
-- 현재 결재자 표시
-- 원본 이미지/문구 확인
-- AI 1차 검토 요약
-- 리스크 후보와 수정 제안
-- 작성자 검토 의견
-- 이전 결재자 의견
-- 결재 의견 입력
-- 승인 버튼
-- 수정 요청 버튼
-- 반려 버튼
-- 감사 로그
+- 현재 연결 상태
+- provider 선택
+- API Key 입력
+- 연결 테스트 버튼
+- 마지막 테스트 시각
+- 실패 메시지
+- 보안 안내
 
-### 결재 원칙
+### 원칙
 
-- AI 의견은 결재 참고 자료다.
-- 작성자 의견은 결재자가 반드시 볼 수 있어야 한다.
-- 수정 요청이나 반려 시 코멘트를 필수로 입력한다.
-- 최종 승인 전까지 게시 가능 상태가 될 수 없다.
+- API Key는 클라이언트에 노출하지 않는다.
+- production-like 예시에서는 localStorage에 API Key를 저장하지 않는다.
+- 프론트에서는 연결 상태만 표시한다.
+- 실제 provider 호출은 서버 route 또는 server action에서 수행한다.
 
 ---
 
-## 9.4 Approvals List
+## 9.5 History Page
 
 ### 목적
 
-사용자가 자신에게 도착한 결재 요청을 확인한다.
+저장된 검수 리포트를 확인한다.
 
 ### 주요 요소
 
-- 결재 대기 목록
-- 캠페인명
+- 검수 기록 목록
+- 검수 제목
 - 브랜드명
-- 요청자
-- 현재 상태
-- 리스크 점수
-- 상신일
-- 승인 화면으로 이동하는 CTA
+- 콘텐츠 유형
+- 후보 수
+- 심각도 요약
+- 생성일
+- 상세 보기 CTA
 
-MVP에서는 복잡한 필터보다 `내 결재 대기`, `전체 결재 대기` 정도만 있어도 충분하다.
+MVP에서는 복잡한 필터보다 검색과 기본 정렬만 있어도 충분하다.
 
 ---
 
 ## 10. 상태 모델
 
 ```ts
-type CampaignStatus =
+type ReviewStatus =
   | 'DRAFT'
   | 'ANALYZING'
-  | 'AI_REVIEWED'
-  | 'IN_APPROVAL'
-  | 'NEEDS_REVISION'
-  | 'APPROVED'
-  | 'READY_TO_PUBLISH'
-  | 'REJECTED'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'REVIEWED'
 ```
 
 ### 기본 흐름
@@ -437,121 +565,169 @@ type CampaignStatus =
 ```txt
 DRAFT
 → ANALYZING
-→ AI_REVIEWED
-→ IN_APPROVAL
-→ APPROVED
-→ READY_TO_PUBLISH
+→ COMPLETED
+→ REVIEWED
 ```
 
-### 수정 흐름
+### 실패 흐름
 
 ```txt
-IN_APPROVAL
-→ NEEDS_REVISION
+ANALYZING
+→ FAILED
 → ANALYZING
-→ AI_REVIEWED
-→ IN_APPROVAL
-```
-
-### 반려 흐름
-
-```txt
-IN_APPROVAL
-→ REJECTED
+→ COMPLETED
 ```
 
 ### 상태 전이 규칙
 
-- `DRAFT → ANALYZING`: 작성자가 AI 1차 검토를 시작한다.
-- `ANALYZING → AI_REVIEWED`: mock 분석 결과가 생성된다.
-- `AI_REVIEWED → IN_APPROVAL`: 작성자가 의견을 작성하고 결재 상신한다.
-- `IN_APPROVAL → IN_APPROVAL`: 중간 결재자가 승인하고 다음 단계로 넘긴다.
-- `IN_APPROVAL → APPROVED`: 최종 결재자가 승인한다.
-- `APPROVED → READY_TO_PUBLISH`: 게시 가능한 소재로 표시한다.
-- `IN_APPROVAL → NEEDS_REVISION`: 결재자가 수정 요청한다.
-- `IN_APPROVAL → REJECTED`: 결재자가 반려한다.
-
-모든 상태 전이는 감사 로그에 기록한다.
+- `DRAFT → ANALYZING`: 사용자가 콘텐츠 검수를 시작한다.
+- `ANALYZING → COMPLETED`: 대본/문구 검사와 OCR 검사가 완료된다.
+- `ANALYZING → FAILED`: OCR 또는 검수 처리 중 오류가 발생한다.
+- `FAILED → ANALYZING`: 사용자가 재시도한다.
+- `COMPLETED → REVIEWED`: 사용자가 검수 메모 또는 리포트를 저장한다.
 
 ---
 
 ## 11. 데이터 모델
 
 ```ts
-type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
+type Severity = 'low' | 'medium' | 'high' | 'critical'
 
-type RiskCategory =
-  | 'visual_gesture'
-  | 'ocr_text'
-  | 'sensitive_date'
-  | 'political_historical'
-  | 'gender_conflict'
-  | 'regional_discrimination'
-  | 'generation_conflict'
-  | 'disability_disease'
-  | 'race_nationality'
-  | 'religion'
-  | 'labor_power_abuse'
-  | 'sexual_expression'
-  | 'violence_disaster'
+type ReviewStatus =
+  | 'DRAFT'
+  | 'ANALYZING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'REVIEWED'
+
+type ContentType =
+  | 'video_script'
+  | 'ad_copy'
+  | 'sns_caption'
+  | 'web_banner'
+  | 'image_only'
+  | 'mixed'
+
+type Channel =
+  | 'instagram'
+  | 'youtube'
+  | 'tiktok'
+  | 'web_banner'
+  | 'push'
+  | 'offline'
+  | 'homepage'
+  | 'newsletter'
+
+type PolicyTermType = 'forbidden' | 'caution'
+
+type MatchType = 'exact' | 'contains' | 'regex' | 'normalized'
+
+type FindingSource = 'pasted_text' | 'image_ocr' | 'vision_ai'
+
+type PolicyCategory =
+  | 'guarantee_claim'
+  | 'exaggerated_claim'
+  | 'comparative_rank'
+  | 'sensitive_industry'
+  | 'brand_tone_mismatch'
+  | 'legal_review_required'
+  | 'event_condition_missing'
   | 'community_slang'
-  | 'brand_mismatch'
+  | 'custom_forbidden_term'
 
-type UserRole =
-  | 'REQUESTER'
-  | 'MARKETING_REVIEWER'
-  | 'BRAND_MANAGER'
-  | 'PR_REVIEWER'
-  | 'LEGAL_REVIEWER'
-  | 'FINAL_APPROVER'
-  | 'ADMIN'
-
-type Campaign = {
+type PolicyTerm = {
   id: string
-  name: string
-  brandName: string
-  channel: 'instagram' | 'youtube' | 'tiktok' | 'web_banner' | 'push' | 'offline'
-  publishDate: string
-  targetAudience: string
-  industry: string
-  status: CampaignStatus
-  riskScore: number
-  requesterName: string
-  currentApprovalStepId?: string
+  brandId: string
+  term: string
+  type: PolicyTermType
+  category: PolicyCategory
+  severity: Severity
+  matchType: MatchType
+  reason: string
+  replacementSuggestion?: string
+  enabled: boolean
   createdAt: string
   updatedAt: string
 }
 
-type MarketingAsset = {
+type ReviewJob = {
   id: string
-  campaignId: string
-  imageUrl?: string
-  copy?: string
-  fileName?: string
-  createdAt: string
-}
-
-type AnalysisResult = {
-  id: string
-  campaignId: string
-  assetId: string
-  source: 'mock' | 'ocr' | 'vision_llm' | 'hybrid'
-  overallRiskScore: number
-  overallRiskLevel: RiskLevel
-  summary: string
-  reviewRequired: boolean
-  categories: RiskFinding[]
-  suggestions: RevisionSuggestion[]
-  createdAt: string
-}
-
-type RiskFinding = {
-  id: string
-  category: RiskCategory
   title: string
-  level: RiskLevel
+  brandName: string
+  contentType: ContentType
+  channel: Channel
+  status: ReviewStatus
+  originalText?: string
+  imageUrls: string[]
+  dictionaryId: string
+  reviewerName: string
+  createdAt: string
+  updatedAt: string
+}
+
+type TextSegment = {
+  id: string
+  reviewJobId: string
+  source: 'pasted_text' | 'image_ocr'
+  text: string
+  normalizedText: string
+  lineNumber?: number
+  sentenceIndex?: number
+  imageId?: string
+  regionId?: string
+}
+
+type OcrTextRegion = {
+  id: string
+  imageId: string
+  text: string
   confidence: number
+  x: number
+  y: number
+  width: number
+  height: number
+  lineNumber?: number
+}
+
+type OcrResult = {
+  id: string
+  reviewJobId: string
+  imageId: string
+  imageUrl: string
+  fullText: string
+  language: string
+  confidence: number
+  regions: OcrTextRegion[]
+  createdAt: string
+}
+
+type PolicyFinding = {
+  id: string
+  reviewJobId: string
+  source: FindingSource
+  severity: Severity
+  category: PolicyCategory
+  policyTermId?: string
+  matchedTerm: string
+  originalText: string
+  highlightedText: string
+  reason: string
+  replacementSuggestion?: string
+  confidence?: number
+  lineNumber?: number
+  sentenceIndex?: number
+  imageId?: string
+  regionId?: string
+  createdAt: string
+}
+
+type VisionAiFinding = {
+  id: string
+  reviewJobId: string
+  title: string
   description: string
+  severity: Severity
+  confidence: number
   evidence: string[]
   falsePositiveNote: string
   regions?: ImageRegion[]
@@ -559,258 +735,288 @@ type RiskFinding = {
 
 type ImageRegion = {
   id: string
-  type: 'hand' | 'ocr_text' | 'symbol' | 'object'
   x: number
   y: number
   width: number
   height: number
   confidence: number
   label: string
-  landmarks?: Landmark[]
 }
 
-type Landmark = {
-  x: number
-  y: number
-  label?: string
-}
-
-type RevisionSuggestion = {
+type ReviewReport = {
   id: string
-  target: 'copy' | 'image' | 'schedule' | 'review_process'
-  title: string
-  description: string
-  before?: string
-  after?: string
-}
-
-type RequesterOpinion = {
-  id: string
-  campaignId: string
-  authorName: string
-  body: string
-  conclusion: 'submit_for_approval' | 'needs_edit_before_submit' | 'false_positive_likely'
-  createdAt: string
-}
-
-type ApprovalDecision = 'approve' | 'request_revision' | 'reject'
-
-type ApprovalStepStatus =
-  | 'pending'
-  | 'in_progress'
-  | 'approved'
-  | 'revision_requested'
-  | 'rejected'
-  | 'skipped'
-
-type ApprovalStep = {
-  id: string
-  campaignId: string
-  order: number
-  title: string
-  ownerName: string
-  role: UserRole
-  status: ApprovalStepStatus
-  decision?: ApprovalDecision
-  comment?: string
-  decidedAt?: string
-}
-
-type AuditLogEntry = {
-  id: string
-  campaignId: string
-  actorName: string
-  action:
-    | 'campaign_created'
-    | 'analysis_started'
-    | 'analysis_completed'
-    | 'requester_opinion_added'
-    | 'submitted_for_approval'
-    | 'approval_step_approved'
-    | 'revision_requested'
-    | 'campaign_rejected'
-    | 'campaign_final_approved'
-  message: string
+  reviewJobId: string
+  summary: string
+  totalFindingCount: number
+  pastedTextFindingCount: number
+  ocrFindingCount: number
+  visionFindingCount: number
+  reviewerMemo?: string
   createdAt: string
 }
 ```
 
 ---
 
-## 12. Mock 분석 결과 예시
+## 12. 정책 필터 엔진 요구사항
+
+정책 필터 엔진은 MVP의 핵심이다.
+
+### 입력
+
+```ts
+type PolicyFilterInput = {
+  reviewJobId: string
+  source: 'pasted_text' | 'image_ocr'
+  textSegments: TextSegment[]
+  policyTerms: PolicyTerm[]
+}
+```
+
+### 출력
+
+```ts
+type PolicyFilterResult = {
+  findings: PolicyFinding[]
+}
+```
+
+### 필수 동작
+
+- 비활성화된 정책은 무시한다.
+- 매칭 전 텍스트를 정규화한다.
+- 영문 대소문자를 무시한다.
+- 한글/영문 공백 변형에 대응한다.
+- `exact`, `contains`, `regex`, `normalized` 매칭을 지원한다.
+- 매칭된 원문 문장 또는 줄을 반환한다.
+- 매칭된 표현을 하이라이트할 수 있어야 한다.
+- 정책의 심각도, 카테고리, 사유, 대체 표현을 결과에 포함한다.
+
+### 추천 구현 순서
+
+```txt
+contains 매칭
+→ exact 매칭
+→ normalized 매칭
+→ regex 매칭
+→ 하이라이트
+→ 대체 표현 제안
+```
+
+---
+
+## 13. Tesseract.js OCR 요구사항
+
+이미지 OCR은 MVP 필수 기능이다.
+
+### 필수 기능
+
+- jpg/png/webp 이미지 업로드
+- 이미지 미리보기
+- OCR 진행률 표시
+- OCR 전체 텍스트 표시
+- OCR confidence 표시
+- OCR 텍스트 region 표시
+- 이미지 위 OCR bounding box overlay
+- OCR region 클릭 시 텍스트 패널과 동기화
+- OCR 텍스트를 정책 필터 엔진으로 검사
+- OCR 실패 상태 표시
+- 이미지에서 텍스트가 없을 때 empty state 표시
+
+### OCR 결과 매핑
+
+Tesseract.js 결과는 UI에서 바로 쓰지 말고 앱 도메인 타입으로 변환한다.
+
+```txt
+Tesseract raw result
+→ OcrResult
+→ OcrTextRegion[]
+→ TextSegment[]
+→ PolicyFilterEngine
+→ PolicyFinding[]
+```
+
+### 좌표 규칙
+
+이미지 overlay 좌표는 0~1 사이의 normalized coordinate로 관리한다.
+
+```ts
+type NormalizedRegion = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+```
+
+---
+
+## 14. AI 이미지 분석 확장 요구사항
+
+AI 이미지 분석은 기본 검수 기능이 아니라 확장 기능이다.
+
+기본 MVP는 다음만으로도 완성된 제품처럼 동작해야 한다.
+
+```txt
+대본/문구 검사
++ Tesseract.js OCR
++ OCR 문구 검사
++ 검수 리포트
+```
+
+AI 연결 전에는 다음 상태를 보여준다.
+
+```txt
+AI 이미지 분석 미연결
+```
+
+AI 연결 후에는 vision provider가 추가로 실행된다.
+
+### Provider Interface
+
+```ts
+type VisionAnalysisInput = {
+  reviewJobId: string
+  imageUrls: string[]
+  brandName: string
+  policySummary: string
+  ocrText: string
+}
+
+type VisionAnalysisResult = {
+  summary: string
+  findings: VisionAiFinding[]
+}
+
+type VisionAnalysisProvider = {
+  analyzeImages(input: VisionAnalysisInput): Promise<VisionAnalysisResult>
+}
+```
+
+### Disabled Provider
+
+```ts
+const disabledVisionProvider: VisionAnalysisProvider = {
+  async analyzeImages() {
+    return {
+      summary: 'AI 이미지 분석이 연결되지 않았습니다.',
+      findings: [],
+    }
+  },
+}
+```
+
+### 연결 원칙
+
+- API Key는 서버 사이드에서만 사용한다.
+- 프론트에는 연결 상태만 내려준다.
+- API Key를 public env로 두지 않는다.
+- API Key를 client component에서 참조하지 않는다.
+- API Key를 localStorage에 저장하지 않는다.
+- 연결 실패 시 OCR 기반 검수는 계속 동작해야 한다.
+
+---
+
+## 15. Mock 데이터 예시
+
+### 정책 사전 예시
+
+```json
+[
+  {
+    "id": "term-001",
+    "brandId": "brand-001",
+    "term": "무료 보장",
+    "type": "forbidden",
+    "category": "guarantee_claim",
+    "severity": "high",
+    "matchType": "contains",
+    "reason": "조건 없이 혜택을 보장하는 표현은 브랜드 정책상 사용이 제한됩니다.",
+    "replacementSuggestion": "조건 충족 시 제공",
+    "enabled": true
+  },
+  {
+    "id": "term-002",
+    "brandId": "brand-001",
+    "term": "업계 1위",
+    "type": "caution",
+    "category": "comparative_rank",
+    "severity": "medium",
+    "matchType": "contains",
+    "reason": "객관적 근거 없이 순위 표현을 사용할 경우 검토가 필요합니다.",
+    "replacementSuggestion": "많은 고객이 선택한",
+    "enabled": true
+  }
+]
+```
+
+### 검토 후보 예시
 
 ```json
 {
-  "source": "mock",
-  "overallRiskScore": 74,
-  "overallRiskLevel": "medium",
-  "summary": "이미지와 문구에서 담당자 검토가 필요한 리스크 후보가 확인되었습니다. 최종 판단은 캠페인 맥락을 아는 작성자와 결재자가 검토해야 합니다.",
-  "reviewRequired": true,
-  "categories": [
-    {
-      "id": "risk-001",
-      "category": "visual_gesture",
-      "title": "손동작 후보 검토 필요",
-      "level": "medium",
-      "confidence": 0.74,
-      "description": "이미지 내 손동작이 일부 민감한 시각 패턴과 유사하게 해석될 가능성이 있습니다.",
-      "evidence": [
-        "엄지와 검지 사이 거리가 가까운 형태가 확인되었습니다.",
-        "일부 손가락이 가려져 있어 맥락 확인이 필요합니다.",
-        "제품을 집는 동작일 가능성도 있습니다."
-      ],
-      "falsePositiveNote": "이 결과는 의도나 성향을 판정하지 않으며, 시각적 유사성에 기반한 검토 후보입니다.",
-      "regions": [
-        {
-          "id": "region-001",
-          "type": "hand",
-          "x": 0.52,
-          "y": 0.24,
-          "width": 0.2,
-          "height": 0.28,
-          "confidence": 0.91,
-          "label": "visual gesture candidate",
-          "landmarks": [
-            { "x": 0.55, "y": 0.31, "label": "wrist" },
-            { "x": 0.62, "y": 0.27, "label": "thumb_tip" },
-            { "x": 0.64, "y": 0.28, "label": "index_tip" }
-          ]
-        }
-      ]
-    }
-  ],
-  "suggestions": [
-    {
-      "id": "sug-001",
-      "target": "image",
-      "title": "제품 단독 컷 사용 검토",
-      "description": "손동작 해석 가능성을 줄이기 위해 손이 보이지 않는 제품 단독 이미지를 사용하는 방안을 검토하세요."
-    },
-    {
-      "id": "sug-002",
-      "target": "review_process",
-      "title": "PR 담당자 추가 검토 권장",
-      "description": "SNS 채널 게시 전 PR 담당자의 추가 검토를 권장합니다."
-    }
-  ]
+  "id": "finding-001",
+  "reviewJobId": "review-001",
+  "source": "pasted_text",
+  "severity": "high",
+  "category": "guarantee_claim",
+  "policyTermId": "term-001",
+  "matchedTerm": "무료 보장",
+  "originalText": "이번 이벤트에 참여하면 누구나 무료 보장 혜택을 받을 수 있습니다.",
+  "highlightedText": "이번 이벤트에 참여하면 누구나 <mark>무료 보장</mark> 혜택을 받을 수 있습니다.",
+  "reason": "조건 없이 혜택을 보장하는 표현은 브랜드 정책상 사용이 제한됩니다.",
+  "replacementSuggestion": "조건 충족 시 제공",
+  "lineNumber": 12,
+  "sentenceIndex": 18
+}
+```
+
+### OCR 후보 예시
+
+```json
+{
+  "id": "finding-002",
+  "reviewJobId": "review-001",
+  "source": "image_ocr",
+  "severity": "medium",
+  "category": "comparative_rank",
+  "policyTermId": "term-002",
+  "matchedTerm": "업계 1위",
+  "originalText": "업계 1위 확정 이벤트",
+  "highlightedText": "<mark>업계 1위</mark> 확정 이벤트",
+  "reason": "객관적 근거 없이 순위 표현을 사용할 경우 검토가 필요합니다.",
+  "replacementSuggestion": "많은 고객이 선택한",
+  "confidence": 0.89,
+  "imageId": "image-001",
+  "regionId": "ocr-region-001"
 }
 ```
 
 ---
 
-## 13. AI 1차 검토 원칙
+## 16. 검수 결과 표현 원칙
 
-AI는 작성자와 결재자의 검토를 돕는 1차 리뷰 어시스턴트다.
+결과 표현은 반드시 사람이 검토해야 하는 후보로 표현한다.
 
-AI 결과에는 항상 다음 정보가 있어야 한다.
-
-- 검토 후보 제목
-- 설명
-- 근거
-- 신뢰도
-- 오탐 가능성
-- 사람 검토 권장 문구
-- 수정 제안
-
-AI는 다음을 하면 안 된다.
-
-- 특정 사상 판정
-- 정치 성향 판정
-- 의도 판정
-- 성별 관점 판정
-- 커뮤니티 소속 판정
-- 법적 문제 자동 판정
-- 자동 승인/반려/게시 결정
-
-좋은 표현:
+### 좋은 표현
 
 ```txt
-논란으로 해석될 가능성이 있는 손동작 후보가 확인되었습니다.
-제품을 집는 동작일 가능성도 있으므로 작성자와 결재자의 검토가 필요합니다.
+브랜드 정책 사전에 등록된 표현이 확인되었습니다.
+해당 문장은 검토가 필요합니다.
+OCR로 추출된 문구에서 주의어가 확인되었습니다.
+캠페인 맥락에 따라 오탐일 수 있습니다.
+담당자 검토 후 수정 여부를 결정하세요.
 ```
 
-나쁜 표현:
+### 나쁜 표현
 
 ```txt
-이 이미지는 특정 사상을 담고 있습니다.
-이 손동작은 특정 집단 표현입니다.
-AI가 위험하다고 확정했습니다.
+정책 위반 확정입니다.
+법적 문제가 확정되었습니다.
+AI가 논란을 감지했습니다.
+이 이미지는 위험합니다.
+100% 안전합니다.
+AI가 승인했습니다.
 ```
-
----
-
-## 14. 작성자 의견 요구사항
-
-작성자 의견은 이 프로젝트에서 매우 중요하다.
-
-AI 결과가 나온 뒤 바로 결재로 넘기는 것이 아니라, 작성자가 다음을 확인하고 의견을 남겨야 한다.
-
-- AI가 표시한 후보가 실제 소재 맥락과 맞는지
-- 오탐 가능성이 있는지
-- 그래도 결재자 검토가 필요한지
-- 수정 없이 상신할지
-- 수정 후 재검토할지
-
-작성자 의견 필드는 필수다.
-
-작성자 의견 없이 `결재 상신` 버튼은 비활성화한다.
-
----
-
-## 15. 결재 라인 요구사항
-
-MVP에서는 복잡한 권한 관리보다 단순한 결재 라인을 우선한다.
-
-예시 결재 라인:
-
-```txt
-작성자
-→ 마케팅 리더
-→ PR 담당자
-→ 최종 결재자
-```
-
-각 결재 단계는 다음 정보를 가진다.
-
-- 단계명
-- 담당자 이름
-- 역할
-- 상태
-- 결정
-- 의견
-- 결정 시각
-
-결재자는 다음 중 하나를 선택할 수 있다.
-
-- 승인
-- 수정 요청
-- 반려
-
-수정 요청 또는 반려 시 의견 입력은 필수다.
-
----
-
-## 16. 감사 로그 요구사항
-
-다음 이벤트는 반드시 로그로 남긴다.
-
-- 캠페인 생성
-- AI 1차 검토 시작
-- AI 1차 검토 완료
-- 작성자 검토 의견 작성
-- 결재 상신
-- 중간 결재자 승인
-- 수정 요청
-- 반려
-- 최종 승인
-- 게시 가능 상태 전환
-
-로그는 다음 정보를 포함한다.
-
-- 행동자
-- 행동 유형
-- 설명
-- 생성 시각
 
 ---
 
@@ -818,20 +1024,22 @@ MVP에서는 복잡한 권한 관리보다 단순한 결재 라인을 우선한�
 
 ### 권장 문구
 
-- AI 1차 검토
+- 콘텐츠 검수
+- 브랜드 정책 사전
+- 금지어
+- 주의어
+- 정책 매칭
 - 검토 후보
 - 검토 필요
-- 오탐 가능성
-- 감지 근거
+- OCR 문구 추출
+- 이미지 문구 검사
+- 신뢰도
+- 검출 위치
 - 수정 제안
-- 작성자 검토 의견
-- 결재 상신
-- 결재 라인
-- 승인
-- 수정 요청
-- 반려
-- 최종 승인
-- 게시 가능
+- 검수 메모
+- 검수 리포트
+- AI 이미지 분석 미연결
+- API Key 연결
 
 ### 금지 문구
 
@@ -851,11 +1059,12 @@ MVP에서는 복잡한 권한 관리보다 단순한 결재 라인을 우선한�
 
 - 모든 버튼은 키보드로 접근 가능해야 한다.
 - 이미지 overlay 항목은 오른쪽 리스트에서도 접근 가능해야 한다.
-- 위험도는 색상만으로 전달하지 않는다.
+- 심각도는 색상만으로 전달하지 않는다.
 - badge에는 텍스트 레이블을 포함한다.
 - tooltip은 핵심 정보를 숨기는 용도로 사용하지 않는다.
 - 입력 필드에는 label과 에러 메시지가 있어야 한다.
-- 결재 버튼은 명확한 accessible name을 가져야 한다.
+- 이미지 OCR region은 리스트에서도 선택 가능해야 한다.
+- OCR 진행률은 스크린리더가 인식할 수 있는 텍스트와 함께 제공한다.
 
 ---
 
@@ -863,15 +1072,18 @@ MVP에서는 복잡한 권한 관리보다 단순한 결재 라인을 우선한�
 
 다음 상태를 제공한다.
 
+- 정책 사전 없음
+- 금지어 없음
+- 대본/문구 없음
 - 업로드 이미지 없음
-- 광고 문구 없음
-- AI 분석 중
-- AI 분석 실패
-- 리스크 후보 없음
-- 작성자 의견 없음
-- 결재 대기 항목 없음
-- 결재 권한 없음
-- 감사 로그 없음
+- OCR 분석 중
+- OCR 분석 실패
+- 이미지에서 텍스트를 찾지 못함
+- 검토 후보 없음
+- AI 이미지 분석 미연결
+- AI 연결 실패
+- 검수 리포트 없음
+- 저장된 검수 기록 없음
 
 ---
 
@@ -879,14 +1091,15 @@ MVP에서는 복잡한 권한 관리보다 단순한 결재 라인을 우선한�
 
 MVP 성공 기준:
 
-- 사용자가 3분 안에 소재 업로드부터 AI 결과 확인까지 완료할 수 있다.
-- 작성자가 AI 결과를 확인하고 본인 의견을 남긴 뒤 결재 상신할 수 있다.
-- 결재자가 원본 소재, AI 결과, 작성자 의견을 한 화면에서 이해할 수 있다.
-- 승인/수정요청/반려 상태 전이가 명확하다.
-- 최종 승인된 소재만 게시 가능 상태가 된다.
+- 사용자가 3분 안에 대본/문구 입력부터 검수 결과 확인까지 완료할 수 있다.
+- 사용자가 금지어를 등록하고, 해당 표현이 포함된 문장을 검출할 수 있다.
+- 사용자가 이미지를 업로드하고 OCR 문구를 확인할 수 있다.
+- OCR로 추출된 문구가 정책 필터 엔진으로 검사된다.
+- 이미지 위 OCR 영역과 오른쪽 결과 패널이 직관적으로 연결된다.
+- AI API Key가 없어도 제품의 핵심 기능이 동작한다.
+- AI API Key 연결 후 확장 가능한 provider 구조가 존재한다.
 - mock 데이터만으로도 실제 SaaS처럼 보인다.
-- 이미지 overlay와 오른쪽 리스크 패널이 직관적으로 연결된다.
-- 감사 로그로 전체 의사결정 흐름을 추적할 수 있다.
+- 안전하지 않은 확정 표현 없이 검토 후보 중심으로 표시된다.
 
 ---
 
@@ -895,21 +1108,30 @@ MVP 성공 기준:
 1. 프로젝트 세팅
 2. 디자인 토큰/레이아웃 구축
 3. 타입 정의와 mock 데이터 작성
-4. 캠페인 생성 폼
-5. 이미지/문구 업로드 미리보기
-6. AI 1차 검토 progress UI
-7. mock analysis provider
-8. 리뷰 페이지 레이아웃
-9. 이미지 overlay 구현
-10. 리스크 결과 패널 구현
-11. 작성자 의견 폼
-12. 결재 상신 액션
-13. 결재 화면 구현
-14. 결재 라인 타임라인
-15. 승인/수정요청/반려 상태 전이
-16. 감사 로그
-17. 핵심 E2E 테스트
-18. README 정리
+4. 브랜드 정책 사전 모델 작성
+5. 금지어/주의어 테이블 구현
+6. 금지어/주의어 추가/수정 폼 구현
+7. 검수 생성 폼 구현
+8. 대본/문구 붙여넣기 textarea 구현
+9. 텍스트 정규화 함수 구현
+10. 문장/줄 단위 split 함수 구현
+11. 정책 필터 엔진 구현
+12. 대본/문구 검토 후보 UI 구현
+13. 이미지 업로드와 미리보기 구현
+14. Tesseract.js OCR 연동
+15. OCR progress UI 구현
+16. OCR 텍스트 패널 구현
+17. OCR region overlay 구현
+18. OCR 텍스트 정책 검사 연결
+19. 검수 결과 요약 카드 구현
+20. 검토 후보 상세 패널 구현
+21. 출처/심각도 필터 구현
+22. 검수 메모와 리포트 저장 구현
+23. 검수 기록 페이지 구현
+24. AI settings 화면 구현
+25. disabled/mock vision provider 구현
+26. 핵심 E2E 테스트 작성
+27. README 정리
 
 ---
 
@@ -918,22 +1140,36 @@ MVP 성공 기준:
 ### 메인 카피
 
 ```txt
-공개 전, AI 1차 검토와 결재 라인으로 브랜드 리스크를 확인하세요.
+영상 대본과 이미지 문구를 공개 전 미리 검수하세요.
 ```
 
 ### 서브카피
 
 ```txt
-BrandGuard는 마케팅 이미지와 문구에서 검토가 필요한 리스크 후보를 정리하고,
-작성자 의견과 결재자 판단을 하나의 승인 흐름으로 연결합니다.
+BrandGuard는 브랜드가 등록한 금지어와 표현 정책을 기준으로
+대본, 광고 문구, 이미지 속 텍스트의 검토 후보를 찾아줍니다.
+```
+
+### OCR 설명
+
+```txt
+이미지 속 문구는 Tesseract.js OCR로 추출한 뒤,
+브랜드 정책 사전과 동일한 기준으로 검사합니다.
+```
+
+### AI 확장 설명
+
+```txt
+AI 이미지 분석은 API Key 연결 후 사용할 수 있습니다.
+연결 전에도 대본/문구 검사와 OCR 기반 이미지 문구 검사는 정상적으로 동작합니다.
 ```
 
 ### 제품 설명
 
 ```txt
-AI가 최종 판단하지 않습니다.
-AI는 검토 후보와 근거를 정리하고,
-작성자와 결재자가 의견을 남겨 최종 게시 여부를 결정합니다.
+BrandGuard는 위반 여부를 최종 확정하지 않습니다.
+정책 위반 가능성이 있는 검토 후보와 근거, 대체 표현을 제공하며,
+최종 판단과 수정 여부는 마케팅 담당자가 결정합니다.
 ```
 
 ---
@@ -943,14 +1179,18 @@ AI는 검토 후보와 근거를 정리하고,
 ```md
 # BrandGuard
 
-BrandGuard는 마케팅 소재 공개 전, AI 1차 검토와 사람 중심 결재 라인을 통해
-이미지와 문구의 브랜드 리스크 후보를 점검하는 B2B SaaS 포트폴리오입니다.
+BrandGuard는 기업과 브랜드 마케팅 담당자가 영상 대본, 광고 문구,
+이미지 속 텍스트를 공개하기 전에 검수할 수 있도록 돕는
+브랜드 정책 기반 콘텐츠 사전 검수 SaaS 포트폴리오입니다.
 
-사용자는 이미지와 문구를 업로드하고, AI 검토 결과를 확인한 뒤,
-작성자 의견을 남겨 결재를 상신할 수 있습니다.
-결재자는 AI 결과와 작성자 의견을 함께 확인하고
-승인, 수정 요청, 반려를 결정합니다.
+사용자는 브랜드 금지어와 주의어를 등록하고,
+영상 대본이나 광고 문구를 붙여넣어 문장 단위로 검사할 수 있습니다.
+이미지의 경우 Tesseract.js OCR로 이미지 속 문구를 추출하고,
+동일한 정책 사전 기준으로 검토 후보를 확인할 수 있습니다.
 
 BrandGuard는 특정 사상, 정치 성향, 의도, 커뮤니티 소속을 판정하지 않습니다.
-AI 결과는 최종 판단이 아니라 사람 검토를 돕는 참고 자료입니다.
+결과는 최종 확정이 아니라 사람이 확인해야 하는 검토 후보입니다.
+
+AI 이미지 분석은 API Key 연결 후 확장할 수 있으며,
+기본 MVP는 AI 없이도 대본/문구 검사와 OCR 이미지 문구 검사가 동작합니다.
 ```

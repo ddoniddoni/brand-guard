@@ -1,12 +1,11 @@
 import {
-  ClipboardCheck,
-  FolderKanban,
+  BookOpen,
+  FileClock,
   LayoutDashboard,
-  Library,
   Plus,
   Settings,
   ShieldCheck,
-  Users,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -15,12 +14,11 @@ import { CurrentUserSwitcher } from "@/components/auth/CurrentUserSwitcher";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const navigation = [
-  { href: "/dashboard", label: "대시보드", icon: LayoutDashboard },
-  { href: "/campaigns", label: "내 요청", icon: FolderKanban },
-  { href: "/campaigns/new", label: "새 검토 요청", icon: Plus },
-  { href: "/approvals", label: "내 결재함", icon: ClipboardCheck },
-  { href: "/cases", label: "케이스", icon: Library },
-  { href: "/settings/team", label: "팀 설정", icon: Users },
+  { href: "/reviews/new", label: "콘텐츠 검수", icon: Plus },
+  { href: "/dictionaries", label: "정책 사전", icon: BookOpen },
+  { href: "/history", label: "검수 기록", icon: FileClock },
+  { href: "/settings/ai", label: "AI 설정", icon: Sparkles },
+  { href: "/dashboard", label: "이전 대시보드", icon: LayoutDashboard },
   { href: "/settings/profile", label: "프로필", icon: Settings },
 ];
 
@@ -49,7 +47,7 @@ export function AppShell({
                     BrandGuard
                   </span>
                   <span className="block truncate text-xs leading-5 text-[var(--color-muted)]">
-                    사람 중심 결재 보조 도구
+                    브랜드 정책 기반 검수
                   </span>
                 </span>
               </Link>
@@ -100,8 +98,8 @@ export function AppShell({
                 <div className="hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface-card)] p-4 lg:block">
                   <p className="text-sm font-semibold">검토 보조 원칙</p>
                   <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-                    AI 결과는 검토 후보입니다. 최종 승인과 반려는 작성자와
-                    결재자가 결정합니다.
+                    결과는 정책 매칭 후보입니다. 최종 수정 여부는 담당자가
+                    맥락을 보고 결정합니다.
                   </p>
                 </div>
               </div>
@@ -127,6 +125,10 @@ function getIsActivePath(activePath: string, href: string) {
       activePath === href ||
       (activePath.startsWith("/campaigns/") && activePath !== "/campaigns/new")
     );
+  }
+
+  if (href === "/reviews/new") {
+    return activePath === href || activePath.startsWith("/reviews/");
   }
 
   return activePath === href;
