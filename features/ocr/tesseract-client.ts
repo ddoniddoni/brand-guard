@@ -1,19 +1,4 @@
-import type { ImageRegion } from "@/features/risk-analysis/types";
-
-export type OcrExtractionStatus =
-  | "not_requested"
-  | "succeeded"
-  | "empty"
-  | "failed";
-
-export type OcrExtractionResult = {
-  confidence: number;
-  errorMessage?: string;
-  progress: number;
-  regions: ImageRegion[];
-  status: OcrExtractionStatus;
-  text: string;
-};
+import type { OcrExtractionResult, OcrImageRegion } from "@/features/ocr/types";
 
 type TesseractWord = {
   bbox?: {
@@ -79,7 +64,7 @@ export async function extractImageTextWithTesseract(
     const text = normalizeOcrText(result.data.text);
     const words = collectWords(result.data.blocks);
     const regions = createOcrRegions({
-      campaignScopedId: `${file.name}-${file.lastModified}`,
+      imageScopedId: `${file.name}-${file.lastModified}`,
       imageHeight: imageDimensions.height,
       imageWidth: imageDimensions.width,
       words,
@@ -114,24 +99,34 @@ export async function extractImageTextWithTesseract(
 }
 
 function collectWords(blocks: Tesseract.Block[] | null): TesseractWord[] {
-  return (blocks ?? [])
-    .flatMap((block) => block.paragraphs)
-    .flatMap((paragraph) => paragraph.lines)
-    .flatMap((line) => line.words)
-    .filter((word) => word.text?.trim());
+  const words: TesseractWord[] = [];
+
+  for (const block of blocks ?? []) {
+    for (const paragraph of block.paragraphs) {
+      for (const line of paragraph.lines) {
+        for (const word of line.words) {
+          if (word.text?.trim()) {
+            words.push(word);
+          }
+        }
+      }
+    }
+  }
+
+  return words;
 }
 
 function createOcrRegions({
-  campaignScopedId,
+  imageScopedId,
   imageHeight,
   imageWidth,
   words,
 }: {
-  campaignScopedId: string;
+  imageScopedId: string;
   imageHeight: number;
   imageWidth: number;
   words: TesseractWord[];
-}): ImageRegion[] {
+}): OcrImageRegion[] {
   const usableWords = words.filter(
     (word) => word.bbox && (word.confidence ?? 0) >= 35,
   );
@@ -152,7 +147,7 @@ function createOcrRegions({
     {
       confidence: clampConfidence(averageConfidence / 100),
       height: clamp01((y1 - y0) / imageHeight),
-      id: `ocr-region-${hashText(campaignScopedId)}`,
+      id: `ocr-region-${hashText(imageScopedId)}`,
       label: "OCR 추출 문구 영역",
       type: "ocr_text",
       width: clamp01((x1 - x0) / imageWidth),
@@ -185,8 +180,11 @@ function getImageDimensions(file: File) {
 function normalizeOcrText(text: string) {
   return text
     .split(/\n+/)
-    .map((line) => line.replace(/\s+/g, " ").trim())
-    .filter(Boolean)
+    .flatMap((line) => {
+      const normalizedLine = line.replace(/\s+/g, " ").trim();
+
+      return normalizedLine ? [normalizedLine] : [];
+    })
     .join("\n");
 }
 

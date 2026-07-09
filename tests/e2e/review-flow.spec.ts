@@ -17,6 +17,13 @@ test.describe("BrandGuard policy review flow", () => {
     await expect(page.getByText("무료 보장").first()).toBeVisible();
     await expect(page.getByText("업계 1위").first()).toBeVisible();
 
+    await page.getByRole("button", { name: "정책 추가" }).click();
+    await page.getByRole("textbox", { exact: true, name: "표현" }).fill("테스트 금지어");
+    await page.getByLabel("검출 사유").fill("브랜드 정책상 테스트 문구는 검토가 필요합니다.");
+    await page.getByLabel("대체 표현").fill("검토 완료 문구");
+    await page.getByRole("button", { exact: true, name: "추가" }).click();
+    await expect(page.getByText("테스트 금지어").first()).toBeVisible();
+
     await page.getByRole("link", { name: /콘텐츠 검수/ }).click();
     await expect(
       page.getByRole("heading", { name: "새 콘텐츠 검수" }),
@@ -26,7 +33,7 @@ test.describe("BrandGuard policy review flow", () => {
     await page
       .getByRole("textbox", { name: "대본 또는 광고 문구" })
       .fill(
-        "이번 이벤트에 참여하면 누구나 무료 보장 혜택을 받을 수 있습니다.\n업계 1위 확정 이벤트 문구는 공개 전 근거를 확인합니다.",
+        "이번 이벤트에 참여하면 누구나 무료 보장 혜택을 받을 수 있습니다.\n업계 1위 확정 이벤트 문구는 공개 전 근거를 확인합니다.\n테스트 금지어는 새로 등록한 정책으로 확인합니다.",
       );
     await page.getByRole("button", { name: "콘텐츠 검수 시작" }).click();
 
@@ -36,6 +43,7 @@ test.describe("BrandGuard policy review flow", () => {
     ).toBeVisible();
     await expect(page.getByText("무료 보장").first()).toBeVisible();
     await expect(page.getByText("업계 1위").first()).toBeVisible();
+    await expect(page.getByText("테스트 금지어").first()).toBeVisible();
     await expect(page.getByText("AI 이미지 분석").first()).toBeVisible();
 
     await page
@@ -46,7 +54,7 @@ test.describe("BrandGuard policy review flow", () => {
 
     await page.getByRole("link", { name: /검수 기록/ }).click();
     await expect(page.getByText("E2E 정책 사전 검수")).toBeVisible();
-    await expect(page.getByText("검토 후보 2개")).toBeVisible();
+    await expect(page.getByText("검토 후보 3개")).toBeVisible();
   });
 
   test("review creation shows Korean validation errors", async ({ page }) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { runPolicyFilter } from "@/features/policy/filter-engine";
-import { mockPolicyTerms } from "@/features/policy/mock-terms";
+import { getStoredPolicyTerms } from "@/features/policy/local-policy-store";
 import type {
   FindingSource,
   PolicyFinding,
@@ -15,8 +15,10 @@ import type {
   ReviewReport,
   ReviewWorkspace,
 } from "@/features/review/types";
-import type { OcrExtractionResult } from "@/features/risk-analysis/ocr";
-import type { ImageRegion } from "@/features/risk-analysis/types";
+import type {
+  OcrExtractionResult,
+  OcrImageRegion,
+} from "@/features/ocr/types";
 
 const storageKey = "brandguard.review-workspaces.v1";
 
@@ -59,14 +61,15 @@ export function createReviewWorkspace({
     createOcrTextSegments({ result, reviewJobId }),
   );
   const segments = [...textSegments, ...ocrSegments];
+  const policyTerms = getStoredPolicyTerms();
   const pastedTextFindings = runPolicyFilter({
-    policyTerms: mockPolicyTerms,
+    policyTerms,
     reviewJobId,
     source: "pasted_text",
     textSegments,
   }).findings;
   const ocrFindings = runPolicyFilter({
-    policyTerms: mockPolicyTerms,
+    policyTerms,
     reviewJobId,
     source: "image_ocr",
     textSegments: ocrSegments,
@@ -219,7 +222,7 @@ function mapOcrRegions({
   text,
 }: {
   imageId: string;
-  regions: ImageRegion[];
+  regions: OcrImageRegion[];
   text: string;
 }): OcrTextRegion[] {
   return regions.map((region, index) => ({

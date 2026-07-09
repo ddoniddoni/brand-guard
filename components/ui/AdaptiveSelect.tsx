@@ -49,7 +49,7 @@ export function AdaptiveSelect({
   const selectedIndex = options.findIndex(
     (option) => option.value === selectedValue,
   );
-  const [highlightedIndex, setHighlightedIndex] = useState(
+  const [highlightedIndex, setHighlightedIndex] = useState(() =>
     Math.max(selectedIndex, 0),
   );
   const selectedOption = useMemo(

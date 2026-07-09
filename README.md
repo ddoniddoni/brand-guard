@@ -60,9 +60,6 @@ BrandGuard는 특정 사상, 정치 성향, 의도, 커뮤니티 소속을 판�
 - `/history`
 - `/settings/ai`
 
-Legacy approval workflow routes remain in the codebase for now, but they are no
-longer the primary product flow.
-
 ## Run
 
 ```bash
@@ -106,8 +103,7 @@ npx playwright install
 - Policy dictionary edits are not persisted beyond the current page state.
 - OCR is client-side Tesseract.js only.
 - AI image analysis provider is not connected yet.
-- Legacy approval routes still exist and should be hidden or moved under a later
-  workflow settings area.
+- The policy dictionary UI is currently mock-first and will need persistent CRUD.
 
 ## Future Improvements
 

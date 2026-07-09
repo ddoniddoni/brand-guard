@@ -9,8 +9,8 @@ import { useRouter } from "next/navigation";
 import { AdaptiveSelect } from "@/components/ui/AdaptiveSelect";
 import {
   defaultDictionaryId,
-  mockPolicyTerms,
 } from "@/features/policy/mock-terms";
+import { getStoredPolicyTerms } from "@/features/policy/local-policy-store";
 import {
   getContentTypeLabel,
   getReviewChannelLabel,
@@ -24,7 +24,7 @@ import {
   type ReviewCreateInput,
 } from "@/features/review/schema";
 import type { Channel, ContentType } from "@/features/review/types";
-import { extractImageTextWithTesseract } from "@/features/risk-analysis/ocr";
+import { extractImageTextWithTesseract } from "@/features/ocr/tesseract-client";
 
 const contentTypes: ContentType[] = [
   "video_script",
@@ -51,6 +51,7 @@ export function ReviewCreateForm() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imageError, setImageError] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [policyTerms] = useState(() => getStoredPolicyTerms());
   const [progressLabel, setProgressLabel] = useState("");
   const [ocrProgress, setOcrProgress] = useState(0);
   const form = useForm<ReviewCreateInput>({
@@ -167,7 +168,7 @@ export function ReviewCreateForm() {
               <Field label="검수 제목" error={form.formState.errors.title?.message}>
                 <input
                   className="app-input h-11 w-full px-3 text-sm"
-                  placeholder="예: 여름 캠페인 대본 사전 검수"
+                  placeholder="예: 여름 프로모션 대본 사전 검수"
                   {...form.register("title")}
                 />
               </Field>
@@ -216,7 +217,7 @@ export function ReviewCreateForm() {
                 <h2 className="mt-2 text-2xl font-normal">검수할 텍스트</h2>
               </div>
               <span className="rounded-full bg-[var(--color-surface-soft)] px-3 py-1 text-xs font-medium">
-                {mockPolicyTerms.filter((term) => term.enabled).length}개 정책 적용
+                {policyTerms.filter((term) => term.enabled).length}개 정책 적용
               </span>
             </div>
             <label className="mt-5 block">

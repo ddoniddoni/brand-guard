@@ -1,16 +1,13 @@
 import {
   BookOpen,
   FileClock,
-  LayoutDashboard,
   Plus,
-  Settings,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cx } from "@/lib/utils";
-import { CurrentUserSwitcher } from "@/components/auth/CurrentUserSwitcher";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const navigation = [
@@ -18,8 +15,6 @@ const navigation = [
   { href: "/dictionaries", label: "정책 사전", icon: BookOpen },
   { href: "/history", label: "검수 기록", icon: FileClock },
   { href: "/settings/ai", label: "AI 설정", icon: Sparkles },
-  { href: "/dashboard", label: "이전 대시보드", icon: LayoutDashboard },
-  { href: "/settings/profile", label: "프로필", icon: Settings },
 ];
 
 export function AppShell({
@@ -37,7 +32,7 @@ export function AppShell({
             <div className="flex min-w-0 items-center justify-between gap-3">
               <Link
                 className="flex min-h-12 min-w-0 items-center gap-3 rounded-full px-2 hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-                href="/dashboard"
+                href="/reviews/new"
               >
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-dark)] text-[var(--color-risk-critical-text)]">
                   <ShieldCheck aria-hidden="true" size={20} strokeWidth={1.8} />
@@ -90,8 +85,6 @@ export function AppShell({
             </nav>
 
             <div className="mt-4 grid gap-3 lg:mt-auto lg:min-h-0 lg:overflow-y-auto lg:px-3 lg:pb-1">
-              <CurrentUserSwitcher />
-
               <div className="hidden gap-3 lg:grid">
                 <ThemeToggle />
 
@@ -116,17 +109,6 @@ export function AppShell({
 }
 
 function getIsActivePath(activePath: string, href: string) {
-  if (href === "/dashboard") {
-    return activePath === href;
-  }
-
-  if (href === "/campaigns") {
-    return (
-      activePath === href ||
-      (activePath.startsWith("/campaigns/") && activePath !== "/campaigns/new")
-    );
-  }
-
   if (href === "/reviews/new") {
     return activePath === href || activePath.startsWith("/reviews/");
   }
