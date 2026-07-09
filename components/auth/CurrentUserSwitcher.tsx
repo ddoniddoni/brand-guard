@@ -21,7 +21,7 @@ export function CurrentUserSwitcher() {
   return (
     <section
       aria-label="현재 사용자"
-      className="grid min-w-0 gap-3 rounded-lg border border-[var(--color-hairline)] bg-white p-3"
+      className="app-panel grid min-w-0 gap-3 p-3 shadow-none"
     >
       <div className="flex min-w-0 items-center gap-3">
         <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--color-surface-soft)] text-[var(--color-ink)]">
@@ -37,7 +37,7 @@ export function CurrentUserSwitcher() {
       <label className="grid gap-1 text-xs font-medium text-[var(--color-muted)]">
         역할 전환
         <select
-          className="h-10 min-w-0 rounded-md border border-[var(--color-hairline)] bg-white px-3 text-sm font-medium text-[var(--color-ink)] outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+          className="app-input h-10 min-w-0 px-3 text-sm font-medium focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
           onChange={(event) => setCurrentUserId(event.target.value)}
           value={currentUser.id}
         >

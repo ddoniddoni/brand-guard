@@ -167,7 +167,7 @@ export function AdaptiveSelect({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={ariaLabel ?? label}
-        className="flex h-11 w-full min-w-0 items-center justify-between gap-3 rounded-md border border-[var(--color-hairline)] bg-white pl-3 pr-11 text-left text-sm outline-none hover:bg-[var(--color-surface-soft)] focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:bg-[var(--color-surface-soft)] disabled:opacity-70"
+        className="app-input flex h-11 w-full min-w-0 items-center justify-between gap-3 pl-3 pr-11 text-left text-sm hover:bg-[var(--color-surface-soft)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:bg-[var(--color-surface-soft)] disabled:opacity-70"
         disabled={disabled}
         onClick={() => {
           if (isOpen) {
@@ -196,7 +196,7 @@ export function AdaptiveSelect({
       {isOpen ? (
         <div
           className={cx(
-            "absolute left-0 z-50 w-full min-w-44 overflow-hidden rounded-md border border-[var(--color-hairline)] bg-white p-1 shadow-lg",
+            "absolute left-0 z-50 w-full min-w-44 overflow-hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-panel)] p-1 shadow-lg",
             direction === "down" ? "top-full mt-1" : "bottom-full mb-1",
           )}
           id={listboxId}
@@ -211,9 +211,11 @@ export function AdaptiveSelect({
                 <button
                   aria-selected={isSelected}
                   className={cx(
-                    "flex min-h-9 w-full min-w-0 items-center rounded px-3 text-left text-sm text-[var(--color-body)] hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]",
+                    "flex min-h-9 w-full min-w-0 items-center rounded px-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]",
                     isSelected &&
-                      "bg-[var(--color-info-bg)] font-medium text-[var(--color-info)]",
+                      "bg-[var(--color-info-bg)] font-medium text-[var(--color-info)] hover:bg-[var(--color-info-bg)]",
+                    !isSelected &&
+                      "text-[var(--color-body)] hover:bg-[var(--color-surface-soft)]",
                     isHighlighted && !isSelected && "bg-[var(--color-surface-soft)]",
                   )}
                   key={option.value}

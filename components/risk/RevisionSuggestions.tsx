@@ -13,18 +13,18 @@ export function RevisionSuggestions({
   suggestions: RevisionSuggestion[];
 }) {
   return (
-    <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
+    <section className="app-panel overflow-hidden">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
           수정 제안
         </p>
-        <h2 className="mt-2 text-xl font-normal">수정 제안</h2>
+        <h2 className="mt-2 text-xl font-semibold">수정 제안</h2>
       </div>
       <div className="grid gap-3 p-4">
         {suggestions.length > 0 ? (
           suggestions.map((suggestion) => (
             <article
-              className="rounded-lg bg-[var(--color-surface-soft)] p-4"
+              className="app-panel-muted p-4"
               key={suggestion.id}
             >
               <p className="text-xs font-medium text-[var(--color-muted)]">

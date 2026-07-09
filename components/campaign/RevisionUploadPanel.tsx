@@ -77,12 +77,12 @@ export function RevisionUploadPanel({
   };
 
   return (
-    <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
+    <section className="app-panel overflow-hidden">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
           수정본 업로드
         </p>
-        <h2 className="mt-2 text-xl font-normal">수정 버전 업로드</h2>
+        <h2 className="mt-2 text-xl font-semibold">수정 버전 업로드</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
           수정 요청 상태에서 2차 소재를 올리면 모의 AI 재분석 후 버전 비교가
           생성됩니다.
@@ -105,7 +105,7 @@ export function RevisionUploadPanel({
         <label className="grid min-w-0 gap-2 text-sm font-medium">
           수정 문구
           <textarea
-            className="min-h-28 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:bg-[var(--color-surface-soft)]"
+            className="app-input min-h-28 w-full min-w-0 px-3 py-3 text-sm leading-6 focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:bg-[var(--color-surface-soft)]"
             disabled={!isEnabled || isAnalyzing}
             onChange={(event) => setCopyDraft(event.target.value)}
             value={copyDraft}
@@ -155,31 +155,32 @@ export function RevisionUploadPanel({
           </div>
         </div>
 
-        <button
-          className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={!isEnabled || isAnalyzing || Boolean(fileError)}
-          onClick={handleSubmit}
-          type="button"
-        >
-          {isAnalyzing ? (
-            <LoaderCircle
-              aria-hidden="true"
-              className="animate-spin"
-              size={16}
-              strokeWidth={1.8}
-            />
+        <div className="flex flex-col-reverse items-stretch gap-2 sm:flex-row sm:justify-end">
+          {isComplete || hasVersionComparison ? (
+            <Link
+              className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+              href={`/campaigns/${campaignId}/versions`}
+            >
+              버전 비교
+            </Link>
           ) : null}
-          2차 재분석
-        </button>
-
-        {isComplete || hasVersionComparison ? (
-          <Link
-            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-hairline)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-            href={`/campaigns/${campaignId}/versions`}
+          <button
+            className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-5 text-sm font-semibold text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={!isEnabled || isAnalyzing || Boolean(fileError)}
+            onClick={handleSubmit}
+            type="button"
           >
-            버전 비교 보기
-          </Link>
-        ) : null}
+            {isAnalyzing ? (
+              <LoaderCircle
+                aria-hidden="true"
+                className="animate-spin"
+                size={16}
+                strokeWidth={1.8}
+              />
+            ) : null}
+            수정본 검토 시작
+          </button>
+        </div>
       </div>
     </section>
   );

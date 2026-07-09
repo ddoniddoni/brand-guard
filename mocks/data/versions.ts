@@ -2,11 +2,10 @@ import type { VersionComparison } from "@/features/campaign/version-types";
 import { analysisResults } from "@/mocks/data/analysis-results";
 
 const baseFindings = analysisResults[0]?.categories ?? [];
-const handFinding = baseFindings.find((finding) => finding.id === "risk-001");
 const ocrFinding = baseFindings.find((finding) => finding.id === "risk-002");
 
-if (!handFinding || !ocrFinding) {
-  throw new Error("버전 모의 데이터에는 기본 리스크 후보가 필요합니다.");
+if (!ocrFinding) {
+  throw new Error("버전 모의 데이터에는 기본 OCR 후보가 필요합니다.");
 }
 
 const refinedOcrFinding = {
@@ -37,8 +36,8 @@ export const versionComparisons: VersionComparison[] = [
       createdAt: "2026-07-07T09:10:00.000Z",
       copy: "이번 여름, 모두가 주목할 한정 혜택을 놓치지 마세요.",
       imageNote:
-        "제품을 손에 쥔 인물 컷. 손동작 후보와 OCR 문구 영역이 함께 표시됩니다.",
-      findings: [handFinding, ocrFinding],
+        "제품 홍보 컷. OCR 문구 영역과 입력 카피 맥락을 함께 확인합니다.",
+      findings: [ocrFinding],
     },
     after: {
       id: "v2",
@@ -58,7 +57,7 @@ export const versionComparisons: VersionComparison[] = [
       { type: "removed", text: "모두가 주목할 한정 혜택을 놓치지 마세요." },
       { type: "added", text: "제품의 산뜻한 사용감을 먼저 경험해 보세요." },
     ],
-    removedFindings: [handFinding],
+    removedFindings: [],
     addedFindings: [refinedOcrFinding],
   },
 ];

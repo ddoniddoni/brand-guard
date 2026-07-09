@@ -19,7 +19,10 @@ import type {
   ReviewerComment,
   ReviewAction,
 } from "@/features/review-workflow/types";
-import { applyReviewAction } from "@/features/review-workflow/state-machine";
+import {
+  applyReviewAction,
+  normalizeApprovalStepsSequence,
+} from "@/features/review-workflow/state-machine";
 import { ReviewCanvas } from "@/components/image-review/ReviewCanvas";
 import { RiskFindingPanel } from "@/components/risk/RiskFindingPanel";
 import { RiskScoreCard } from "@/components/risk/RiskScoreCard";
@@ -28,6 +31,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ApprovalTimeline } from "@/components/workflow/ApprovalTimeline";
 import { AuditLog } from "@/components/workflow/AuditLog";
 import { CommentThread } from "@/components/workflow/CommentThread";
+import { CurrentTaskSummary } from "@/components/workflow/CurrentTaskSummary";
 
 const approvalActions: ReviewAction[] = [
   "APPROVE_STEP",
@@ -62,7 +66,9 @@ export function ApprovalWorkspace({
   const [commentDraft, setCommentDraft] = useState("");
   const [reviewComments, setReviewComments] = useState(comments);
   const [auditEntries, setAuditEntries] = useState(auditLogEntries);
-  const [displayedSteps, setDisplayedSteps] = useState(approvalSteps);
+  const [displayedSteps, setDisplayedSteps] = useState(() =>
+    normalizeApprovalStepsSequence(approvalSteps, campaign.status),
+  );
   const [activeStepId, setActiveStepId] = useState(
     campaign.currentApprovalStepId ?? "",
   );
@@ -79,6 +85,15 @@ export function ApprovalWorkspace({
     campaign: { ...campaign, status },
     currentStep,
     user: currentUser,
+  });
+  const canMarkReadyToPublish =
+    status === "APPROVED" && currentUser.role === "FINAL_APPROVER";
+  const currentTask = getApprovalCurrentTask({
+    canMarkReadyToPublish,
+    canDecide,
+    currentStep,
+    currentUser,
+    status,
   });
   const transitions =
     status === "IN_APPROVAL"
@@ -118,28 +133,31 @@ export function ApprovalWorkspace({
       return;
     }
 
-    const nextSteps = displayedSteps.map((step) => {
-      if (step.id === currentStep.id) {
-        return {
-          ...step,
-          comment:
-            decisionComment ||
-            getDecisionDefaultComment(action, Boolean(isFinalStep)),
-          decidedAt: timestamp,
-          decision: getApprovalDecision(action),
-          status: getStepStatusByAction(action),
-        };
-      }
+    const nextSteps = normalizeApprovalStepsSequence(
+      displayedSteps.map((step) => {
+        if (step.id === currentStep.id) {
+          return {
+            ...step,
+            comment:
+              decisionComment ||
+              getDecisionDefaultComment(action, Boolean(isFinalStep)),
+            decidedAt: timestamp,
+            decision: getApprovalDecision(action),
+            status: getStepStatusByAction(action),
+          };
+        }
 
-      if (isApprove && !isFinalStep && step.id === nextStepId) {
-        return {
-          ...step,
-          status: "in_progress" as const,
-        };
-      }
+        if (isApprove && !isFinalStep && step.id === nextStepId) {
+          return {
+            ...step,
+            status: "in_progress" as const,
+          };
+        }
 
-      return step;
-    });
+        return step;
+      }),
+      nextStatus,
+    );
     const auditEntry = createAuditEntry({
       action: getDecisionAuditAction(action, Boolean(isFinalStep)),
       actorName: currentUser.name,
@@ -186,6 +204,35 @@ export function ApprovalWorkspace({
     });
   };
 
+  const handleMarkReadyToPublish = () => {
+    if (!canMarkReadyToPublish) {
+      return;
+    }
+
+    const nextStatus = applyReviewAction(status, "MARK_READY_TO_PUBLISH");
+
+    if (nextStatus === status) {
+      return;
+    }
+
+    const auditEntry = createAuditEntry({
+      action: "ready_to_publish",
+      actorName: currentUser.name,
+      campaignId: campaign.id,
+      fromStatus: status,
+      message: "최종 승인 이력을 확인하고 게시 가능 상태로 전환했습니다.",
+      toStatus: nextStatus,
+    });
+    const nextAuditEntries = [auditEntry, ...auditEntries];
+
+    setStatus(nextStatus);
+    setAuditEntries(nextAuditEntries);
+    onWorkspaceChange?.({
+      auditLogEntries: nextAuditEntries,
+      status: nextStatus,
+    });
+  };
+
   const handleAddComment = () => {
     if (!canDecide) {
       return;
@@ -227,7 +274,7 @@ export function ApprovalWorkspace({
 
   return (
     <div className="mx-auto grid w-full max-w-[1700px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
-      <section className="grid min-w-0 gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <section className="app-panel grid min-w-0 gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={status} />
@@ -235,54 +282,72 @@ export function ApprovalWorkspace({
               최종 결정자 확인
             </span>
           </div>
-          <h2 className="mt-4 text-2xl font-normal">결재 검토 요약</h2>
+          <h2 className="mt-4 text-2xl font-semibold">결재 검토 요약</h2>
           <p className="mt-3 max-w-4xl text-sm leading-6 text-[var(--color-body)]">
             {analysis.summary} AI 의견은 참고 자료이며, 결재자는 이미지, 문구,
             작성자 의견, 감사 로그를 함께 확인해야 합니다.
           </p>
         </div>
-        <div className="rounded-lg bg-[var(--color-surface-soft)] p-4">
-          <p className="text-sm font-medium">결재 액션</p>
+        <div className="app-panel-muted p-4">
+          <p className="text-sm font-semibold">결재 액션</p>
           <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
             현재 단계는 {currentStep?.title ?? "결재 단계"}입니다. 수정 요청과
             반려는 의견 입력 후 처리할 수 있습니다.
           </p>
           {!canDecide ? (
-            <p className="mt-3 rounded-lg bg-white p-3 text-xs leading-5 text-[var(--color-muted)]">
+            <p className="mt-3 rounded-lg bg-[var(--color-panel)] p-3 text-xs leading-5 text-[var(--color-muted)]">
               {currentUser.name}님은 현재 결재 단계 담당자가 아니어서 결재
               액션을 실행할 수 없습니다.
             </p>
           ) : null}
           <div className="mt-4 grid gap-2">
             {transitions.length > 0 ? (
-              transitions.map((transition, index) => (
-                <button
-                  className={
-                    index === 0
-                      ? "min-h-11 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-                      : "min-h-11 whitespace-nowrap rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-                  }
-                  disabled={
-                    !canDecide ||
-                    (transition.action === "REQUEST_REVISION" ||
-                      transition.action === "REJECT") &&
-                    !commentDraft.trim()
-                  }
-                  key={transition.action}
-                  onClick={() => handleAction(transition.action)}
-                  type="button"
-                >
-                  {transition.label}
-                </button>
-              ))
+              transitions.map((transition, index) => {
+                const requiresComment =
+                  transition.action === "REQUEST_REVISION" ||
+                  transition.action === "REJECT";
+                const isDisabled =
+                  !canDecide || (requiresComment && !commentDraft.trim());
+
+                return (
+                  <button
+                    className={
+                      index === 0
+                        ? "min-h-11 whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+                        : "min-h-11 whitespace-nowrap rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+                    }
+                    disabled={isDisabled}
+                    key={transition.action}
+                    onClick={() => handleAction(transition.action)}
+                    type="button"
+                  >
+                    {transition.label}
+                  </button>
+                );
+              })
+            ) : canMarkReadyToPublish ? (
+              <button
+                className="min-h-11 whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+                onClick={handleMarkReadyToPublish}
+                type="button"
+              >
+                게시 가능 처리
+              </button>
             ) : (
-              <p className="rounded-lg bg-white p-3 text-sm text-[var(--color-body)]">
+              <p className="rounded-lg bg-[var(--color-panel)] p-3 text-sm text-[var(--color-body)]">
                 현재 상태에서는 추가 결재 액션이 없습니다.
               </p>
             )}
           </div>
         </div>
       </section>
+
+      <CurrentTaskSummary
+        description={currentTask.description}
+        meta={currentTask.meta}
+        title={currentTask.title}
+        tone={currentTask.tone}
+      />
 
       <ApprovalTimeline steps={displayedSteps} />
 
@@ -324,6 +389,86 @@ export function ApprovalWorkspace({
       </div>
     </div>
   );
+}
+
+function getApprovalCurrentTask({
+  canMarkReadyToPublish,
+  canDecide,
+  currentStep,
+  currentUser,
+  status,
+}: {
+  canMarkReadyToPublish: boolean;
+  canDecide: boolean;
+  currentStep?: ApprovalStep;
+  currentUser: CurrentUser;
+  status: CampaignStatus;
+}) {
+  if (status === "IN_APPROVAL") {
+    if (canDecide) {
+      return {
+        description: currentStep
+          ? `${currentStep.title} 단계 담당자로서 AI 후보, 작성자 의견, 이전 코멘트, 감사 로그를 확인한 뒤 결정해 주세요.`
+          : "현재 결재 단계 정보를 확인한 뒤 결정해 주세요.",
+        meta: "수정 요청 또는 반려는 결재 의견 입력 후 처리할 수 있습니다.",
+        title: "내 결재 차례입니다",
+        tone: "action" as const,
+      };
+    }
+
+    return {
+      description: currentStep
+        ? `${currentStep.ownerName}님이 ${currentStep.title} 단계에서 검토할 차례입니다.`
+        : "현재 진행 중인 결재 단계를 확인하고 있습니다.",
+      meta: `${currentUser.name}님은 현재 단계 담당자가 아니어서 결재 액션이 잠겨 있습니다.`,
+      title: "다른 결재자 검토 대기",
+      tone: "locked" as const,
+    };
+  }
+
+  if (status === "NEEDS_REVISION") {
+    return {
+      description:
+        "수정 요청이 등록되었습니다. 작성자가 수정본을 업로드하고 다시 AI 1차 검토를 진행해야 합니다.",
+      title: "작성자 수정 대기",
+      tone: "waiting" as const,
+    };
+  }
+
+  if (status === "APPROVED") {
+    return {
+      description: canMarkReadyToPublish
+        ? "최종 승인 이력과 감사 로그를 확인한 뒤 게시 가능 상태로 전환할 수 있습니다."
+        : "최종 승인된 상태입니다. 게시 가능 처리 전까지 결재 이력과 감사 로그를 유지합니다.",
+      meta: canMarkReadyToPublish
+        ? "게시 가능 처리는 최종 승인 이후에만 실행됩니다."
+        : undefined,
+      title: canMarkReadyToPublish ? "게시 가능 처리 대기" : "최종 승인 완료",
+      tone: canMarkReadyToPublish ? ("action" as const) : ("complete" as const),
+    };
+  }
+
+  if (status === "READY_TO_PUBLISH") {
+    return {
+      description: "이 소재는 최종 승인 후 게시 가능 상태로 전환되었습니다.",
+      title: "게시 가능",
+      tone: "complete" as const,
+    };
+  }
+
+  if (status === "REJECTED") {
+    return {
+      description: "현재 버전은 반려되어 추가 결재 액션을 실행할 수 없습니다.",
+      title: "반려 완료",
+      tone: "locked" as const,
+    };
+  }
+
+  return {
+    description: "결재 라인에 상신된 뒤 결재 액션을 실행할 수 있습니다.",
+    title: "결재 대기 전 상태",
+    tone: "waiting" as const,
+  };
 }
 
 function getApprovalActionLabel(action: ReviewAction, isFinalStep?: boolean) {
@@ -402,13 +547,13 @@ function RequesterOpinionSummary({
   opinion?: RequesterOpinion | null;
 }) {
   return (
-    <section className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
+    <section className="app-panel p-5">
       <p className="text-sm font-medium text-[var(--color-muted)]">
         작성자 검토 의견
       </p>
       {opinion ? (
         <>
-          <h2 className="mt-2 text-xl font-normal">{opinion.authorName}</h2>
+          <h2 className="mt-2 text-xl font-semibold">{opinion.authorName}</h2>
           <p className="mt-3 text-sm leading-6 text-[var(--color-body)]">
             {opinion.body}
           </p>

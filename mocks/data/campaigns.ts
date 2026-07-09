@@ -13,7 +13,7 @@ export const campaigns: Campaign[] = [
     riskScore: 74,
     riskLevel: "medium",
     requesterName: "김민서",
-    currentApprovalStepId: "approval-step-003",
+    currentApprovalStepId: "approval-step-004",
     createdAt: "2026-07-01T09:30:00.000Z",
     updatedAt: "2026-07-07T09:10:00.000Z",
   },

@@ -14,21 +14,24 @@ export function ReviewActions({
   const transitions = getAvailableTransitions(status);
 
   return (
-    <section className="rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-5">
-      <p className="text-sm font-medium">검토 액션</p>
-      <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
-        상태 변경은 감사 로그에 기록됩니다. AI 결과는 최종 판단이 아니며,
-        작성자와 결재자가 맥락을 확인해야 합니다.
-      </p>
-      <div className="mt-4 grid gap-2">
+    <section className="app-panel p-4 lg:sticky lg:bottom-4">
+      <div className="flex min-w-0 items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">다음 단계</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-muted)]">
+            상태 변경은 감사 로그에 기록됩니다.
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 grid justify-items-end gap-2">
         {transitions.length > 0 ? (
           transitions.map((transition, index) => (
-            <div className="grid gap-1" key={transition.action}>
+            <div className="grid justify-items-end gap-1" key={transition.action}>
               <button
                 className={
                   index === 0
-                    ? "min-h-11 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
-                    : "min-h-11 whitespace-nowrap rounded-xl border border-[var(--color-hairline)] bg-white px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
+                    ? "inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-5 text-sm font-semibold text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
+                    : "inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
                 }
                 disabled={Boolean(disabledActionReasons?.[transition.action])}
                 onClick={() => onAction(transition.action)}
@@ -37,14 +40,14 @@ export function ReviewActions({
                 {transition.label}
               </button>
               {disabledActionReasons?.[transition.action] ? (
-                <p className="text-xs leading-5 text-[var(--color-muted)]">
+                <p className="max-w-72 text-right text-xs leading-5 text-[var(--color-muted)]">
                   {disabledActionReasons[transition.action]}
                 </p>
               ) : null}
             </div>
           ))
         ) : (
-          <p className="rounded-lg bg-white p-3 text-sm text-[var(--color-body)]">
+          <p className="rounded-lg bg-[var(--color-panel)] p-3 text-sm text-[var(--color-body)]">
             현재 상태에서는 추가 전이가 없습니다.
           </p>
         )}

@@ -11,6 +11,7 @@ import type {
   ApprovalStep,
   ApprovalStepStatus,
 } from "@/features/review-workflow/types";
+import { normalizeApprovalStepsSequence } from "@/features/review-workflow/state-machine";
 
 export function getCampaigns() {
   return campaigns;
@@ -43,7 +44,9 @@ export function getApprovalStepsByCampaignId(campaignId: string) {
   const steps = approvalSteps.filter((step) => step.campaignId === campaignId);
 
   if (steps.length > 0) {
-    return steps;
+    const campaign = getCampaignById(campaignId);
+
+    return normalizeApprovalStepsSequence(steps, campaign?.status);
   }
 
   const campaign = getCampaignById(campaignId);
@@ -52,7 +55,10 @@ export function getApprovalStepsByCampaignId(campaignId: string) {
     return [];
   }
 
-  return createFallbackApprovalSteps(campaignId, campaign.status);
+  return normalizeApprovalStepsSequence(
+    createFallbackApprovalSteps(campaignId, campaign.status),
+    campaign.status,
+  );
 }
 
 export function getAuditLogByCampaignId(campaignId: string) {
@@ -67,53 +73,43 @@ function createFallbackApprovalSteps(
 ): ApprovalStep[] {
   return [
     {
-      id: `${campaignId}-approval-upload`,
-      campaignId,
-      order: 1,
-      title: "소재 등록",
-      ownerName: "작성자",
-      role: "REQUESTER",
-      status: getFallbackApprovalStepStatus(status, 1),
-      description: "이미지와 광고 카피를 등록했습니다.",
-    },
-    {
       id: `${campaignId}-approval-ai`,
       campaignId,
-      order: 2,
+      order: 1,
       title: "AI 1차 검토",
       ownerName: "브랜드가드 모의 AI",
       role: "ADMIN",
-      status: getFallbackApprovalStepStatus(status, 2),
+      status: getFallbackApprovalStepStatus(status, 1),
       description: "검토 후보와 수정 제안을 구조화합니다.",
     },
     {
       id: `${campaignId}-approval-stakeholder`,
       campaignId,
-      order: 3,
+      order: 2,
       title: "작성자 의견",
       ownerName: "작성자",
       role: "REQUESTER",
-      status: getFallbackApprovalStepStatus(status, 3),
+      status: getFallbackApprovalStepStatus(status, 2),
       description: "AI 결과가 실제 소재 맥락과 맞는지 작성자가 의견을 남깁니다.",
     },
     {
       id: `${campaignId}-approval-marketing`,
       campaignId,
-      order: 4,
+      order: 3,
       title: "마케팅 리더",
       ownerName: "담당 검토자",
       role: "MARKETING_REVIEWER",
-      status: getFallbackApprovalStepStatus(status, 4),
+      status: getFallbackApprovalStepStatus(status, 3),
       description: "작성자 의견과 AI 검토 후보를 함께 확인합니다.",
     },
     {
       id: `${campaignId}-approval-final`,
       campaignId,
-      order: 5,
+      order: 4,
       title: "최종 결재",
       ownerName: "최종 결정자",
       role: "FINAL_APPROVER",
-      status: getFallbackApprovalStepStatus(status, 5),
+      status: getFallbackApprovalStepStatus(status, 4),
       description: "전체 의견과 감사 로그를 보고 최종 게시 가능 여부를 결정합니다.",
     },
   ];
@@ -140,7 +136,7 @@ function getFallbackApprovalStepStatus(
   }
 
   if (status === "APPROVED") {
-    return order < 5 ? "approved" : "in_progress";
+    return "approved";
   }
 
   if (status === "READY_TO_PUBLISH") {

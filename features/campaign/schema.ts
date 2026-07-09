@@ -8,23 +8,25 @@ const hasFiles = (value: unknown) =>
   value instanceof FileList &&
   value.length > 0;
 
+const requiredText = (message: string) =>
+  z.string({ error: message }).trim().min(1, message);
+
 export const campaignCreateSchema = z
   .object({
-    name: z.string().trim().min(1, "검토 요청명을 입력하세요."),
-    brandName: z.string().trim().min(1, "브랜드명을 입력하세요."),
+    name: requiredText("검토 요청명을 입력하세요."),
+    brandName: requiredText("브랜드명을 입력하세요."),
     channel: z.enum(
       ["instagram", "youtube", "tiktok", "web_banner", "push", "offline"],
       { message: "게시 채널을 선택하세요." },
     ),
-    publishDate: z
-      .string()
-      .trim()
-      .min(1, "게시 예정일을 선택하세요.")
-      .refine((value) => !Number.isNaN(Date.parse(value)), {
+    publishDate: requiredText("게시 예정일을 선택하세요.").refine(
+      (value) => !Number.isNaN(Date.parse(value)),
+      {
         message: "유효한 날짜를 선택하세요.",
-      }),
-    targetAudience: z.string().trim().min(1, "타깃을 입력하세요."),
-    industry: z.string().trim().min(1, "업종을 입력하세요."),
+      },
+    ),
+    targetAudience: requiredText("타깃을 입력하세요."),
+    industry: requiredText("업종을 입력하세요."),
     copy: z.string().trim().optional(),
     image: z.custom<FileList>().optional(),
   })

@@ -3,12 +3,13 @@ import { getRiskLevelLabel } from "@/lib/format";
 import { cx } from "@/lib/utils";
 
 const riskClassName: Record<RiskLevel, string> = {
-  low: "bg-[var(--color-risk-low-bg)] text-[var(--color-risk-low-text)]",
+  low: "border border-[var(--color-risk-low-text)] bg-[var(--color-risk-low-bg)] text-[var(--color-risk-low-text)]",
   medium:
-    "bg-[var(--color-risk-medium-bg)] text-[var(--color-risk-medium-text)]",
-  high: "bg-[var(--color-risk-high-bg)] text-[var(--color-risk-high-text)]",
+    "border border-[var(--color-risk-medium-text)] bg-[var(--color-risk-medium-bg)] text-[var(--color-risk-medium-text)]",
+  high:
+    "border border-[var(--color-risk-high-text)] bg-[var(--color-risk-high-bg)] text-[var(--color-risk-high-text)]",
   critical:
-    "bg-[var(--color-risk-critical-bg)] text-[var(--color-risk-critical-text)]",
+    "border border-[var(--color-risk-critical-bg)] bg-[var(--color-risk-critical-bg)] text-[var(--color-risk-critical-text)]",
 };
 
 export function RiskBadge({

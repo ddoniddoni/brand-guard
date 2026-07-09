@@ -1,8 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { CurrentUser } from "@/features/auth/mock-users";
-import { isRequesterForCampaign } from "@/features/auth/permissions";
+import {
+  getCurrentApprovalStep,
+  isCurrentApprovalOwner,
+  isRequesterForCampaign,
+} from "@/features/auth/permissions";
 import type {
   Campaign,
   CampaignStatus,
@@ -21,7 +26,10 @@ import type {
   ReviewerComment,
   ReviewAction,
 } from "@/features/review-workflow/types";
-import { applyReviewAction } from "@/features/review-workflow/state-machine";
+import {
+  applyReviewAction,
+  normalizeApprovalStepsSequence,
+} from "@/features/review-workflow/state-machine";
 import { formatDate, getChannelLabel, getStatusLabel } from "@/lib/format";
 import { ReviewCanvas } from "@/components/image-review/ReviewCanvas";
 import { RiskFindingPanel } from "@/components/risk/RiskFindingPanel";
@@ -32,6 +40,7 @@ import { RevisionUploadPanel } from "@/components/campaign/RevisionUploadPanel";
 import { ApprovalTimeline } from "@/components/workflow/ApprovalTimeline";
 import { AuditLog } from "@/components/workflow/AuditLog";
 import { CommentThread } from "@/components/workflow/CommentThread";
+import { CurrentTaskSummary } from "@/components/workflow/CurrentTaskSummary";
 import { ReviewActions } from "@/components/workflow/ReviewActions";
 
 export function ReviewWorkspace({
@@ -59,6 +68,10 @@ export function ReviewWorkspace({
   onWorkspaceChange?: (patch: WorkspacePatch) => void;
   requesterOpinion?: RequesterOpinion | null;
 }) {
+  const normalizedApprovalSteps = normalizeApprovalStepsSequence(
+    approvalSteps,
+    campaign.status,
+  );
   const firstFindingId = analysis.categories[0]?.id ?? "";
   const [selectedFindingId, setSelectedFindingId] = useState(firstFindingId);
   const [status, setStatus] = useState<CampaignStatus>(campaign.status);
@@ -81,6 +94,18 @@ export function ReviewWorkspace({
     [analysis.categories, selectedFindingId],
   );
   const canRequesterReview = isRequesterForCampaign(currentUser, campaign);
+  const currentApprovalStep = getCurrentApprovalStep(normalizedApprovalSteps, {
+    ...campaign,
+    status,
+  });
+  const currentTask = getReviewCurrentTask({
+    campaign,
+    canRequesterReview,
+    currentApprovalStep,
+    currentUser,
+    savedRequesterOpinion,
+    status,
+  });
 
   const createAuditEntry = (
     entry: Omit<AuditLogEntry, "id" | "createdAt">,
@@ -124,13 +149,13 @@ export function ReviewWorkspace({
     const nextAuditEntries = [auditEntry, ...auditEntries];
     const nextApprovalSteps =
       nextStatus === "IN_APPROVAL"
-        ? approvalSteps.map((step) =>
+        ? normalizedApprovalSteps.map((step) =>
             step.id === `${campaign.id}-step-marketing` ||
             step.title === "마케팅 리더"
               ? { ...step, status: "in_progress" as const }
               : step,
           )
-        : approvalSteps;
+        : normalizedApprovalSteps;
 
     setStatus(nextStatus);
     setAuditEntries(nextAuditEntries);
@@ -165,7 +190,7 @@ export function ReviewWorkspace({
       conclusion: opinionConclusion,
       createdAt: timestamp,
     };
-    const nextApprovalSteps = approvalSteps.map((step) => {
+    const nextApprovalSteps = normalizedApprovalSteps.map((step) => {
       if (step.title === "작성자 의견") {
         return {
           ...step,
@@ -241,7 +266,7 @@ export function ReviewWorkspace({
 
   return (
     <div className="mx-auto grid w-full max-w-[1700px] gap-6 px-5 py-6 sm:px-6 lg:px-8">
-      <section className="grid min-w-0 gap-4 rounded-xl border border-[var(--color-hairline)] bg-white p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+      <section className="app-panel grid min-w-0 gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={status} />
@@ -257,7 +282,7 @@ export function ReviewWorkspace({
             {campaign.requesterName}
           </p>
         </div>
-        <div className="min-w-0 rounded-lg bg-[var(--color-surface-soft)] px-4 py-3 lg:max-w-80">
+        <div className="app-panel-muted min-w-0 px-4 py-3 lg:max-w-80">
           <p className="text-xs text-[var(--color-muted)]">분석 제공자</p>
           <p className="mt-1 truncate text-sm font-medium">
             {getAnalysisSourceLabel(analysis.source)} ·{" "}
@@ -265,7 +290,24 @@ export function ReviewWorkspace({
           </p>
         </div>
       </section>
-      <ApprovalTimeline steps={approvalSteps} />
+
+      <CurrentTaskSummary
+        action={
+          currentTask.actionHref ? (
+            <Link
+              className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+              href={currentTask.actionHref}
+            >
+              {currentTask.actionLabel}
+            </Link>
+          ) : undefined
+        }
+        description={currentTask.description}
+        meta={currentTask.meta}
+        title={currentTask.title}
+        tone={currentTask.tone}
+      />
+      <ApprovalTimeline steps={normalizedApprovalSteps} />
 
       <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_460px]">
         <div className="grid gap-6">
@@ -294,17 +336,19 @@ export function ReviewWorkspace({
             onSave={handleSaveRequesterOpinion}
             savedOpinion={savedRequesterOpinion}
           />
-          <ReviewActions
-            disabledActionReasons={
-              getReviewActionDisabledReasons({
-                canRequesterReview,
-                savedRequesterOpinion,
-              })
-            }
-            onAction={handleAction}
-            status={status}
-          />
-          {asset ? (
+          {status === "AI_REVIEWED" ? (
+            <ReviewActions
+              disabledActionReasons={
+                getReviewActionDisabledReasons({
+                  canRequesterReview,
+                  savedRequesterOpinion,
+                })
+              }
+              onAction={handleAction}
+              status={status}
+            />
+          ) : null}
+          {asset && status === "NEEDS_REVISION" ? (
             <RevisionUploadPanel
               asset={asset}
               canUpload={canRequesterReview}
@@ -328,6 +372,115 @@ export function ReviewWorkspace({
       </div>
     </div>
   );
+}
+
+function getReviewCurrentTask({
+  campaign,
+  canRequesterReview,
+  currentApprovalStep,
+  currentUser,
+  savedRequesterOpinion,
+  status,
+}: {
+  campaign: Campaign;
+  canRequesterReview: boolean;
+  currentApprovalStep?: ApprovalStep;
+  currentUser: CurrentUser;
+  savedRequesterOpinion: RequesterOpinion | null;
+  status: CampaignStatus;
+}) {
+  if (status === "AI_REVIEWED") {
+    if (!canRequesterReview) {
+      return {
+        description: `${campaign.requesterName}님이 AI 1차 검토 후보를 확인하고 작성자 의견을 남길 차례입니다.`,
+        meta: "작성자 의견이 저장되기 전에는 결재 상신할 수 없습니다.",
+        title: "작성자 검토 의견 대기",
+        tone: "waiting" as const,
+      };
+    }
+
+    if (!savedRequesterOpinion) {
+      return {
+        description:
+          "AI 후보의 관련성, 오탐 가능성, 게시 전 확인 의견을 작성해 주세요.",
+        meta: "의견 저장 후 결재 상신 버튼이 활성화됩니다.",
+        title: "작성자 검토 의견을 남겨주세요",
+        tone: "action" as const,
+      };
+    }
+
+    return {
+      description:
+        "작성자 의견이 저장되었습니다. 이제 결재 라인으로 상신할 수 있습니다.",
+      meta: "상신하면 마케팅 리더 단계부터 순차 결재가 시작됩니다.",
+      title: "결재 상신 준비 완료",
+      tone: "action" as const,
+    };
+  }
+
+  if (status === "IN_APPROVAL") {
+    const canCurrentUserApprove = isCurrentApprovalOwner(
+      currentUser,
+      currentApprovalStep,
+    );
+
+    return {
+      actionHref: canCurrentUserApprove
+        ? `/campaigns/${campaign.id}/approval`
+        : undefined,
+      actionLabel: "결재 검토로 이동",
+      description: currentApprovalStep
+        ? `${currentApprovalStep.ownerName}님이 ${currentApprovalStep.title} 단계에서 검토할 차례입니다.`
+        : "현재 결재 단계 담당자를 확인하고 있습니다.",
+      meta: canCurrentUserApprove
+        ? "현재 로그인한 사용자에게 결재 액션 권한이 있습니다."
+        : "내 차례가 아니면 승인, 수정 요청, 반려 액션은 잠깁니다.",
+      title: canCurrentUserApprove ? "내 결재 차례입니다" : "결재자 검토 대기",
+      tone: canCurrentUserApprove ? ("action" as const) : ("waiting" as const),
+    };
+  }
+
+  if (status === "NEEDS_REVISION") {
+    return {
+      description: canRequesterReview
+        ? "결재자가 수정을 요청했습니다. 수정본을 업로드하고 AI 1차 검토를 다시 진행해 주세요."
+        : `${campaign.requesterName}님이 수정본을 준비할 차례입니다.`,
+      meta: "수정본은 다시 작성자 의견과 결재 라인을 거칩니다.",
+      title: canRequesterReview ? "수정본 업로드 필요" : "작성자 수정 대기",
+      tone: canRequesterReview ? ("action" as const) : ("waiting" as const),
+    };
+  }
+
+  if (status === "APPROVED") {
+    return {
+      description:
+        "최종 결재자가 승인했습니다. 게시 가능 처리 전까지 승인 이력과 감사 로그를 유지합니다.",
+      title: "최종 승인 완료",
+      tone: "complete" as const,
+    };
+  }
+
+  if (status === "READY_TO_PUBLISH") {
+    return {
+      description: "이 소재는 최종 승인 후 게시 가능 상태로 전환되었습니다.",
+      title: "게시 가능",
+      tone: "complete" as const,
+    };
+  }
+
+  if (status === "REJECTED") {
+    return {
+      description: "현재 버전은 반려되었습니다. 새 소재나 수정본으로 다시 요청해야 합니다.",
+      title: "반려 완료",
+      tone: "locked" as const,
+    };
+  }
+
+  return {
+    description: "현재 상태에 맞는 다음 액션을 확인하고 있습니다.",
+    title: "워크플로우 확인 중",
+    tone: "waiting" as const,
+  };
 }
 
 function getAnalysisSourceLabel(source: AnalysisResult["source"]) {
@@ -408,13 +561,13 @@ function RequesterOpinionPanel({
   ];
 
   return (
-    <section className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
+    <section className="app-panel p-5">
       <p className="text-sm font-medium text-[var(--color-muted)]">
         작성자 검토 의견
       </p>
-      <h2 className="mt-2 text-xl font-normal">AI 결과 확인 의견</h2>
+      <h2 className="mt-2 text-xl font-semibold">AI 결과 확인 의견</h2>
       {savedOpinion ? (
-        <div className="mt-4 rounded-lg bg-[var(--color-surface-soft)] p-4">
+        <div className="app-panel-muted mt-4 p-4">
           <p className="text-xs font-medium text-[var(--color-muted)]">
             {savedOpinion.authorName} ·{" "}
             {getRequesterConclusionLabel(savedOpinion.conclusion)}
@@ -438,7 +591,7 @@ function RequesterOpinionPanel({
           의견
         </label>
         <textarea
-          className="min-h-28 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+          className="app-input min-h-28 w-full min-w-0 px-3 py-3 text-sm leading-6 focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
           disabled={!canEdit}
           id="requester-opinion"
           onChange={(event) => onDraftChange(event.target.value)}
@@ -452,7 +605,7 @@ function RequesterOpinionPanel({
           <div className="grid gap-2">
             {options.map((option) => (
               <label
-                className="flex min-h-10 items-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-3 text-sm"
+                className="flex min-h-10 items-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-3 text-sm hover:bg-[var(--color-surface-soft)]"
                 key={option.value}
               >
                 <input
@@ -468,12 +621,12 @@ function RequesterOpinionPanel({
           </div>
         </div>
         <button
-          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-10 justify-self-end whitespace-nowrap rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-4 text-sm font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
           disabled={!canEdit || !draft.trim()}
           onClick={onSave}
           type="button"
         >
-          작성자 의견 저장
+          의견 저장
         </button>
       </div>
     </section>

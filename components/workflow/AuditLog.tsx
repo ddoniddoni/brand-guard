@@ -3,12 +3,12 @@ import { formatDate, getStatusLabel } from "@/lib/format";
 
 export function AuditLog({ entries }: { entries: AuditLogEntry[] }) {
   return (
-    <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
+    <section className="app-panel overflow-hidden">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
           감사 로그
         </p>
-        <h2 className="mt-2 text-xl font-normal">검토 이력</h2>
+        <h2 className="mt-2 text-xl font-semibold">검토 이력</h2>
       </div>
       <ol className="divide-y divide-[var(--color-hairline)]">
         {entries.map((entry) => (

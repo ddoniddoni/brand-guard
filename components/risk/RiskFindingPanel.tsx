@@ -14,7 +14,7 @@ export function RiskFindingPanel({
 }) {
   if (findings.length === 0) {
     return (
-      <section className="rounded-xl border border-[var(--color-hairline)] bg-white p-5">
+      <section className="app-panel p-5">
         <p className="text-sm font-medium">검토 후보 없음</p>
         <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
           현재 모의 분석 결과에서는 검토가 필요한 후보가 없습니다.
@@ -24,12 +24,12 @@ export function RiskFindingPanel({
   }
 
   return (
-    <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
+    <section className="app-panel overflow-hidden">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
           항목별 검토 후보
         </p>
-        <h2 className="mt-2 text-xl font-normal">리스크 후보</h2>
+        <h2 className="mt-2 text-xl font-semibold">리스크 후보</h2>
       </div>
       <div className="grid gap-3 p-4">
         {findings.map((finding) => {
@@ -41,8 +41,8 @@ export function RiskFindingPanel({
               className={cx(
                 "min-w-0 rounded-lg border p-4 text-left outline-none transition-colors",
                 isSelected
-                  ? "border-[var(--color-primary)] bg-[var(--color-surface-soft)]"
-                  : "border-[var(--color-hairline)] bg-white hover:bg-[var(--color-surface-soft)] focus-visible:border-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]",
+                  ? "border-[var(--color-primary)] bg-[var(--color-surface-soft)] shadow-sm"
+                  : "border-[var(--color-hairline)] bg-[var(--color-panel)] hover:bg-[var(--color-surface-soft)] focus-visible:border-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]",
               )}
               key={finding.id}
               onClick={() => onSelectFinding(finding.id)}
@@ -72,7 +72,7 @@ export function RiskFindingPanel({
                 </ul>
               </div>
               {finding.falsePositiveNote ? (
-                <p className="mt-4 rounded-lg bg-white p-3 text-sm leading-6 text-[var(--color-body)]">
+                <p className="mt-4 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] p-3 text-sm leading-6 text-[var(--color-body)]">
                   <span className="font-medium text-[var(--color-ink)]">
                     오탐 가능성:
                   </span>{" "}

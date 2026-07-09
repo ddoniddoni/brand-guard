@@ -1,5 +1,6 @@
 import type { CampaignStatus } from "@/features/campaign/types";
 import type {
+  ApprovalStep,
   ReviewAction,
   WorkflowTransition,
 } from "@/features/review-workflow/types";
@@ -24,7 +25,7 @@ const transitions: Partial<Record<CampaignStatus, WorkflowTransition[]>> = {
   AI_REVIEWED: [
     {
       action: "SUBMIT_FOR_APPROVAL",
-      label: "검토 의견 작성 후 결재 상신",
+      label: "결재 상신",
       nextStatus: "IN_APPROVAL",
       description: "작성자 의견을 포함해 결재 라인으로 전달합니다.",
     },
@@ -80,4 +81,48 @@ export function applyReviewAction(
   );
 
   return transition?.nextStatus ?? currentStatus;
+}
+
+export function normalizeApprovalStepsSequence(
+  steps: ApprovalStep[],
+  campaignStatus?: CampaignStatus,
+) {
+  const sortedSteps = steps
+    .filter((step) => step.title !== "소재 등록")
+    .toSorted((a, b) => a.order - b.order)
+    .map((step, index) => ({ ...step, order: index + 1 }));
+
+  if (campaignStatus === "APPROVED" || campaignStatus === "READY_TO_PUBLISH") {
+    return sortedSteps.map((step) => ({ ...step, status: "approved" as const }));
+  }
+
+  let hasOpenStep = false;
+
+  return sortedSteps.map((step) => {
+    if (hasOpenStep) {
+      return resetStepToPending(step);
+    }
+
+    if (step.status === "approved") {
+      return step;
+    }
+
+    hasOpenStep = true;
+
+    return step;
+  });
+}
+
+function resetStepToPending(step: ApprovalStep): ApprovalStep {
+  if (step.status === "pending") {
+    return step;
+  }
+
+  return {
+    ...step,
+    comment: undefined,
+    decidedAt: undefined,
+    decision: undefined,
+    status: "pending",
+  };
 }

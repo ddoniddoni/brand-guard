@@ -33,27 +33,14 @@ export const reviewerComments: ReviewerComment[] = [
 
 export const approvalSteps: ApprovalStep[] = [
   {
-    id: "approval-step-001",
-    campaignId: "cmp-001",
-    order: 1,
-    title: "소재 등록",
-    ownerName: "김민서",
-    role: "REQUESTER",
-    status: "approved",
-    description: "이미지와 광고 카피를 등록했습니다.",
-    decision: "approve",
-    comment: "SNS용 메인 비주얼 1차안",
-    decidedAt: "2026-07-07T09:00:00.000Z",
-  },
-  {
     id: "approval-step-002",
     campaignId: "cmp-001",
-    order: 2,
+    order: 1,
     title: "AI 1차 검토",
     ownerName: "브랜드가드 모의 AI",
     role: "ADMIN",
     status: "approved",
-    description: "시각 패턴 후보와 OCR 문구 후보를 구조화했습니다.",
+    description: "OCR 문구 후보와 입력 카피 맥락을 구조화했습니다.",
     decision: "approve",
     comment: "검토 후보 2건, 수정 제안 2건",
     decidedAt: "2026-07-07T09:10:00.000Z",
@@ -61,7 +48,7 @@ export const approvalSteps: ApprovalStep[] = [
   {
     id: "approval-step-003",
     campaignId: "cmp-001",
-    order: 3,
+    order: 2,
     title: "작성자 의견",
     ownerName: "김민서",
     role: "REQUESTER",
@@ -73,7 +60,7 @@ export const approvalSteps: ApprovalStep[] = [
   {
     id: "approval-step-004",
     campaignId: "cmp-001",
-    order: 4,
+    order: 3,
     title: "마케팅 리더",
     ownerName: "박준호",
     role: "MARKETING_REVIEWER",
@@ -84,7 +71,7 @@ export const approvalSteps: ApprovalStep[] = [
   {
     id: "approval-step-005",
     campaignId: "cmp-001",
-    order: 5,
+    order: 4,
     title: "최종 결재",
     ownerName: "윤지수",
     role: "FINAL_APPROVER",

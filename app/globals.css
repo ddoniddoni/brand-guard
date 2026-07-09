@@ -1,88 +1,146 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --background: #ffffff;
-  --foreground: #181d26;
-  --font-brand-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  --font-brand-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo,
-    monospace;
-  --color-primary: #181d26;
-  --color-primary-active: #0d1218;
+  --foreground: #000000;
+  --font-brand-display: Inter, "SF Pro Display", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-brand-sans: Inter, "SF Pro Text", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-brand-mono: "JetBrains Mono", "SFMono-Regular", Consolas,
+    "Liberation Mono", Menlo, monospace;
+  --color-primary: #000000;
+  --color-primary-active: #242424;
+  --color-primary-disabled: #cfcfcf;
+  --color-on-primary: #ffffff;
   --color-panel: #ffffff;
-  --color-ink: #181d26;
-  --color-body: #333840;
-  --color-muted: #41454d;
-  --color-hairline: #dddddd;
+  --color-ink: #000000;
+  --color-body: #222222;
+  --color-body-strong: #000000;
+  --color-muted: #5f5f5f;
+  --color-muted-soft: #7a7a7a;
+  --color-hairline: #e6e6e6;
+  --color-hairline-soft: #f1f1f1;
   --color-canvas: #ffffff;
-  --color-link: #1b61c9;
-  --color-info: #254fad;
-  --color-info-bg: #eef4ff;
-  --color-info-border: #458fff;
-  --color-surface-soft: #f8fafc;
-  --color-surface-strong: #e0e2e6;
-  --color-signature-cream: #f5e9d4;
-  --color-signature-peach: #fcab79;
-  --color-review-canvas: #181d26;
-  --color-review-canvas-panel: #1d1f25;
-  --color-review-overlay-hand: #aa2d00;
-  --color-review-overlay-ocr: #254fad;
-  --color-review-overlay-symbol: #0a2e0e;
-  --color-risk-low-bg: #eef8f0;
-  --color-risk-low-text: #006400;
-  --color-risk-medium-bg: #fff4cf;
-  --color-risk-medium-text: #6f4a00;
-  --color-risk-high-bg: #fff0e8;
-  --color-risk-high-text: #aa2d00;
-  --color-risk-critical-bg: #181d26;
+  --color-inverse-canvas: #000000;
+  --color-inverse-ink: #ffffff;
+  --color-on-inverse-soft: rgba(255, 255, 255, 0.16);
+  --color-link: #000000;
+  --color-info: #000000;
+  --color-info-bg: #f7f7f5;
+  --color-info-border: #000000;
+  --color-surface-soft: #f7f7f5;
+  --color-surface-card: #f7f7f5;
+  --color-surface-strong: #ededed;
+  --color-surface-dark: #000000;
+  --color-surface-dark-elevated: #1f1d3d;
+  --color-surface-dark-soft: #171717;
+  --color-panel-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --color-block-lime: #dceeb1;
+  --color-block-lilac: #c5b0f4;
+  --color-block-cream: #f4ecd6;
+  --color-block-pink: #efd4d4;
+  --color-block-mint: #c8e6cd;
+  --color-block-coral: #f3c9b6;
+  --color-block-navy: #1f1d3d;
+  --color-accent-magenta: #ff3d8b;
+  --color-semantic-success: #1ea64a;
+  --color-signature-cream: #f4ecd6;
+  --color-signature-peach: #f3c9b6;
+  --color-review-canvas: #000000;
+  --color-review-canvas-panel: #171717;
+  --color-review-overlay-hand: #ff3d8b;
+  --color-review-overlay-ocr: #c5b0f4;
+  --color-review-overlay-symbol: #dceeb1;
+  --color-risk-low-bg: #ecf6dc;
+  --color-risk-low-text: #186c33;
+  --color-risk-medium-bg: #f4ecd6;
+  --color-risk-medium-text: #6b4b00;
+  --color-risk-high-bg: #f3c9b6;
+  --color-risk-high-text: #8a351c;
+  --color-risk-critical-bg: #000000;
   --color-risk-critical-text: #ffffff;
+  --color-scrollbar-track: #f7f7f5;
+  --color-scrollbar-thumb: #cfcfcf;
+  --color-scrollbar-thumb-hover: #000000;
+  --radius-panel: 24px;
+  --radius-control: 9999px;
+  --radius-input: 8px;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --background: #0f1218;
-  --foreground: #f4f6f8;
-  --color-primary: #3468d9;
-  --color-primary-active: #2452b8;
-  --color-panel: #151922;
-  --color-ink: #f4f6f8;
-  --color-body: #d5dae2;
-  --color-muted: #a9b1bd;
-  --color-hairline: #2a303a;
-  --color-canvas: #0f1218;
-  --color-link: #8fb7ff;
-  --color-info: #a9c4ff;
-  --color-info-bg: #16243d;
-  --color-info-border: #5f8ee8;
-  --color-surface-soft: #1a1f29;
-  --color-surface-strong: #303744;
-  --color-signature-cream: #453a2b;
-  --color-signature-peach: #b96d4b;
-  --color-review-canvas: #0b0e13;
-  --color-review-canvas-panel: #11151d;
-  --color-review-overlay-hand: #ff9b73;
-  --color-review-overlay-ocr: #8fb7ff;
-  --color-review-overlay-symbol: #83d68d;
-  --color-risk-low-bg: #10271a;
-  --color-risk-low-text: #78d78c;
-  --color-risk-medium-bg: #332712;
-  --color-risk-medium-text: #f0c766;
-  --color-risk-high-bg: #3a1b12;
-  --color-risk-high-text: #ff9b73;
-  --color-risk-critical-bg: #f4f6f8;
-  --color-risk-critical-text: #181d26;
+  --background: #000000;
+  --foreground: #ffffff;
+  --color-primary: #ffffff;
+  --color-primary-active: #e6e6e6;
+  --color-primary-disabled: #3d3d3d;
+  --color-on-primary: #000000;
+  --color-panel: #000000;
+  --color-ink: #ffffff;
+  --color-body: #e8e8e8;
+  --color-body-strong: #ffffff;
+  --color-muted: #b8b8b8;
+  --color-muted-soft: #8f8f8f;
+  --color-hairline: #2f2f2f;
+  --color-hairline-soft: #1f1f1f;
+  --color-canvas: #000000;
+  --color-inverse-canvas: #ffffff;
+  --color-inverse-ink: #000000;
+  --color-on-inverse-soft: rgba(0, 0, 0, 0.12);
+  --color-link: #ffffff;
+  --color-info: #ffffff;
+  --color-info-bg: #171717;
+  --color-info-border: #ffffff;
+  --color-surface-soft: #111111;
+  --color-surface-card: #171717;
+  --color-surface-strong: #242424;
+  --color-surface-dark: #ffffff;
+  --color-surface-dark-elevated: #f7f7f5;
+  --color-surface-dark-soft: #e6e6e6;
+  --color-panel-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --color-block-lime: #b8d978;
+  --color-block-lilac: #9d82df;
+  --color-block-cream: #d9c898;
+  --color-block-pink: #d6a7ac;
+  --color-block-mint: #93cda0;
+  --color-block-coral: #dfa98f;
+  --color-block-navy: #1f1d3d;
+  --color-accent-magenta: #ff3d8b;
+  --color-semantic-success: #75df91;
+  --color-signature-cream: #d9c898;
+  --color-signature-peach: #dfa98f;
+  --color-review-canvas: #000000;
+  --color-review-canvas-panel: #111111;
+  --color-review-overlay-hand: #ff3d8b;
+  --color-review-overlay-ocr: #c5b0f4;
+  --color-review-overlay-symbol: #dceeb1;
+  --color-risk-low-bg: #122417;
+  --color-risk-low-text: #75df91;
+  --color-risk-medium-bg: #2b240f;
+  --color-risk-medium-text: #e7cb65;
+  --color-risk-high-bg: #32170f;
+  --color-risk-high-text: #ffb199;
+  --color-risk-critical-bg: #ffffff;
+  --color-risk-critical-text: #000000;
+  --color-scrollbar-track: #000000;
+  --color-scrollbar-thumb: #3a3a3a;
+  --color-scrollbar-thumb-hover: #ffffff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --font-serif: var(--font-brand-display);
   --font-sans: var(--font-brand-sans);
   --font-mono: var(--font-brand-mono);
 }
 
 html {
   overflow-x: clip;
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+  scrollbar-width: thin;
 }
 
 body {
@@ -91,6 +149,69 @@ body {
   font-family: var(--font-brand-sans);
   letter-spacing: 0;
   overflow-x: clip;
+  text-rendering: geometricPrecision;
+}
+
+* {
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--color-scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-scrollbar-thumb);
+  border: 2px solid var(--color-scrollbar-track);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--color-scrollbar-track);
+}
+
+.app-panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-panel);
+  box-shadow: none;
+}
+
+.app-panel-muted {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-panel);
+}
+
+.app-input {
+  background: var(--color-panel);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-input);
+  color: var(--color-ink);
+}
+
+.app-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 16%, transparent);
+  outline: none;
+}
+
+[class*="bg-[var(--color-primary)]"][class*="text-white"] {
+  color: var(--color-on-primary);
+}
+
+[class*="bg-[var(--color-primary)]"] {
+  border-radius: var(--radius-control);
 }
 
 :root[data-theme="dark"] .bg-white {

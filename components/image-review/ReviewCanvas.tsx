@@ -66,14 +66,13 @@ export function ReviewCanvas({
   };
 
   return (
-    <section className="rounded-xl bg-[var(--color-review-canvas)] p-5 text-white">
+    <section className="rounded-lg bg-[var(--color-review-canvas)] p-5 text-white shadow-[var(--color-panel-shadow)]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="text-sm font-medium text-white/70">검토 캔버스</p>
-          <h2 className="mt-2 text-2xl font-normal">이미지 검토 영역</h2>
+          <h2 className="mt-2 text-2xl font-semibold">OCR 검토 영역</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
-            좌표는 원본 이미지 기준 정규화 좌표 `0..1` 값으로 저장하고, 렌더링
-            시 현재 캔버스 크기에 맞춰 변환합니다.
+            업로드 이미지와 OCR 문구 후보를 같은 화면에서 확인합니다.
           </p>
         </div>
         <ZoomControls
@@ -84,9 +83,9 @@ export function ReviewCanvas({
         />
       </div>
 
-      <div className="mt-5 overflow-hidden rounded-xl bg-[var(--color-review-canvas-panel)] p-4">
+      <div className="mt-5 overflow-hidden rounded-lg bg-[var(--color-review-canvas-panel)] p-4">
         <div
-          className="mx-auto aspect-[4/3] max-h-[620px] w-full max-w-4xl origin-center overflow-hidden rounded-lg border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03))]"
+          className="mx-auto aspect-[4/3] max-h-[620px] w-full max-w-4xl origin-center overflow-hidden rounded-lg border border-white/10 bg-white/5"
           style={{ transform: `scale(${zoom})` }}
         >
           <div className="relative h-full w-full">
@@ -146,8 +145,10 @@ export function ReviewCanvas({
         {regions.map((region) => (
           <button
             className={cx(
-              "min-w-0 rounded-lg border border-white/15 bg-white/10 p-4 text-left text-sm hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-              region.findingId === selectedFindingId && "bg-white text-[var(--color-ink)]",
+              "min-w-0 rounded-lg border border-white/15 p-4 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+              region.findingId === selectedFindingId
+                ? "bg-white text-[var(--color-ink)] hover:bg-white"
+                : "bg-white/10 hover:bg-white/15",
             )}
             key={region.id}
             onClick={() => onSelectFinding(region.findingId)}
@@ -175,7 +176,12 @@ export function ReviewCanvas({
           선택된 영역: {selectedRegion.label}. 툴팁 정보는 오른쪽 검토 패널과
           아래 텍스트 리스트에서도 동일하게 확인할 수 있습니다.
         </p>
-      ) : null}
+      ) : (
+        <p className="mt-4 text-sm leading-6 text-white/70">
+          OCR 문구 영역이 없거나 아직 추출되지 않았습니다. 원본 이미지와 입력
+          광고 카피를 함께 확인하세요.
+        </p>
+      )}
     </section>
   );
 }
@@ -198,8 +204,8 @@ function MockCreativeSurface({
 
   return (
     <>
-      <div className="absolute inset-8 rounded-[28px] bg-[var(--color-signature-cream)]/95" />
-      <div className="absolute left-[12%] top-[18%] h-[50%] w-[42%] rounded-2xl bg-white/95 p-6 text-[var(--color-ink)]">
+      <div className="absolute inset-8 rounded-lg bg-[var(--color-signature-cream)]/95" />
+      <div className="absolute left-[12%] top-[18%] h-[50%] w-[42%] rounded-lg bg-white/95 p-6 text-[var(--color-ink)]">
         <p className="text-sm font-medium text-[var(--color-muted)]">
           {brandName}
         </p>
@@ -208,7 +214,7 @@ function MockCreativeSurface({
         </p>
       </div>
       <div className="absolute right-[15%] top-[18%] h-[42%] w-[23%] rounded-full bg-[var(--color-signature-peach)]" />
-      <div className="absolute bottom-[14%] left-[16%] h-[12%] w-[58%] overflow-hidden break-words rounded-xl bg-white/90 px-5 py-4 text-sm leading-6 text-[var(--color-body)]">
+      <div className="absolute bottom-[14%] left-[16%] h-[12%] w-[58%] overflow-hidden break-words rounded-lg bg-white/90 px-5 py-4 text-sm leading-6 text-[var(--color-body)]">
         {supportText}
       </div>
     </>

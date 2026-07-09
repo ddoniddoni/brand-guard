@@ -22,8 +22,8 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       aria-label={isDark ? "라이트 모드로 전환" : "다크 모드로 전환"}
       className={
         compact
-          ? "inline-grid size-10 shrink-0 place-items-center rounded-lg border border-[var(--color-hairline)] bg-white text-[var(--color-body)] hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-          : "inline-flex min-h-11 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-[var(--color-hairline)] bg-white px-3 text-sm font-medium text-[var(--color-body)] hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+          ? "inline-grid size-10 shrink-0 place-items-center rounded-full border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] text-[var(--color-ink)] hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+          : "inline-flex min-h-11 w-full min-w-0 items-center justify-between gap-3 rounded-full border border-[var(--color-hairline)] bg-[var(--color-panel)] px-3 text-sm font-medium text-[var(--color-body)] hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
       }
       onClick={() => setTheme(isDark ? "light" : "dark")}
       type="button"
@@ -34,7 +34,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       ) : (
         <>
           <span className="flex min-w-0 items-center gap-3">
-            <span className="grid size-8 shrink-0 place-items-center rounded-md bg-[var(--color-surface-soft)] text-[var(--color-ink)]">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--color-surface-soft)] text-[var(--color-ink)]">
               <Icon aria-hidden="true" size={17} strokeWidth={1.8} />
             </span>
             <span className="truncate">

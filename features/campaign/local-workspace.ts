@@ -11,10 +11,15 @@ import type {
 } from "@/features/campaign/version-types";
 import type {
   AnalysisResult,
+  ImageRegion,
   RiskFinding,
   RiskLevel,
   RevisionSuggestion,
 } from "@/features/risk-analysis/types";
+import type {
+  OcrExtractionResult,
+  OcrExtractionStatus,
+} from "@/features/risk-analysis/ocr";
 import type {
   ApprovalStep,
   AuditLogEntry,
@@ -38,6 +43,11 @@ export type CampaignAsset = {
   copy: string;
   imageDataUrl?: string;
   imageFileName?: string;
+  ocrConfidence?: number;
+  ocrErrorMessage?: string;
+  ocrRegions?: ImageRegion[];
+  ocrStatus?: OcrExtractionStatus;
+  ocrText?: string;
   source: "mock" | "sample" | "upload";
   usesSampleAsset: boolean;
 };
@@ -74,8 +84,27 @@ type CreateCampaignWorkspaceInput = Pick<
 > & {
   imageDataUrl?: string;
   imageFileName?: string;
+  ocrResult?: OcrExtractionResult;
   requesterName: string;
   usesSampleAsset: boolean;
+};
+
+type CreateDraftCampaignWorkspaceInput = Partial<
+  Pick<
+    CampaignCreateInput,
+    | "brandName"
+    | "channel"
+    | "copy"
+    | "industry"
+    | "name"
+    | "publishDate"
+    | "targetAudience"
+  >
+> & {
+  campaignId?: string;
+  imageDataUrl?: string;
+  imageFileName?: string;
+  requesterName: string;
 };
 
 export type WorkspacePatch = Partial<
@@ -110,6 +139,11 @@ export function createCampaignWorkspace(
     copy: input.copy?.trim() ?? "",
     imageDataUrl: input.imageDataUrl,
     imageFileName: input.imageFileName,
+    ocrConfidence: input.ocrResult?.confidence,
+    ocrErrorMessage: input.ocrResult?.errorMessage,
+    ocrRegions: input.ocrResult?.regions,
+    ocrStatus: input.ocrResult?.status,
+    ocrText: input.ocrResult?.text,
     source: input.usesSampleAsset ? "sample" : input.imageDataUrl ? "upload" : "mock",
     usesSampleAsset: input.usesSampleAsset,
   };
@@ -154,6 +188,68 @@ export function createCampaignWorkspace(
       timestamp,
       input.requesterName,
     ),
+    campaign,
+    comments: [],
+    requesterOpinion: null,
+    versionComparison: null,
+  };
+}
+
+export function createDraftCampaignWorkspace(
+  input: CreateDraftCampaignWorkspaceInput,
+): CampaignWorkspace {
+  const timestamp = new Date().toISOString();
+  const campaignId =
+    input.campaignId?.trim() || `cmp-local-draft-${Date.now().toString(36)}`;
+  const asset: CampaignAsset = {
+    copy: input.copy?.trim() ?? "",
+    imageDataUrl: input.imageDataUrl,
+    imageFileName: input.imageFileName,
+    source: input.imageDataUrl ? "upload" : "mock",
+    usesSampleAsset: false,
+  };
+  const analysis = createDraftAnalysis(campaignId, timestamp);
+  const campaign: Campaign = {
+    id: campaignId,
+    name: input.name?.trim() || "제목 없는 초안",
+    brandName: input.brandName?.trim() || "브랜드 미입력",
+    channel: input.channel ?? "instagram",
+    publishDate: getSafeDraftPublishDate(input.publishDate),
+    targetAudience: input.targetAudience?.trim() || "타깃 미입력",
+    industry: input.industry?.trim() || "업종 미입력",
+    status: "DRAFT",
+    riskScore: analysis.overallRiskScore,
+    riskLevel: analysis.overallRiskLevel,
+    requesterName: input.requesterName,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+
+  return {
+    analysis,
+    approvalSteps: createDraftApprovalSteps(campaignId, timestamp, input.requesterName),
+    asset,
+    assetVersions: [
+      {
+        ...asset,
+        analysis,
+        createdAt: timestamp,
+        id: "draft",
+        imageNote: getAssetImageNote(asset),
+        label: "저장된 초안",
+      },
+    ],
+    auditLogEntries: [
+      {
+        id: `${campaignId}-audit-draft-saved-${timestamp}`,
+        campaignId,
+        actorName: input.requesterName,
+        action: "campaign_created",
+        toStatus: "DRAFT",
+        message: "검토 요청 초안을 저장했습니다.",
+        createdAt: timestamp,
+      },
+    ],
     campaign,
     comments: [],
     requesterOpinion: null,
@@ -356,7 +452,7 @@ export function createRevisionWorkspace(
     createdAt: timestamp,
     id: `v${previousVersions.length + 1}`,
     imageNote: isImageReplaced
-      ? "수정 업로드된 대체 이미지입니다. 주요 시각 후보가 줄어든 상태로 재분석되었습니다."
+      ? "수정 업로드된 대체 이미지입니다. OCR 문구와 입력 카피 맥락 중심으로 재분석되었습니다."
       : "이미지는 유지하고 문구를 수정한 버전입니다. 문구 맥락 중심으로 재분석되었습니다.",
     label: `${previousVersions.length + 1}차 수정본`,
   };
@@ -413,13 +509,14 @@ function createInputBasedAnalysis({
 }): AnalysisResult {
   const hasImage = Boolean(asset.imageDataUrl || asset.usesSampleAsset);
   const hasCopy = asset.copy.trim().length > 0;
+  const hasOcrText = Boolean(asset.ocrText?.trim());
   const hasLongCopy = asset.copy.trim().length > 80;
   const isFastChannel = channel === "instagram" || channel === "tiktok";
   const isWeekendPublish = [0, 6].includes(new Date(publishDate).getDay());
   const findings: RiskFinding[] = [];
 
-  if (hasImage) {
-    findings.push(createVisualFinding(campaignId));
+  if (hasOcrText || asset.ocrStatus === "empty" || asset.ocrStatus === "failed") {
+    findings.push(createOcrFinding(campaignId, asset));
   }
 
   if (hasCopy) {
@@ -432,8 +529,8 @@ function createInputBasedAnalysis({
 
   const score = Math.min(
     92,
-    18 +
-      (hasImage ? 26 : 0) +
+      18 +
+      (hasOcrText ? 16 : hasImage ? 4 : 0) +
       (hasCopy ? 18 : 0) +
       (hasLongCopy ? 8 : 0) +
       (isFastChannel ? 6 : 0) +
@@ -489,18 +586,6 @@ function createRevisionAnalysis({
     },
   ];
 
-  if (!isImageReplaced) {
-    findings.unshift({
-      ...createVisualFinding(campaignId),
-      id: `${campaignId}-risk-visual-revised`,
-      confidence: 0.48,
-      description:
-        "이미지는 유지되었으므로 주요 시각 후보가 낮은 신뢰도로 남아 있습니다. 필요 시 대체 컷 비교가 권장됩니다.",
-      level: "low" as const,
-      title: "기존 이미지 후보 낮은 수준 확인",
-    });
-  }
-
   const score = Math.max(
     24,
     Math.min(baseAnalysis.overallRiskScore - (isImageReplaced ? 32 : 18), 52),
@@ -530,39 +615,53 @@ function createRevisionAnalysis({
   };
 }
 
-function createVisualFinding(campaignId: string): RiskFinding {
+function createOcrFinding(campaignId: string, asset: CampaignAsset): RiskFinding {
+  const ocrText = asset.ocrText?.trim() ?? "";
+  const ocrPreview = ocrText
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 16)
+    .join(" ");
+  const hasOcrText = Boolean(ocrPreview);
+
+  if (!hasOcrText) {
+    return {
+      id: `${campaignId}-risk-ocr`,
+      category: "ocr_text",
+      title: "이미지 OCR 확인 결과",
+      level: "low",
+      confidence: asset.ocrStatus === "failed" ? 0.2 : 0.35,
+      description:
+        asset.ocrStatus === "failed"
+          ? "이미지 OCR을 완료하지 못했습니다. 입력된 광고 카피와 원본 이미지를 사람이 함께 확인해야 합니다."
+          : "이미지에서 의미 있는 문구가 OCR 후보로 추출되지 않았습니다. 원본 이미지에 작은 글자가 있다면 직접 확인이 필요합니다.",
+      evidence: [
+        asset.ocrErrorMessage ??
+          "Tesseract.js OCR 결과에서 검토 가능한 문구 후보가 비어 있습니다.",
+        "OCR 결과는 이미지 해상도, 폰트, 대비에 따라 누락될 수 있습니다.",
+      ],
+      falsePositiveNote:
+        "OCR 결과는 문구 추출 보조 정보이며, 이미지 내용을 완전히 판정하지 않습니다.",
+      regions: asset.ocrRegions,
+    };
+  }
+
   return {
-    id: `${campaignId}-risk-visual`,
-    category: "visual_gesture",
-    title: "이미지 시각 요소 후보 검토 필요",
-    level: "medium",
-    confidence: 0.72,
+    id: `${campaignId}-risk-ocr`,
+    category: "ocr_text",
+    title: "이미지 OCR 문구 확인 권장",
+    level: ocrText.length > 80 ? "medium" : "low",
+    confidence: asset.ocrConfidence ?? 0.62,
     description:
-      "업로드 이미지의 주요 오브젝트와 손 영역이 일부 민감한 시각 패턴과 유사하게 해석될 가능성이 있어 맥락 확인이 권장됩니다.",
+      "업로드 이미지에서 추출된 OCR 문구가 광고 카피와 게시 맥락에 맞는지 작성자와 결재자 확인이 권장됩니다.",
     evidence: [
-      "이미지 내 손 또는 제품 접촉 영역이 주요 시선 구간에 위치합니다.",
-      "일부 형태는 촬영 각도와 크롭 방식에 따라 다르게 해석될 수 있습니다.",
-      "제품을 잡거나 강조하는 일반적인 광고 연출일 가능성도 있습니다.",
+      `OCR 추출 문구 일부: "${ocrPreview}"`,
+      "이미지 안의 문구는 작은 글자, 배경 대비, 폰트에 따라 오인식될 수 있습니다.",
+      "입력 광고 카피와 이미지 내 문구가 서로 다른 의미로 읽히지 않는지 확인하세요.",
     ],
     falsePositiveNote:
-      "이 결과는 의도나 성향을 판정하지 않으며, 시각적 유사성에 기반한 검토 후보입니다.",
-    regions: [
-      {
-        id: `${campaignId}-region-visual`,
-        type: "hand",
-        x: 0.52,
-        y: 0.24,
-        width: 0.24,
-        height: 0.34,
-        confidence: 0.86,
-        label: "시각 패턴 후보",
-        landmarks: [
-          { x: 0.56, y: 0.31, label: "손목" },
-          { x: 0.63, y: 0.28, label: "엄지 끝" },
-          { x: 0.65, y: 0.3, label: "검지 끝" },
-        ],
-      },
-    ],
+      "OCR 결과는 이미지 속 문구 후보를 추출한 값이며, 문구 의도나 사회적 의미를 판정하지 않습니다.",
+    regions: asset.ocrRegions,
   };
 }
 
@@ -594,18 +693,6 @@ function createCopyFinding(
     ],
     falsePositiveNote:
       "문구 검토는 맥락 후보를 정리하는 단계이며, 특정 의도나 성향을 판정하지 않습니다.",
-    regions: [
-      {
-        id: `${campaignId}-region-copy`,
-        type: "ocr_text",
-        x: 0.14,
-        y: 0.66,
-        width: 0.58,
-        height: 0.12,
-        confidence: 0.78,
-        label: "문구 맥락 후보",
-      },
-    ],
   };
 }
 
@@ -638,9 +725,9 @@ function createRevisionSuggestions(
     suggestions.push({
       id: "suggestion-image",
       target: "image",
-      title: "대체 컷 함께 검토",
+      title: "상품/촬영 설명서 기준 명시",
       description:
-        "주요 손동작이나 크롭이 다르게 보이는 대체 이미지를 함께 올려 작성자와 결재자가 비교할 수 있게 하세요.",
+        "손동작, 제품 파지 방식, 크롭 기준처럼 자동 판정하기 어려운 시각 요소는 상품 설명서나 촬영 가이드에 명확히 남기세요.",
     });
   }
 
@@ -674,22 +761,9 @@ function createApprovalSteps(
 ): ApprovalStep[] {
   return [
     {
-      id: `${campaignId}-step-upload`,
-      campaignId,
-      order: 1,
-      title: "소재 등록",
-      ownerName: requesterName,
-      role: "REQUESTER",
-      status: "approved",
-      description: "이미지와 광고 카피를 등록했습니다.",
-      decision: "approve",
-      comment: "로컬 모의 작업 공간에 저장되었습니다.",
-      decidedAt: timestamp,
-    },
-    {
       id: `${campaignId}-step-ai`,
       campaignId,
-      order: 2,
+      order: 1,
       title: "AI 1차 검토",
       ownerName: "브랜드가드 모의 AI",
       role: "ADMIN",
@@ -702,7 +776,7 @@ function createApprovalSteps(
     {
       id: `${campaignId}-step-requester-opinion`,
       campaignId,
-      order: 3,
+      order: 2,
       title: "작성자 의견",
       ownerName: requesterName,
       role: "REQUESTER",
@@ -712,7 +786,7 @@ function createApprovalSteps(
     {
       id: `${campaignId}-step-marketing`,
       campaignId,
-      order: 4,
+      order: 3,
       title: "마케팅 리더",
       ownerName: "마케팅 리더",
       role: "MARKETING_REVIEWER",
@@ -722,7 +796,7 @@ function createApprovalSteps(
     {
       id: `${campaignId}-step-final`,
       campaignId,
-      order: 5,
+      order: 4,
       title: "최종 결재",
       ownerName: "최종 결정자",
       role: "FINAL_APPROVER",
@@ -730,6 +804,83 @@ function createApprovalSteps(
       description: "전체 의견과 감사 로그를 보고 최종 게시 가능 여부를 결정합니다.",
     },
   ];
+}
+
+function createDraftApprovalSteps(
+  campaignId: string,
+  timestamp: string,
+  requesterName: string,
+): ApprovalStep[] {
+  return [
+    {
+      id: `${campaignId}-step-ai`,
+      campaignId,
+      order: 1,
+      title: "AI 1차 검토",
+      ownerName: "브랜드가드 모의 AI",
+      role: "ADMIN",
+      status: "pending",
+      description: "작성자가 AI 1차 검토를 시작하면 후보를 생성합니다.",
+    },
+    {
+      id: `${campaignId}-step-requester-opinion`,
+      campaignId,
+      order: 2,
+      title: "작성자 의견",
+      ownerName: requesterName,
+      role: "REQUESTER",
+      status: "pending",
+      description: "AI 결과가 생성된 뒤 작성자가 의견을 남깁니다.",
+    },
+    {
+      id: `${campaignId}-step-marketing`,
+      campaignId,
+      order: 3,
+      title: "마케팅 리더",
+      ownerName: "마케팅 리더",
+      role: "MARKETING_REVIEWER",
+      status: "pending",
+      description: "작성자 의견과 AI 검토 후보를 함께 확인합니다.",
+    },
+    {
+      id: `${campaignId}-step-final`,
+      campaignId,
+      order: 4,
+      title: "최종 결재",
+      ownerName: "최종 결정자",
+      role: "FINAL_APPROVER",
+      status: "pending",
+      description: "전체 의견과 감사 로그를 보고 최종 게시 가능 여부를 결정합니다.",
+    },
+  ];
+}
+
+function createDraftAnalysis(
+  campaignId: string,
+  timestamp: string,
+): AnalysisResult {
+  return {
+    id: `analysis-${campaignId}-draft`,
+    campaignId,
+    versionId: "draft",
+    source: "mock",
+    overallRiskScore: 0,
+    overallRiskLevel: "low",
+    summary:
+      "초안 저장 상태입니다. AI 1차 검토를 시작하면 검토 후보와 수정 제안이 생성됩니다.",
+    reviewRequired: false,
+    categories: [],
+    suggestions: [],
+    createdAt: timestamp,
+  };
+}
+
+function getSafeDraftPublishDate(value?: string) {
+  if (value && !Number.isNaN(Date.parse(value))) {
+    return value;
+  }
+
+  return new Date().toISOString().slice(0, 10);
 }
 
 function createInitialAuditLog(
@@ -854,7 +1005,7 @@ function getAssetImageNote(asset: CampaignAsset) {
   }
 
   if (asset.usesSampleAsset) {
-    return "샘플 홍보 소재입니다. 모의 시각 후보와 OCR 문구 후보가 함께 표시됩니다.";
+    return "샘플 홍보 소재입니다. OCR 문구 후보를 중심으로 표시됩니다.";
   }
 
   return "이미지 없이 문구 중심으로 등록된 소재입니다.";
@@ -865,7 +1016,7 @@ function resetApprovalStepsForRevision(
   timestamp: string,
 ) {
   return steps.map((step) => {
-    if (step.title === "소재 등록" || step.title === "AI 1차 검토") {
+    if (step.title === "AI 1차 검토") {
       return {
         ...step,
         status: "approved" as const,

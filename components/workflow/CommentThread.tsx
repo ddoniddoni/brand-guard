@@ -1,6 +1,5 @@
 "use client";
 
-import { Send } from "lucide-react";
 import type { UserRole } from "@/features/campaign/types";
 import type { ReviewerComment } from "@/features/review-workflow/types";
 import { formatDate, getUserRoleLabel } from "@/lib/format";
@@ -23,17 +22,17 @@ export function CommentThread({
   onCommentDraftChange: (value: string) => void;
 }) {
   return (
-    <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
+    <section className="app-panel overflow-hidden">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
           결재자 의견
         </p>
-        <h2 className="mt-2 text-xl font-normal">결재 의견</h2>
+        <h2 className="mt-2 text-xl font-semibold">결재 의견</h2>
       </div>
       <div className="grid gap-4 p-4">
         {comments.map((comment) => (
           <article
-            className="rounded-lg bg-[var(--color-surface-soft)] p-4"
+            className="app-panel-muted p-4"
             key={comment.id}
           >
             <div className="flex items-center justify-between gap-3">
@@ -73,23 +72,23 @@ export function CommentThread({
             새 결재 의견
           </label>
           <textarea
-            className="min-h-28 w-full min-w-0 rounded-md border border-[var(--color-hairline)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--color-info-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+            className="app-input min-h-28 w-full min-w-0 px-3 py-3 text-sm leading-6 focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             id="review-comment"
             disabled={Boolean(disabledReason)}
             onChange={(event) => onCommentDraftChange(event.target.value)}
+            onInput={(event) => onCommentDraftChange(event.currentTarget.value)}
             placeholder={
               disabledReason ?? "결재 의견을 입력하세요. 예: 확인한 바 이상 없습니다."
             }
             value={commentDraft}
           />
           <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-10 justify-self-end whitespace-nowrap rounded-lg border border-[var(--color-hairline)] bg-[var(--color-panel)] px-4 text-sm font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={Boolean(disabledReason) || !commentDraft.trim()}
             onClick={onAddComment}
             type="button"
           >
-            <Send aria-hidden="true" size={15} strokeWidth={1.8} />
-            의견 추가
+            의견 등록
           </button>
           {disabledReason ? (
             <p className="text-xs leading-5 text-[var(--color-muted)]">

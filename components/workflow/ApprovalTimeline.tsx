@@ -9,6 +9,7 @@ import type {
   ApprovalStep,
   ApprovalStepStatus,
 } from "@/features/review-workflow/types";
+import { normalizeApprovalStepsSequence } from "@/features/review-workflow/state-machine";
 import { formatDate, getUserRoleLabel } from "@/lib/format";
 import { cx } from "@/lib/utils";
 
@@ -31,16 +32,15 @@ const statusLabel: Record<ApprovalStepStatus, string> = {
 };
 
 const statusClassName: Record<ApprovalStepStatus, string> = {
-  approved:
-    "border-[var(--color-risk-low-text)] bg-[var(--color-risk-low-bg)]",
+  approved: "border-l-[var(--color-risk-low-text)] bg-[var(--color-panel)]",
   in_progress:
-    "border-[var(--color-risk-medium-text)] bg-[var(--color-risk-medium-bg)]",
-  pending: "border-[var(--color-hairline)] bg-[var(--color-surface-soft)]",
+    "border-l-[var(--color-risk-medium-text)] bg-[var(--color-risk-medium-bg)]",
+  pending: "border-l-[var(--color-hairline)] bg-[var(--color-panel)]",
   rejected:
-    "border-[var(--color-risk-critical-text)] bg-[var(--color-risk-critical-bg)]",
+    "border-l-[var(--color-risk-critical-bg)] bg-[var(--color-panel)]",
   revision_requested:
-    "border-[var(--color-risk-high-text)] bg-[var(--color-risk-high-bg)]",
-  skipped: "border-[var(--color-hairline)] bg-[var(--color-surface-soft)]",
+    "border-l-[var(--color-risk-high-text)] bg-[var(--color-panel)]",
+  skipped: "border-l-[var(--color-hairline)] bg-[var(--color-panel)]",
 };
 
 const statusAccentClassName: Record<ApprovalStepStatus, string> = {
@@ -68,15 +68,15 @@ const statusBadgeClassName: Record<ApprovalStepStatus, string> = {
 };
 
 export function ApprovalTimeline({ steps }: { steps: ApprovalStep[] }) {
-  const sortedSteps = steps.toSorted((a, b) => a.order - b.order);
+  const sortedSteps = normalizeApprovalStepsSequence(steps);
 
   return (
-    <section className="rounded-xl border border-[var(--color-hairline)] bg-white">
+    <section className="app-panel overflow-hidden">
       <div className="border-b border-[var(--color-hairline)] p-5">
         <p className="text-sm font-medium text-[var(--color-muted)]">
           결재 흐름
         </p>
-        <h2 className="mt-2 text-xl font-normal">결재 단계</h2>
+        <h2 className="mt-2 text-xl font-semibold">결재 단계</h2>
       </div>
       <div className="grid gap-3 p-4 lg:grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
         {sortedSteps.map((step) => {
@@ -85,7 +85,7 @@ export function ApprovalTimeline({ steps }: { steps: ApprovalStep[] }) {
           return (
             <article
               className={cx(
-                "rounded-lg border p-4",
+                "rounded-lg border border-l-4 border-[var(--color-hairline)] p-4 shadow-sm",
                 statusClassName[step.status],
               )}
               key={step.id}

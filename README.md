@@ -23,7 +23,8 @@ BrandGuard는 특정 사상이나 의도를 판정하지 않습니다. AI는 검
 - 캠페인 검토 요청 생성
 - 이미지/문구 업로드와 미리보기
 - staged AI 1차 검토 시뮬레이션
-- 이미지 오버레이 기반 검토 후보 선택
+- Tesseract.js 기반 이미지 OCR 문구 후보 추출
+- OCR 오버레이 기반 문구 후보 선택
 - 감지 근거, 신뢰도, 오탐 가능성 노트 표시
 - 작성자 검토 의견 저장 후 결재 상신
 - mock 현재 사용자/역할 전환
@@ -43,6 +44,7 @@ BrandGuard는 특정 사상이나 의도를 판정하지 않습니다. AI는 검
 - TanStack Query
 - MSW
 - Playwright
+- Tesseract.js
 
 ## Routes
 
@@ -74,6 +76,10 @@ npm run build
 npm run test:e2e
 ```
 
+The E2E suite currently checks empty-form Korean validation messages, the main
+approval path through publishable status, revision request and revised asset
+resubmission, rejection locking, and audit log updates.
+
 If Playwright browsers are not installed locally, run:
 
 ```bash
@@ -82,7 +88,8 @@ npx playwright install
 
 ## Demo Notes
 
-- AI/OCR/VLM outputs are mocked JSON-style results.
+- AI/VLM 판단 결과는 mocked JSON-style 결과입니다.
+- Uploaded images run client-side OCR with Tesseract.js when possible.
 - Uploaded demo campaigns are persisted in browser `localStorage`.
 - The current user switcher is mock auth, not real authentication.
 - Role-based filtering currently uses mock names and roles.
@@ -93,9 +100,10 @@ npx playwright install
 
 - No real account system or organization membership yet.
 - No server-side persistence yet.
-- No real OCR, vision, or LLM provider integration.
+- No server-side OCR, vision, or LLM provider integration yet.
+- OCR is client-side Tesseract.js only; no real vision/gesture model is integrated.
 - Mock uploaded assets stay in local browser storage.
-- E2E currently covers the main approval path; revision and rejection paths are future tests.
+- E2E currently covers the main approval, revision request, rejection, and empty-form validation paths.
 
 ## Future Improvements
 
@@ -103,5 +111,5 @@ npx playwright install
 - User ID based ownership and approval permissions
 - Approval delegation and team settings
 - Revision request and rejection E2E coverage
-- Real OCR/Vision/LLM provider behind a server-side API
+- Server-side OCR/Vision/LLM provider behind an API
 - Richer audit export and approval evidence package
