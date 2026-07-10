@@ -65,4 +65,20 @@ test("uploaded image runs through Tesseract and produces OCR policy findings", a
   );
   expect(storedResult.regionCount).toBeGreaterThan(0);
   expect(storedResult.findingCount).toBeGreaterThan(0);
+
+  const localStoragePayload = await page.evaluate(
+    () => window.localStorage.getItem("brandguard.review-workspaces.v1") ?? "",
+  );
+  expect(localStoragePayload).not.toContain("data:image");
+
+  await page.reload();
+  const restoredImage = page.getByRole("img", {
+    name: "ocr-live.png OCR 검수 이미지",
+  });
+  await expect(restoredImage).toBeVisible();
+  await expect
+    .poll(() =>
+      restoredImage.evaluate((image) => (image as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0);
 });

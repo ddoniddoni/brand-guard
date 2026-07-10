@@ -54,6 +54,7 @@ type ReviewResultState = {
   selectedRegionId: string;
   severityFilter: "all" | Severity;
   sourceFilter: "all" | FindingSource;
+  storageError: string;
   workspace: ReviewWorkspace | null;
 };
 
@@ -75,6 +76,7 @@ type ReviewResultAction =
   | { type: "setMemo"; memo: string }
   | { type: "setSeverityFilter"; value: "all" | Severity }
   | { type: "setSourceFilter"; value: "all" | FindingSource }
+  | { type: "storageFailed"; message: string }
   | { type: "workspaceSaved"; workspace: ReviewWorkspace };
 
 const initialReviewResultState: ReviewResultState = {
@@ -84,6 +86,7 @@ const initialReviewResultState: ReviewResultState = {
   selectedRegionId: "",
   severityFilter: "all",
   sourceFilter: "all",
+  storageError: "",
   workspace: null,
 };
 
@@ -105,6 +108,7 @@ function reviewResultReducer(
         firstOcrFinding?.imageId ?? firstOcrResult?.imageId ?? "",
       selectedRegionId:
         firstOcrFinding?.regionId ?? firstOcrResult?.regions[0]?.id ?? "",
+      storageError: "",
       workspace: action.workspace,
     };
   }
@@ -148,7 +152,11 @@ function reviewResultReducer(
     return { ...state, sourceFilter: action.value };
   }
 
-  return { ...state, workspace: action.workspace };
+  if (action.type === "storageFailed") {
+    return { ...state, storageError: action.message };
+  }
+
+  return { ...state, storageError: "", workspace: action.workspace };
 }
 
 export function ReviewResultClient({ reviewId }: { reviewId: string }) {
@@ -163,14 +171,34 @@ export function ReviewResultClient({ reviewId }: { reviewId: string }) {
     selectedRegionId,
     severityFilter,
     sourceFilter,
+    storageError,
     workspace,
   } = state;
 
   useEffect(() => {
-    queueMicrotask(() => {
-      const nextWorkspace = getStoredReviewWorkspace(reviewId) ?? null;
-      dispatch({ type: "hydrate", workspace: nextWorkspace });
-    });
+    let cancelled = false;
+
+    void getStoredReviewWorkspace(reviewId)
+      .then((nextWorkspace) => {
+        if (!cancelled) {
+          dispatch({ type: "hydrate", workspace: nextWorkspace ?? null });
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          dispatch({
+            message:
+              error instanceof Error
+                ? error.message
+                : "저장된 검수 결과를 불러오지 못했습니다.",
+            type: "storageFailed",
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [reviewId]);
 
   const filteredFindings = useMemo(() => {
@@ -194,7 +222,7 @@ export function ReviewResultClient({ reviewId }: { reviewId: string }) {
     filteredFindings.find((finding) => finding.id === selectedFindingId) ?? null;
 
   if (!workspace) {
-    return <MissingReviewState />;
+    return <MissingReviewState storageError={storageError} />;
   }
 
   const selectFinding = (findingId: string) => {
@@ -279,13 +307,27 @@ export function ReviewResultClient({ reviewId }: { reviewId: string }) {
           <ReportMemoPanel
             memo={memo}
             onMemoChange={(value) => dispatch({ memo: value, type: "setMemo" })}
-            onSave={() => {
-              const nextWorkspace = saveReviewReport(workspace.reviewJob.id, memo);
-              if (nextWorkspace) {
-                dispatch({ type: "workspaceSaved", workspace: nextWorkspace });
+            onSave={async () => {
+              try {
+                const nextWorkspace = await saveReviewReport(
+                  workspace.reviewJob.id,
+                  memo,
+                );
+                if (nextWorkspace) {
+                  dispatch({ type: "workspaceSaved", workspace: nextWorkspace });
+                }
+              } catch (error) {
+                dispatch({
+                  message:
+                    error instanceof Error
+                      ? error.message
+                      : "검수 리포트를 저장하지 못했습니다.",
+                  type: "storageFailed",
+                });
               }
             }}
             saved={Boolean(workspace.report)}
+            storageError={storageError}
           />
         </aside>
       </section>
@@ -293,7 +335,7 @@ export function ReviewResultClient({ reviewId }: { reviewId: string }) {
   );
 }
 
-function MissingReviewState() {
+function MissingReviewState({ storageError }: { storageError: string }) {
   return (
     <div className="mx-auto grid w-full max-w-[1100px] gap-4 px-5 py-12 sm:px-6 lg:px-8">
       <section className="app-panel p-8">
@@ -302,8 +344,8 @@ function MissingReviewState() {
         </p>
         <h2 className="mt-2 text-2xl font-normal">검수 리포트를 찾을 수 없습니다</h2>
         <p className="mt-3 text-sm leading-6 text-[var(--color-body)]">
-          브라우저 저장소에 해당 검수 결과가 없습니다. 새 콘텐츠 검수를 다시
-          시작해 주세요.
+          {storageError ||
+            "브라우저 저장소에 해당 검수 결과가 없습니다. 새 콘텐츠 검수를 다시 시작해 주세요."}
         </p>
         <Link
           className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-primary)] px-4 text-sm font-medium text-[var(--color-on-primary)]"
@@ -502,34 +544,40 @@ function OcrEvidencePanel({
           ) : null}
 
           <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="relative overflow-hidden rounded-xl bg-[var(--color-review-canvas)]">
-              <img
-                alt={`${ocrResult.fileName ?? "업로드 이미지"} OCR 검수 이미지`}
-                className="h-auto w-full object-contain"
-                src={ocrResult.imageUrl}
-              />
-              {ocrResult.regions.map((region, index) => (
-                <button
-                  aria-label={`${index + 1}번째 OCR 영역: ${region.text}`}
-                  aria-pressed={region.id === selectedRegion?.id}
-                  className={cx(
-                    "absolute border-2 bg-[var(--color-review-overlay-ocr)]/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-                    region.id === selectedRegion?.id
-                      ? "border-[var(--color-review-overlay-ocr)] bg-[var(--color-review-overlay-ocr)]/30"
-                      : "border-[var(--color-review-overlay-ocr)]/60 hover:bg-[var(--color-review-overlay-ocr)]/25",
-                  )}
-                  key={region.id}
-                  onClick={() => onSelectRegion(ocrResult.imageId, region.id)}
-                  style={{
-                    height: `${region.height * 100}%`,
-                    left: `${region.x * 100}%`,
-                    top: `${region.y * 100}%`,
-                    width: `${region.width * 100}%`,
-                  }}
-                  type="button"
+            {ocrResult.imageUrl ? (
+              <div className="relative overflow-hidden rounded-xl bg-[var(--color-review-canvas)]">
+                <img
+                  alt={`${ocrResult.fileName ?? "업로드 이미지"} OCR 검수 이미지`}
+                  className="h-auto w-full object-contain"
+                  src={ocrResult.imageUrl}
                 />
-              ))}
-            </div>
+                {ocrResult.regions.map((region, index) => (
+                  <button
+                    aria-label={`${index + 1}번째 OCR 영역: ${region.text}`}
+                    aria-pressed={region.id === selectedRegion?.id}
+                    className={cx(
+                      "absolute border-2 bg-[var(--color-review-overlay-ocr)]/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                      region.id === selectedRegion?.id
+                        ? "border-[var(--color-review-overlay-ocr)] bg-[var(--color-review-overlay-ocr)]/30"
+                        : "border-[var(--color-review-overlay-ocr)]/60 hover:bg-[var(--color-review-overlay-ocr)]/25",
+                    )}
+                    key={region.id}
+                    onClick={() => onSelectRegion(ocrResult.imageId, region.id)}
+                    style={{
+                      height: `${region.height * 100}%`,
+                      left: `${region.x * 100}%`,
+                      top: `${region.y * 100}%`,
+                      width: `${region.width * 100}%`,
+                    }}
+                    type="button"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex min-h-64 items-center justify-center rounded-xl bg-[var(--color-review-canvas)] px-6 text-center text-sm leading-6 text-white/70">
+                저장된 이미지 원본을 불러오지 못했습니다.
+              </div>
+            )}
 
             <div className="grid h-fit gap-4 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -738,11 +786,13 @@ function ReportMemoPanel({
   onMemoChange,
   onSave,
   saved,
+  storageError,
 }: {
   memo: string;
   onMemoChange: (value: string) => void;
   onSave: () => void;
   saved: boolean;
+  storageError: string;
 }) {
   return (
     <section className="app-panel p-4">
@@ -766,6 +816,11 @@ function ReportMemoPanel({
       {saved ? (
         <p className="mt-3 text-sm text-[var(--color-semantic-success)]">
           검수 리포트가 저장되었습니다.
+        </p>
+      ) : null}
+      {storageError ? (
+        <p className="mt-3 text-sm text-[var(--color-risk-high-text)]" role="alert">
+          {storageError}
         </p>
       ) : null}
     </section>

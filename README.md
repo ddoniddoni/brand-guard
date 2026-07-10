@@ -88,7 +88,8 @@ npx playwright install
 ## Demo Notes
 
 - Policy terms are mock data for portfolio demonstration.
-- Review jobs and reports are persisted in browser `localStorage`.
+- Review metadata and reports are persisted in browser `localStorage`.
+- Uploaded image assets are stored separately in IndexedDB and restored when a report is reopened.
 - Uploaded images run client-side OCR with Tesseract.js when possible.
 - AI image analysis is shown as a disabled extension point until an API Key is
   connected.

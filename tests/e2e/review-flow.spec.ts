@@ -75,5 +75,14 @@ test.describe("BrandGuard policy review flow", () => {
     await expect(
       page.getByText("대본/문구를 입력하거나 이미지를 하나 이상 업로드하세요."),
     ).toBeVisible();
+
+    await page.locator('input[type="file"]').setInputFiles({
+      buffer: Buffer.alloc(10 * 1024 * 1024 + 1),
+      mimeType: "image/png",
+      name: "too-large.png",
+    });
+    await expect(
+      page.getByText("이미지 한 개의 크기는 10MB 이하여야 합니다."),
+    ).toBeVisible();
   });
 });

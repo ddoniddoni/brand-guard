@@ -46,10 +46,15 @@ const channels: Channel[] = [
   "newsletter",
 ];
 
+const maxImageCount = 10;
+const maxImageSizeBytes = 10 * 1024 * 1024;
+const maxTotalImageSizeBytes = 30 * 1024 * 1024;
+
 export function ReviewCreateForm() {
   const router = useRouter();
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imageError, setImageError] = useState("");
+  const [submitError, setSubmitError] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [policyTerms] = useState(() => getStoredPolicyTerms());
   const [progressLabel, setProgressLabel] = useState("");
@@ -89,7 +94,32 @@ export function ReviewCreateForm() {
       return;
     }
 
+    if (nextFiles.length > maxImageCount) {
+      setImageError(`이미지는 최대 ${maxImageCount}개까지 업로드할 수 있습니다.`);
+      setImageFiles([]);
+      return;
+    }
+
+    const oversizedFile = nextFiles.find(
+      (file) => file.size > maxImageSizeBytes,
+    );
+
+    if (oversizedFile) {
+      setImageError("이미지 한 개의 크기는 10MB 이하여야 합니다.");
+      setImageFiles([]);
+      return;
+    }
+
+    const totalSize = nextFiles.reduce((sum, file) => sum + file.size, 0);
+
+    if (totalSize > maxTotalImageSizeBytes) {
+      setImageError("이미지 전체 용량은 30MB 이하여야 합니다.");
+      setImageFiles([]);
+      return;
+    }
+
     setImageError("");
+    setSubmitError("");
     setImageFiles(nextFiles);
   };
 
@@ -109,6 +139,7 @@ export function ReviewCreateForm() {
 
       setIsAnalyzing(true);
       setProgressLabel("콘텐츠 접수");
+      setSubmitError("");
 
       try {
         await wait(250);
@@ -141,13 +172,19 @@ export function ReviewCreateForm() {
         await wait(250);
         setProgressLabel("검수 리포트 생성");
 
-        const workspace = createReviewWorkspace({
+        const workspace = await createReviewWorkspace({
           images,
           input,
           reviewerName: "김민서",
         });
 
         router.push(`/reviews/${workspace.reviewJob.id}`);
+      } catch (error) {
+        setSubmitError(
+          error instanceof Error
+            ? error.message
+            : "검수 결과를 저장하지 못했습니다. 다시 시도해 주세요.",
+        );
       } finally {
         setIsAnalyzing(false);
       }
@@ -237,54 +274,11 @@ export function ReviewCreateForm() {
         </div>
 
         <aside className="grid h-fit gap-5">
-          <section className="app-panel p-5">
-            <p className="text-sm font-medium text-[var(--color-muted)]">
-              이미지 OCR 검사
-            </p>
-            <h2 className="mt-2 text-2xl font-normal">이미지 업로드</h2>
-            <label className="mt-5 flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-6 text-center hover:bg-[var(--color-surface-strong)]">
-              <UploadCloud aria-hidden="true" size={24} strokeWidth={1.8} />
-              <span className="mt-3 text-sm font-medium">이미지 선택</span>
-              <span className="mt-1 text-xs text-[var(--color-muted)]">
-                jpg, png, webp 지원
-              </span>
-              <input
-                accept="image/jpeg,image/png,image/webp"
-                className="sr-only"
-                multiple
-                onChange={(event) => handleImageChange(event.target.files)}
-                type="file"
-              />
-            </label>
-            {imageError ? (
-              <p className="mt-2 text-sm text-[var(--color-risk-high-text)]">
-                {imageError}
-              </p>
-            ) : null}
-            <div className="mt-4 grid gap-2">
-              {imageFiles.length > 0 ? (
-                imageFiles.map((file) => (
-                  <div
-                    className="flex min-w-0 items-center gap-3 rounded-lg border border-[var(--color-hairline)] px-3 py-2 text-sm"
-                    key={`${file.name}-${file.lastModified}`}
-                  >
-                    <FileImage
-                      aria-hidden="true"
-                      className="shrink-0 text-[var(--color-muted)]"
-                      size={16}
-                      strokeWidth={1.8}
-                    />
-                    <span className="truncate">{file.name}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-[var(--color-muted)]">
-                  이미지는 선택 사항입니다. 업로드하면 OCR로 이미지 속 문구를
-                  추출합니다.
-                </p>
-              )}
-            </div>
-          </section>
+          <ImageUploadPanel
+            imageError={imageError}
+            imageFiles={imageFiles}
+            onImageChange={handleImageChange}
+          />
 
           <section className="app-panel-muted p-5">
             <p className="text-sm font-semibold">AI 이미지 분석 미연결</p>
@@ -294,40 +288,133 @@ export function ReviewCreateForm() {
             </p>
           </section>
 
-          <button
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 text-sm font-medium text-[var(--color-on-primary)] hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:bg-[var(--color-primary-disabled)]"
-            disabled={isAnalyzing}
-            type="submit"
-          >
-            {isAnalyzing ? (
-              <Loader2
-                aria-hidden="true"
-                className="animate-spin"
-                size={16}
-                strokeWidth={1.8}
-              />
-            ) : (
-              <Play aria-hidden="true" size={16} strokeWidth={1.8} />
-            )}
-            콘텐츠 검수 시작
-          </button>
-
-          {isAnalyzing ? (
-            <div className="app-panel p-4" role="status">
-              <p className="text-sm font-medium">{progressLabel}</p>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-surface-soft)]">
-                <div
-                  className="h-full rounded-full bg-[var(--color-primary)] transition-all"
-                  style={{
-                    width: `${Math.max(12, Math.round(ocrProgress * 100))}%`,
-                  }}
-                />
-              </div>
-            </div>
-          ) : null}
+          <ReviewSubmitState
+            isAnalyzing={isAnalyzing}
+            ocrProgress={ocrProgress}
+            progressLabel={progressLabel}
+            submitError={submitError}
+          />
         </aside>
       </section>
     </form>
+  );
+}
+
+function ImageUploadPanel({
+  imageError,
+  imageFiles,
+  onImageChange,
+}: {
+  imageError: string;
+  imageFiles: File[];
+  onImageChange: (files: FileList | null) => void;
+}) {
+  return (
+    <section className="app-panel p-5">
+      <p className="text-sm font-medium text-[var(--color-muted)]">
+        이미지 OCR 검사
+      </p>
+      <h2 className="mt-2 text-2xl font-normal">이미지 업로드</h2>
+      <label className="mt-5 flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-6 text-center hover:bg-[var(--color-surface-strong)]">
+        <UploadCloud aria-hidden="true" size={24} strokeWidth={1.8} />
+        <span className="mt-3 text-sm font-medium">이미지 선택</span>
+        <span className="mt-1 text-xs text-[var(--color-muted)]">
+          jpg, png, webp · 최대 10개 · 개별 10MB · 전체 30MB
+        </span>
+        <input
+          accept="image/jpeg,image/png,image/webp"
+          className="sr-only"
+          multiple
+          onChange={(event) => onImageChange(event.target.files)}
+          type="file"
+        />
+      </label>
+      {imageError ? (
+        <p className="mt-2 text-sm text-[var(--color-risk-high-text)]">
+          {imageError}
+        </p>
+      ) : null}
+      <div className="mt-4 grid gap-2">
+        {imageFiles.length > 0 ? (
+          imageFiles.map((file) => (
+            <div
+              className="flex min-w-0 items-center gap-3 rounded-lg border border-[var(--color-hairline)] px-3 py-2 text-sm"
+              key={`${file.name}-${file.lastModified}`}
+            >
+              <FileImage
+                aria-hidden="true"
+                className="shrink-0 text-[var(--color-muted)]"
+                size={16}
+                strokeWidth={1.8}
+              />
+              <span className="truncate">{file.name}</span>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-[var(--color-muted)]">
+            이미지는 선택 사항입니다. 업로드하면 OCR로 이미지 속 문구를
+            추출합니다.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ReviewSubmitState({
+  isAnalyzing,
+  ocrProgress,
+  progressLabel,
+  submitError,
+}: {
+  isAnalyzing: boolean;
+  ocrProgress: number;
+  progressLabel: string;
+  submitError: string;
+}) {
+  return (
+    <>
+      <button
+        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 text-sm font-medium text-[var(--color-on-primary)] hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:bg-[var(--color-primary-disabled)]"
+        disabled={isAnalyzing}
+        type="submit"
+      >
+        {isAnalyzing ? (
+          <Loader2
+            aria-hidden="true"
+            className="animate-spin"
+            size={16}
+            strokeWidth={1.8}
+          />
+        ) : (
+          <Play aria-hidden="true" size={16} strokeWidth={1.8} />
+        )}
+        콘텐츠 검수 시작
+      </button>
+
+      {submitError ? (
+        <p
+          className="text-sm leading-6 text-[var(--color-risk-high-text)]"
+          role="alert"
+        >
+          {submitError}
+        </p>
+      ) : null}
+
+      {isAnalyzing ? (
+        <div className="app-panel p-4" role="status">
+          <p className="text-sm font-medium">{progressLabel}</p>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-surface-soft)]">
+            <div
+              className="h-full rounded-full bg-[var(--color-primary)] transition-all"
+              style={{
+                width: `${Math.max(12, Math.round(ocrProgress * 100))}%`,
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 

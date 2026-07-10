@@ -19,8 +19,15 @@ import type {
   OcrExtractionResult,
   OcrImageRegion,
 } from "@/features/ocr/types";
+import {
+  deleteReviewAssets,
+  getReviewAssetDataUrls,
+  ReviewStorageError,
+  saveReviewAssets,
+} from "@/features/review/local-asset-store";
 
 const storageKey = "brandguard.review-workspaces.v1";
+const maxStoredReviewCount = 20;
 
 type StoredReviewPayload = {
   reviews: ReviewWorkspace[];
@@ -33,7 +40,7 @@ export type ReviewImageInput = {
   ocrResult?: OcrExtractionResult;
 };
 
-export function createReviewWorkspace({
+export async function createReviewWorkspace({
   images,
   input,
   reviewerName,
@@ -99,7 +106,21 @@ export function createReviewWorkspace({
     visionConnectionState: "not_configured",
   };
 
-  saveReviewWorkspace(workspace);
+  const imageIds = ocrResults.map((result) => result.imageId);
+
+  try {
+    await saveReviewAssets(
+      ocrResults.map((result, index) => ({
+        dataUrl: images[index]?.dataUrl ?? "",
+        imageId: result.imageId,
+        reviewJobId,
+      })),
+    );
+    await saveReviewWorkspace(workspace);
+  } catch (error) {
+    await deleteReviewAssets(imageIds);
+    throw toReviewStorageError(error);
+  }
 
   return workspace;
 }
@@ -120,12 +141,49 @@ export function getStoredReviewWorkspaces() {
   }
 }
 
-export function getStoredReviewWorkspace(id: string) {
-  return getStoredReviewWorkspaces().find((workspace) => workspace.reviewJob.id === id);
+export async function getStoredReviewWorkspace(id: string) {
+  const workspace = getStoredReviewWorkspaces().find(
+    (item) => item.reviewJob.id === id,
+  );
+
+  if (!workspace || workspace.ocrResults.length === 0) {
+    return workspace;
+  }
+
+  if (workspace.ocrResults.every((result) => result.imageUrl)) {
+    return workspace;
+  }
+
+  const assetDataUrls = await getReviewAssetDataUrls(
+    workspace.ocrResults.map((result) => result.imageId),
+  );
+  const ocrResults = workspace.ocrResults.map((result) => ({
+    ...result,
+    imageUrl: result.imageUrl || assetDataUrls.get(result.imageId) || "",
+  }));
+
+  return {
+    ...workspace,
+    ocrResults,
+    reviewJob: {
+      ...workspace.reviewJob,
+      imageUrls: ocrResults.flatMap((result) =>
+        result.imageUrl ? [result.imageUrl] : [],
+      ),
+    },
+  };
 }
 
-export function saveReviewReport(reviewJobId: string, reviewerMemo: string) {
+export async function saveReviewReport(reviewJobId: string, reviewerMemo: string) {
   const reviews = getStoredReviewWorkspaces();
+  const currentWorkspace = reviews.find(
+    (workspace) => workspace.reviewJob.id === reviewJobId,
+  );
+
+  if (currentWorkspace) {
+    await persistInlineReviewAssets(currentWorkspace);
+  }
+
   const nextReviews = reviews.map((workspace) => {
     if (workspace.reviewJob.id !== reviewJobId) {
       return workspace;
@@ -155,20 +213,28 @@ export function saveReviewReport(reviewJobId: string, reviewerMemo: string) {
     };
   });
 
-  persistReviewWorkspaces(nextReviews);
-
-  return nextReviews.find((workspace) => workspace.reviewJob.id === reviewJobId);
+  try {
+    persistReviewWorkspaces(nextReviews);
+    return await getStoredReviewWorkspace(reviewJobId);
+  } catch (error) {
+    throw toReviewStorageError(error);
+  }
 }
 
-function saveReviewWorkspace(workspace: ReviewWorkspace) {
+async function saveReviewWorkspace(workspace: ReviewWorkspace) {
   const reviews = [
     workspace,
     ...getStoredReviewWorkspaces().filter(
       (current) => current.reviewJob.id !== workspace.reviewJob.id,
     ),
   ];
+  const retainedReviews = reviews.slice(0, maxStoredReviewCount);
+  const prunedImageIds = reviews
+    .slice(maxStoredReviewCount)
+    .flatMap((review) => review.ocrResults.map((result) => result.imageId));
 
-  persistReviewWorkspaces(reviews);
+  persistReviewWorkspaces(retainedReviews);
+  await deleteReviewAssets(prunedImageIds);
 }
 
 function persistReviewWorkspaces(reviews: ReviewWorkspace[]) {
@@ -177,11 +243,51 @@ function persistReviewWorkspaces(reviews: ReviewWorkspace[]) {
   }
 
   const payload: StoredReviewPayload = {
-    reviews,
-    version: 1,
+    reviews: reviews.slice(0, maxStoredReviewCount).map(stripInlineAssets),
+    version: 2,
   };
 
   window.localStorage.setItem(storageKey, JSON.stringify(payload));
+}
+
+function stripInlineAssets(workspace: ReviewWorkspace): ReviewWorkspace {
+  return {
+    ...workspace,
+    ocrResults: workspace.ocrResults.map((result) => ({
+      ...result,
+      imageUrl: "",
+    })),
+    reviewJob: {
+      ...workspace.reviewJob,
+      imageUrls: [],
+    },
+  };
+}
+
+async function persistInlineReviewAssets(workspace: ReviewWorkspace) {
+  const assets = workspace.ocrResults.flatMap((result) =>
+    result.imageUrl
+      ? [
+          {
+            dataUrl: result.imageUrl,
+            imageId: result.imageId,
+            reviewJobId: workspace.reviewJob.id,
+          },
+        ]
+      : [],
+  );
+
+  await saveReviewAssets(assets);
+}
+
+function toReviewStorageError(error: unknown) {
+  if (error instanceof ReviewStorageError) {
+    return error;
+  }
+
+  return new ReviewStorageError(
+    "검수 결과를 저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.",
+  );
 }
 
 function createOcrResult({
