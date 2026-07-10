@@ -212,6 +212,11 @@ body {
   outline: none;
 }
 
+.history-record-card {
+  contain-intrinsic-size: 0 172px;
+  content-visibility: auto;
+}
+
 [class*="bg-[var(--color-primary)]"][class*="text-white"] {
   color: var(--color-on-primary);
 }

@@ -2,6 +2,8 @@
 
 import {
   AlertTriangle,
+  Clock3,
+  Download,
   FileText,
   Image as ImageIcon,
   ListFilter,
@@ -12,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useReducer } from "react";
+import { ReviewStatusBadge } from "@/components/review/ReviewStatusBadge";
 import { SeverityBadge } from "@/components/ui/SeverityBadge";
 import {
   getFindingSourceLabel,
@@ -24,14 +27,17 @@ import type {
   Severity,
   TextSegment,
 } from "@/features/policy/types";
+import { getReviewEventLabel } from "@/features/review/labels";
 import {
   getStoredReviewWorkspace,
   retryReviewWorkspace,
   saveReviewReport,
 } from "@/features/review/local-review-store";
+import { downloadReviewReport } from "@/features/review/report-export";
 import { getLatestReviewFailure } from "@/features/review/state-machine";
 import type {
   OcrResult,
+  ReviewStatusEvent,
   ReviewWorkspace,
 } from "@/features/review/types";
 import { formatDate } from "@/lib/format";
@@ -382,6 +388,19 @@ export function ReviewResultClient({ reviewId }: { reviewId: string }) {
               onMemoChange={(value) =>
                 dispatch({ memo: value, type: "setMemo" })
               }
+              onExport={() => {
+                try {
+                  downloadReviewReport(workspace);
+                } catch (error) {
+                  dispatch({
+                    message:
+                      error instanceof Error
+                        ? error.message
+                        : "검수 리포트를 내보내지 못했습니다.",
+                    type: "storageFailed",
+                  });
+                }
+              }}
               onSave={async () => {
                 try {
                   const nextWorkspace = await saveReviewReport(
@@ -410,6 +429,8 @@ export function ReviewResultClient({ reviewId }: { reviewId: string }) {
           </aside>
         </section>
       )}
+
+      <ReviewEventTimeline events={workspace.events ?? []} />
     </div>
   );
 }
@@ -548,40 +569,6 @@ function ReportHeader({ workspace }: { workspace: ReviewWorkspace }) {
         </div>
       </div>
     </section>
-  );
-}
-
-function ReviewStatusBadge({
-  status,
-}: {
-  status: ReviewWorkspace["reviewJob"]["status"];
-}) {
-  const label =
-    status === "DRAFT"
-      ? "초안"
-      : status === "ANALYZING"
-        ? "분석 중"
-        : status === "FAILED"
-          ? "분석 실패"
-          : status === "REVIEWED"
-            ? "리포트 저장됨"
-            : "분석 완료";
-  const className =
-    status === "FAILED"
-      ? "bg-[var(--color-risk-high-bg)] text-[var(--color-risk-high-text)]"
-      : status === "ANALYZING"
-        ? "bg-[var(--color-risk-medium-bg)] text-[var(--color-risk-medium-text)]"
-        : "bg-[var(--color-risk-low-bg)] text-[var(--color-risk-low-text)]";
-
-  return (
-    <span
-      className={cx(
-        "inline-flex min-h-7 items-center rounded-full px-3 text-xs font-medium",
-        className,
-      )}
-    >
-      {label}
-    </span>
   );
 }
 
@@ -967,12 +954,14 @@ function FindingDetail({ finding }: { finding: PolicyFinding | null }) {
 function ReportMemoPanel({
   memo,
   onMemoChange,
+  onExport,
   onSave,
   saved,
   storageError,
 }: {
   memo: string;
   onMemoChange: (value: string) => void;
+  onExport: () => void;
   onSave: () => void;
   saved: boolean;
   storageError: string;
@@ -988,14 +977,25 @@ function ReportMemoPanel({
           value={memo}
         />
       </label>
-      <button
-        className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-4 text-sm font-medium text-[var(--color-on-primary)] hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-        onClick={onSave}
-        type="button"
-      >
-        <Save aria-hidden="true" size={16} strokeWidth={1.8} />
-        검수 리포트 저장
-      </button>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+        <button
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-4 text-sm font-medium text-[var(--color-on-primary)] hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+          onClick={onSave}
+          type="button"
+        >
+          <Save aria-hidden="true" size={16} strokeWidth={1.8} />
+          검수 리포트 저장
+        </button>
+        <button
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[var(--color-hairline)] px-4 text-sm font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)] disabled:cursor-not-allowed disabled:opacity-45"
+          disabled={!saved}
+          onClick={onExport}
+          type="button"
+        >
+          <Download aria-hidden="true" size={16} strokeWidth={1.8} />
+          리포트 내보내기
+        </button>
+      </div>
       {saved ? (
         <p className="mt-3 text-sm text-[var(--color-semantic-success)]">
           검수 리포트가 저장되었습니다.
@@ -1006,6 +1006,60 @@ function ReportMemoPanel({
           {storageError}
         </p>
       ) : null}
+    </section>
+  );
+}
+
+function ReviewEventTimeline({ events }: { events: ReviewStatusEvent[] }) {
+  return (
+    <section className="app-panel overflow-hidden">
+      <PanelTitle
+        countLabel={`${events.length}개 이벤트`}
+        icon={<Clock3 aria-hidden="true" size={18} strokeWidth={1.8} />}
+        kicker="검수 기록"
+        title="상태 변경 타임라인"
+      />
+      {events.length > 0 ? (
+        <ol className="grid gap-0 p-5 sm:p-6">
+          {events.map((event, index) => (
+            <li
+              className="relative grid grid-cols-[16px_minmax(0,1fr)] gap-3 pb-6 last:pb-0"
+              key={event.id}
+            >
+              {index < events.length - 1 ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-0 left-[7px] top-4 w-px bg-[var(--color-hairline)]"
+                />
+              ) : null}
+              <span
+                aria-hidden="true"
+                className="relative z-10 mt-1 size-4 rounded-full border-4 border-[var(--color-panel)] bg-[var(--color-primary)] ring-1 ring-[var(--color-hairline)]"
+              />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold">
+                    {getReviewEventLabel(event.type)}
+                  </p>
+                  <ReviewStatusBadge status={event.toStatus} />
+                  <span className="text-xs text-[var(--color-muted)]">
+                    {formatDate(event.createdAt)}
+                  </span>
+                </div>
+                {event.message ? (
+                  <p className="mt-2 text-sm leading-6 text-[var(--color-body)]">
+                    {event.message}
+                  </p>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="p-5 text-sm text-[var(--color-muted)] sm:p-6">
+          저장된 상태 변경 기록이 없습니다.
+        </p>
+      )}
     </section>
   );
 }
