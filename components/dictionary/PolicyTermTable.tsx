@@ -1,9 +1,10 @@
 "use client";
 
-import { Check, CirclePlus, Search, X } from "lucide-react";
+import { BookOpen, Check, CirclePlus, Pencil, Search, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { AdaptiveSelect } from "@/components/ui/AdaptiveSelect";
+import { MetricCard } from "@/components/ui/MetricCard";
 import { SeverityBadge } from "@/components/ui/SeverityBadge";
 import {
   getMatchTypeLabel,
@@ -67,6 +68,7 @@ export function PolicyTermTable() {
   const [terms, setTerms] = useState(() => getStoredPolicyTerms());
   const [query, setQuery] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [editingTermId, setEditingTermId] = useState("");
   const [draft, setDraft] = useState<DraftPolicyTerm>(emptyDraft);
   const [formError, setFormError] = useState("");
   const filteredTerms = useMemo(() => {
@@ -83,13 +85,27 @@ export function PolicyTermTable() {
         .includes(normalizedQuery),
     );
   }, [query, terms]);
+  const enabledTerms = terms.filter((term) => term.enabled);
+  const forbiddenTermCount = enabledTerms.filter(
+    (term) => term.type === "forbidden",
+  ).length;
+  const cautionTermCount = enabledTerms.filter(
+    (term) => term.type === "caution",
+  ).length;
 
   const commitTerms = (nextTerms: PolicyTerm[]) => {
     setTerms(nextTerms);
     savePolicyTerms(nextTerms);
   };
 
-  const handleAddPolicy = () => {
+  const resetForm = () => {
+    setDraft(emptyDraft);
+    setEditingTermId("");
+    setFormError("");
+    setIsAdding(false);
+  };
+
+  const handleSubmitPolicy = () => {
     const term = draft.term.trim();
     const reason = draft.reason.trim();
 
@@ -113,6 +129,30 @@ export function PolicyTermTable() {
     }
 
     const timestamp = new Date().toISOString();
+
+    if (editingTermId) {
+      commitTerms(
+        terms.map((currentTerm) =>
+          currentTerm.id === editingTermId
+            ? {
+                ...currentTerm,
+                category: draft.category,
+                matchType: draft.matchType,
+                reason,
+                replacementSuggestion:
+                  draft.replacementSuggestion.trim() || undefined,
+                severity: draft.severity,
+                term,
+                type: draft.type,
+                updatedAt: timestamp,
+              }
+            : currentTerm,
+        ),
+      );
+      resetForm();
+      return;
+    }
+
     const nextTerm: PolicyTerm = {
       brandId: "brand-northstar",
       category: draft.category,
@@ -129,13 +169,52 @@ export function PolicyTermTable() {
     };
 
     commitTerms([nextTerm, ...terms]);
-    setDraft(emptyDraft);
+    resetForm();
+  };
+
+  const handleEditPolicy = (term: PolicyTerm) => {
+    setDraft({
+      category: term.category,
+      matchType: term.matchType,
+      reason: term.reason,
+      replacementSuggestion: term.replacementSuggestion ?? "",
+      severity: term.severity,
+      term: term.term,
+      type: term.type,
+    });
+    setEditingTermId(term.id);
     setFormError("");
     setIsAdding(false);
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById("policy-term-form")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   };
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-6">
+      <section className="grid gap-4 md:grid-cols-3">
+        <MetricCard
+          description="현재 검수에 적용되는 활성 정책"
+          icon={BookOpen}
+          title="활성 정책"
+          value={`${enabledTerms.length}`}
+        />
+        <MetricCard
+          description="사용을 제한하는 표현"
+          icon={BookOpen}
+          title="금지어"
+          value={`${forbiddenTermCount}`}
+        />
+        <MetricCard
+          description="맥락 검토가 필요한 표현"
+          icon={BookOpen}
+          title="주의어"
+          value={`${cautionTermCount}`}
+        />
+      </section>
+
       <section className="app-panel p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -147,7 +226,10 @@ export function PolicyTermTable() {
           <button
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-4 text-sm font-medium text-[var(--color-on-primary)] hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
             onClick={() => {
-              setIsAdding((current) => !current);
+              const shouldOpen = !isAdding || Boolean(editingTermId);
+              setIsAdding(shouldOpen);
+              setEditingTermId("");
+              setDraft(emptyDraft);
               setFormError("");
             }}
             type="button"
@@ -157,17 +239,14 @@ export function PolicyTermTable() {
           </button>
         </div>
 
-        {isAdding ? (
+        {isAdding || editingTermId ? (
           <PolicyTermForm
             draft={draft}
             error={formError}
-            onCancel={() => {
-              setDraft(emptyDraft);
-              setFormError("");
-              setIsAdding(false);
-            }}
+            mode={editingTermId ? "edit" : "add"}
+            onCancel={resetForm}
             onChange={setDraft}
-            onSubmit={handleAddPolicy}
+            onSubmit={handleSubmitPolicy}
           />
         ) : null}
 
@@ -193,7 +272,7 @@ export function PolicyTermTable() {
 
       <section className="overflow-hidden rounded-xl border border-[var(--color-hairline)] bg-[var(--color-panel)]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] table-fixed border-collapse text-left text-sm">
+          <table className="w-full min-w-[1080px] table-fixed border-collapse text-left text-sm">
             <colgroup>
               <col className="w-[240px]" />
               <col className="w-[78px]" />
@@ -202,6 +281,7 @@ export function PolicyTermTable() {
               <col className="w-[92px]" />
               <col className="w-[216px]" />
               <col className="w-[82px]" />
+              <col className="w-[88px]" />
             </colgroup>
             <thead className="bg-[var(--color-surface-soft)] text-[var(--color-muted)]">
               <tr>
@@ -212,12 +292,14 @@ export function PolicyTermTable() {
                 <TableHead>매칭</TableHead>
                 <TableHead>대체 표현</TableHead>
                 <TableHead>상태</TableHead>
+                <TableHead>관리</TableHead>
               </tr>
             </thead>
             <tbody>
               {filteredTerms.map((term) => (
                 <PolicyTermRow
                   key={term.id}
+                  onEdit={handleEditPolicy}
                   onToggle={(nextTerm) => {
                     commitTerms(
                       terms.map((currentTerm) =>
@@ -245,18 +327,26 @@ export function PolicyTermTable() {
 function PolicyTermForm({
   draft,
   error,
+  mode,
   onCancel,
   onChange,
   onSubmit,
 }: {
   draft: DraftPolicyTerm;
   error: string;
+  mode: "add" | "edit";
   onCancel: () => void;
   onChange: (draft: DraftPolicyTerm) => void;
   onSubmit: () => void;
 }) {
   return (
-    <div className="mt-5 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4">
+    <div
+      className="mt-5 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4"
+      id="policy-term-form"
+    >
+      <p className="mb-3 text-sm font-semibold">
+        {mode === "edit" ? "정책 수정" : "새 정책 추가"}
+      </p>
       <div className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_120px_180px_130px_130px]">
         <label className="block min-w-0">
           <span className="text-xs font-medium text-[var(--color-muted)]">
@@ -372,7 +462,7 @@ function PolicyTermForm({
             type="button"
           >
             <Check aria-hidden="true" size={15} strokeWidth={1.8} />
-            추가
+            {mode === "edit" ? "수정 저장" : "추가"}
           </button>
         </div>
       </div>
@@ -416,9 +506,11 @@ function TableHead({ children }: { children: ReactNode }) {
 }
 
 function PolicyTermRow({
+  onEdit,
   onToggle,
   term,
 }: {
+  onEdit: (term: PolicyTerm) => void;
   onToggle: (term: PolicyTerm) => void;
   term: PolicyTerm;
 }) {
@@ -475,6 +567,17 @@ function PolicyTermRow({
           type="button"
         >
           {term.enabled ? "활성" : "비활성"}
+        </button>
+      </td>
+      <td className="whitespace-nowrap px-4 py-3">
+        <button
+          aria-label={`${term.term} 수정`}
+          className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[var(--color-hairline)] px-3 text-xs font-medium hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+          onClick={() => onEdit(term)}
+          type="button"
+        >
+          <Pencil aria-hidden="true" size={13} strokeWidth={1.8} />
+          수정
         </button>
       </td>
     </tr>

@@ -100,7 +100,7 @@ npx playwright install
 
 - No real account system or organization membership yet.
 - No server-side persistence yet.
-- Policy dictionary edits are not persisted beyond the current page state.
+- Policy dictionary edits are persisted only in the current browser's `localStorage`.
 - OCR is client-side Tesseract.js only.
 - AI image analysis provider is not connected yet.
 - The policy dictionary UI is currently mock-first and will need persistent CRUD.
