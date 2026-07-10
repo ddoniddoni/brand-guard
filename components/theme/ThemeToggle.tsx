@@ -2,6 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useSyncExternalStore } from "react";
+import { cx } from "@/lib/utils";
 
 type ThemeMode = "dark" | "light";
 
@@ -15,37 +16,72 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
     getThemeServerSnapshot,
   );
   const isDark = theme === "dark";
-  const Icon = isDark ? Sun : Moon;
+
+  return (
+    <section
+      aria-label="화면 테마"
+      className={cx(
+        "inline-flex items-center gap-3",
+        compact ? "shrink-0" : "w-full justify-start",
+      )}
+    >
+      <div
+        aria-label="화면 테마 선택"
+        className="inline-flex items-center rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-1 shadow-sm"
+        role="group"
+      >
+        <ThemeOption
+          compact={compact}
+          isActive={!isDark}
+          label="라이트 모드"
+          onClick={() => setTheme("light")}
+          theme="light"
+        />
+        <ThemeOption
+          compact={compact}
+          isActive={isDark}
+          label="다크 모드"
+          onClick={() => setTheme("dark")}
+          theme="dark"
+        />
+      </div>
+    </section>
+  );
+}
+
+function ThemeOption({
+  compact,
+  isActive,
+  label,
+  onClick,
+  theme,
+}: {
+  compact: boolean;
+  isActive: boolean;
+  label: string;
+  onClick: () => void;
+  theme: ThemeMode;
+}) {
+  const Icon = theme === "light" ? Sun : Moon;
 
   return (
     <button
-      aria-label={isDark ? "라이트 모드로 전환" : "다크 모드로 전환"}
-      className={
-        compact
-          ? "inline-grid size-10 shrink-0 place-items-center rounded-full border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] text-[var(--color-ink)] hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-          : "inline-flex min-h-11 w-full min-w-0 items-center justify-between gap-3 rounded-full border border-[var(--color-hairline)] bg-[var(--color-panel)] px-3 text-sm font-medium text-[var(--color-body)] hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
-      }
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      type="button"
-      title={isDark ? "라이트 모드" : "다크 모드"}
-    >
-      {compact ? (
-        <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
-      ) : (
-        <>
-          <span className="flex min-w-0 items-center gap-3">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--color-surface-soft)] text-[var(--color-ink)]">
-              <Icon aria-hidden="true" size={17} strokeWidth={1.8} />
-            </span>
-            <span className="truncate">
-              {isDark ? "라이트 모드" : "다크 모드"}
-            </span>
-          </span>
-          <span className="shrink-0 rounded-full bg-[var(--color-surface-soft)] px-2 py-1 text-[11px] font-medium text-[var(--color-muted)]">
-            전환
-          </span>
-        </>
+      aria-label={label}
+      aria-pressed={isActive}
+      className={cx(
+        "inline-flex h-8 items-center justify-center gap-2 rounded-lg px-2.5 text-xs font-medium transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]",
+        compact ? "w-8 px-0" : "min-w-20",
+        isActive
+          ? theme === "dark"
+            ? "bg-[#1f1d3d] text-white shadow-sm"
+            : "bg-white text-[#1f1d3d] shadow-sm"
+          : "text-[var(--color-muted)] hover:text-[var(--color-ink)]",
       )}
+      onClick={onClick}
+      type="button"
+    >
+      <Icon aria-hidden="true" size={15} strokeWidth={1.8} />
+      {compact ? null : <span>{theme === "light" ? "Light" : "Dark"}</span>}
     </button>
   );
 }

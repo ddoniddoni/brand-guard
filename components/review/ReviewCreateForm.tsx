@@ -1,16 +1,26 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileImage, Loader2, Play, UploadCloud } from "lucide-react";
+import { Loader2, Play, UploadCloud, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { AdaptiveSelect } from "@/components/ui/AdaptiveSelect";
 import {
   defaultDictionaryId,
 } from "@/features/policy/mock-terms";
-import { getStoredPolicyTerms } from "@/features/policy/local-policy-store";
+import {
+  getDefaultPolicyTerms,
+  getStoredPolicyTerms,
+  subscribeToPolicyTerms,
+} from "@/features/policy/local-policy-store";
 import {
   getContentTypeLabel,
   getReviewChannelLabel,
@@ -50,23 +60,33 @@ const maxImageCount = 10;
 const maxImageSizeBytes = 10 * 1024 * 1024;
 const maxTotalImageSizeBytes = 30 * 1024 * 1024;
 
+type UploadedImage = {
+  file: File;
+  id: string;
+  previewUrl: string;
+};
+
 export function ReviewCreateForm() {
   const router = useRouter();
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [images, setImages] = useState<UploadedImage[]>([]);
+  const imagesRef = useRef<UploadedImage[]>([]);
   const [imageError, setImageError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [policyTerms] = useState(() => getStoredPolicyTerms());
+  const policyTerms = useSyncExternalStore(
+    subscribeToPolicyTerms,
+    getStoredPolicyTerms,
+    getDefaultPolicyTerms,
+  );
   const [progressLabel, setProgressLabel] = useState("");
   const [ocrProgress, setOcrProgress] = useState(0);
   const form = useForm<ReviewCreateInput>({
     defaultValues: {
-      brandName: "노스스타",
+      brandName: "",
       channel: "instagram",
       contentType: "video_script",
       dictionaryId: defaultDictionaryId,
-      originalText:
-        "이번 이벤트에 참여하면 누구나 무료 보장 혜택을 받을 수 있습니다.\n업계 1위 확정 이벤트라는 문구는 공개 전 근거를 확인해 주세요.",
+      originalText: "",
       title: "",
     },
     resolver: zodResolver(reviewCreateSchema),
@@ -78,9 +98,29 @@ export function ReviewCreateForm() {
   const selectedChannel =
     useWatch({ control: form.control, name: "channel" }) ?? "instagram";
   const canStart = useMemo(
-    () => originalText.trim().length > 0 || imageFiles.length > 0,
-    [imageFiles.length, originalText],
+    () => originalText.trim().length > 0 || images.length > 0,
+    [images.length, originalText],
   );
+
+  useEffect(() => {
+    return () => {
+      revokeImagePreviews(imagesRef.current);
+    };
+  }, []);
+
+  const replaceImages = (nextImages: UploadedImage[]) => {
+    const nextPreviewUrls = new Set(
+      nextImages.map((image) => image.previewUrl),
+    );
+
+    revokeImagePreviews(
+      imagesRef.current.filter(
+        (image) => !nextPreviewUrls.has(image.previewUrl),
+      ),
+    );
+    imagesRef.current = nextImages;
+    setImages(nextImages);
+  };
 
   const handleImageChange = (files: FileList | null) => {
     const nextFiles = Array.from(files ?? []);
@@ -90,13 +130,13 @@ export function ReviewCreateForm() {
 
     if (invalidFile) {
       setImageError("이미지는 jpg, png, webp 파일만 업로드할 수 있습니다.");
-      setImageFiles([]);
+      replaceImages([]);
       return;
     }
 
     if (nextFiles.length > maxImageCount) {
       setImageError(`이미지는 최대 ${maxImageCount}개까지 업로드할 수 있습니다.`);
-      setImageFiles([]);
+      replaceImages([]);
       return;
     }
 
@@ -106,7 +146,7 @@ export function ReviewCreateForm() {
 
     if (oversizedFile) {
       setImageError("이미지 한 개의 크기는 10MB 이하여야 합니다.");
-      setImageFiles([]);
+      replaceImages([]);
       return;
     }
 
@@ -114,13 +154,23 @@ export function ReviewCreateForm() {
 
     if (totalSize > maxTotalImageSizeBytes) {
       setImageError("이미지 전체 용량은 30MB 이하여야 합니다.");
-      setImageFiles([]);
+      replaceImages([]);
       return;
     }
 
     setImageError("");
     setSubmitError("");
-    setImageFiles(nextFiles);
+    replaceImages(
+      nextFiles.map((file, index) => ({
+        file,
+        id: `${file.name}-${file.lastModified}-${index}`,
+        previewUrl: URL.createObjectURL(file),
+      })),
+    );
+  };
+
+  const handleImageRemove = (imageId: string) => {
+    replaceImages(images.filter((image) => image.id !== imageId));
   };
 
   const setContentRequiredError = () => {
@@ -147,33 +197,31 @@ export function ReviewCreateForm() {
         await wait(250);
         setProgressLabel("브랜드 금지어 사전 매칭");
 
-        const images = await Promise.all(
-          imageFiles.map(async (file, index): Promise<ReviewImageInput> => {
-            setProgressLabel(
-              `이미지 OCR 문구 추출 ${index + 1}/${imageFiles.length}`,
-            );
-            const [dataUrl, ocrResult] = await Promise.all([
-              readFileAsDataUrl(file),
-              extractImageTextWithTesseract(file, {
-                onProgress: (progress) => setOcrProgress(progress),
-                timeoutMs: 30_000,
-              }),
-            ]);
+        const reviewImages: ReviewImageInput[] = [];
 
-            return {
-              dataUrl,
-              fileName: file.name,
-              ocrResult,
-            };
-          }),
-        );
+        for (const [index, image] of images.entries()) {
+          setProgressLabel(`이미지 OCR 문구 추출 ${index + 1}/${images.length}`);
+          const [dataUrl, ocrResult] = await Promise.all([
+            readFileAsDataUrl(image.file),
+            extractImageTextWithTesseract(image.file, {
+              onProgress: (progress) => setOcrProgress(progress),
+              timeoutMs: 30_000,
+            }),
+          ]);
+
+          reviewImages.push({
+            dataUrl,
+            fileName: image.file.name,
+            ocrResult,
+          });
+        }
 
         setProgressLabel("OCR 문구 정책 검사");
         await wait(250);
         setProgressLabel("검수 리포트 생성");
 
         const workspace = await createReviewWorkspace({
-          images,
+          images: reviewImages,
           input,
           reviewerName: "김민서",
         });
@@ -276,8 +324,9 @@ export function ReviewCreateForm() {
         <aside className="grid min-h-0 gap-5 lg:h-full lg:grid-rows-[minmax(0,1fr)_auto_auto]">
           <ImageUploadPanel
             imageError={imageError}
-            imageFiles={imageFiles}
+            images={images}
             onImageChange={handleImageChange}
+            onImageRemove={handleImageRemove}
           />
 
           <section className="app-panel-muted p-5">
@@ -302,12 +351,14 @@ export function ReviewCreateForm() {
 
 function ImageUploadPanel({
   imageError,
-  imageFiles,
+  images,
   onImageChange,
+  onImageRemove,
 }: {
   imageError: string;
-  imageFiles: File[];
+  images: UploadedImage[];
   onImageChange: (files: FileList | null) => void;
+  onImageRemove: (imageId: string) => void;
 }) {
   return (
     <section className="app-panel flex min-h-0 flex-col p-5">
@@ -335,19 +386,32 @@ function ImageUploadPanel({
         </p>
       ) : null}
       <div className="mt-4 grid min-h-0 flex-1 gap-2 overflow-y-auto">
-        {imageFiles.length > 0 ? (
-          imageFiles.map((file) => (
+        {images.length > 0 ? (
+          images.map((image) => (
             <div
-              className="flex min-w-0 items-center gap-3 rounded-lg border border-[var(--color-hairline)] px-3 py-2 text-sm"
-              key={`${file.name}-${file.lastModified}`}
+              className="flex min-w-0 items-center gap-3 rounded-xl border border-[var(--color-hairline)] p-2 text-sm"
+              key={image.id}
             >
-              <FileImage
-                aria-hidden="true"
-                className="shrink-0 text-[var(--color-muted)]"
-                size={16}
-                strokeWidth={1.8}
+              {/* eslint-disable-next-line @next/next/no-img-element -- Local object URLs cannot use Next.js image optimization. */}
+              <img
+                alt={`${image.file.name} 미리보기`}
+                className="size-14 shrink-0 rounded-lg border border-[var(--color-hairline-soft)] object-cover"
+                src={image.previewUrl}
               />
-              <span className="truncate">{file.name}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">{image.file.name}</span>
+                <span className="mt-0.5 block text-xs text-[var(--color-muted)]">
+                  {formatFileSize(image.file.size)}
+                </span>
+              </span>
+              <button
+                aria-label={`${image.file.name} 제거`}
+                className="inline-grid size-8 shrink-0 place-items-center rounded-lg text-[var(--color-muted)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+                onClick={() => onImageRemove(image.id)}
+                type="button"
+              >
+                <X aria-hidden="true" size={16} strokeWidth={1.8} />
+              </button>
             </div>
           ))
         ) : (
@@ -447,6 +511,18 @@ function readFileAsDataUrl(file: File) {
     reader.addEventListener("error", () => reject(reader.error));
     reader.readAsDataURL(file);
   });
+}
+
+function revokeImagePreviews(images: UploadedImage[]) {
+  images.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+}
+
+function formatFileSize(size: number) {
+  if (size < 1024 * 1024) {
+    return `${Math.max(1, Math.round(size / 1024))}KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)}MB`;
 }
 
 function wait(ms: number) {

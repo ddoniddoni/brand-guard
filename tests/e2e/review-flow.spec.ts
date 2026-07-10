@@ -37,6 +37,7 @@ test.describe("BrandGuard policy review flow", () => {
     ).toBeVisible();
 
     await page.getByLabel("검수 제목").fill("E2E 정책 사전 검수");
+    await page.getByLabel("브랜드명").fill("노스스타");
     await page
       .getByRole("textbox", { name: "대본 또는 광고 문구" })
       .fill(
@@ -67,11 +68,16 @@ test.describe("BrandGuard policy review flow", () => {
   test("review creation shows Korean validation errors", async ({ page }) => {
     await page.goto("/reviews/new");
 
+    await expect(page.getByLabel("브랜드명")).toHaveValue("");
+    await expect(
+      page.getByRole("textbox", { name: "대본 또는 광고 문구" }),
+    ).toHaveValue("");
     await page.getByLabel("검수 제목").fill("");
     await page.getByRole("textbox", { name: "대본 또는 광고 문구" }).fill("");
     await page.getByRole("button", { name: "콘텐츠 검수 시작" }).click();
 
     await expect(page.getByText("검수 제목을 입력하세요.")).toBeVisible();
+    await expect(page.getByText("브랜드명을 입력하세요.")).toBeVisible();
     await expect(
       page.getByText("대본/문구를 입력하거나 이미지를 하나 이상 업로드하세요."),
     ).toBeVisible();
@@ -84,5 +90,114 @@ test.describe("BrandGuard policy review flow", () => {
     await expect(
       page.getByText("이미지 한 개의 크기는 10MB 이하여야 합니다."),
     ).toBeVisible();
+  });
+
+  test("AI settings disclose only the disabled provider state", async ({ page }) => {
+    await page.goto("/settings/ai");
+
+    await expect(
+      page.getByRole("heading", { name: "AI 이미지 분석 연결" }),
+    ).toBeVisible();
+    await expect(page.getByText("AI 이미지 분석 미연결")).toBeVisible();
+    await expect(page.getByLabel("Provider")).toHaveValue(
+      "disabledVisionProvider",
+    );
+    await expect(page.getByLabel("API Key")).toHaveValue(
+      "클라이언트에 저장하지 않음",
+    );
+  });
+
+  test("dictionary hydrates persisted policies without a mismatch", async ({
+    page,
+  }) => {
+    const hydrationErrors: string[] = [];
+
+    page.on("pageerror", (error) => {
+      if (error.message.includes("Hydration failed")) {
+        hydrationErrors.push(error.message);
+      }
+    });
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "brandguard.policy-terms.v1",
+        JSON.stringify({
+          terms: [
+            {
+              brandId: "brand-test",
+              category: "custom_forbidden_term",
+              createdAt: "2026-07-10T00:00:00.000Z",
+              enabled: true,
+              id: "term-persisted",
+              matchType: "contains",
+              reason: "저장된 정책 사유",
+              severity: "medium",
+              term: "저장된 테스트 정책",
+              type: "forbidden",
+              updatedAt: "2026-07-10T00:00:00.000Z",
+            },
+          ],
+          version: 1,
+        }),
+      );
+    });
+
+    await page.goto("/dictionaries");
+
+    await expect(page.getByText("저장된 테스트 정책")).toBeVisible();
+    expect(hydrationErrors).toEqual([]);
+  });
+
+  test("theme selector clearly exposes both appearance modes", async ({
+    page,
+  }) => {
+    await page.goto("/dictionaries");
+
+    const lightMode = page.getByRole("button", { name: "라이트 모드" });
+    const darkMode = page.getByRole("button", { name: "다크 모드" });
+
+    await expect(lightMode).toHaveAttribute("aria-pressed", "true");
+    await darkMode.click();
+    await expect(darkMode).toHaveAttribute("aria-pressed", "true");
+    await expect(lightMode).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("new review hydrates the persisted policy count without a mismatch", async ({
+    page,
+  }) => {
+    const hydrationErrors: string[] = [];
+
+    page.on("pageerror", (error) => {
+      if (error.message.includes("Hydration failed")) {
+        hydrationErrors.push(error.message);
+      }
+    });
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "brandguard.policy-terms.v1",
+        JSON.stringify({
+          terms: [
+            {
+              brandId: "brand-test",
+              category: "custom_forbidden_term",
+              createdAt: "2026-07-10T00:00:00.000Z",
+              enabled: true,
+              id: "term-persisted",
+              matchType: "contains",
+              reason: "저장된 정책 사유",
+              severity: "medium",
+              term: "저장된 테스트 정책",
+              type: "forbidden",
+              updatedAt: "2026-07-10T00:00:00.000Z",
+            },
+          ],
+          version: 1,
+        }),
+      );
+    });
+
+    await page.goto("/reviews/new");
+
+    await expect(page.getByText("1개 정책 적용")).toBeVisible();
+    expect(hydrationErrors).toEqual([]);
   });
 });

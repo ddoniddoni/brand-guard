@@ -13,11 +13,14 @@ type TesseractLine = {
 
 type TesseractWorker = Tesseract.Worker;
 
+const OCR_RETRY_CONFIDENCE = 0.82;
+const MIN_REGION_CONFIDENCE = 45;
+
 export async function extractImageTextWithTesseract(
   file: File,
   {
     onProgress,
-    timeoutMs = 12_000,
+    timeoutMs = 20_000,
   }: {
     onProgress?: (progress: number) => void;
     timeoutMs?: number;
@@ -56,19 +59,46 @@ export async function extractImageTextWithTesseract(
       await worker.setParameters({
         preserve_interword_spaces: "1",
         tessedit_pageseg_mode: PSM.SPARSE_TEXT,
+        user_defined_dpi: "300",
       });
 
-      return worker.recognize(file, undefined, { blocks: true, text: true });
+      const originalResult = await worker.recognize(file, undefined, {
+        blocks: true,
+        text: true,
+      });
+      const enhancedImage =
+        getOcrConfidence(originalResult) < OCR_RETRY_CONFIDENCE
+          ? await createOcrReadyFile(file, imageDimensions)
+          : null;
+
+      if (!enhancedImage) {
+        return { imageDimensions, result: originalResult };
+      }
+
+      await worker.setParameters({
+        preserve_interword_spaces: "1",
+        tessedit_pageseg_mode: PSM.SPARSE_TEXT,
+        user_defined_dpi: "300",
+      });
+      const enhancedResult = await worker.recognize(enhancedImage.file, undefined, {
+        blocks: true,
+        text: true,
+      });
+
+      return getOcrQuality(enhancedResult) > getOcrQuality(originalResult)
+        ? { imageDimensions: enhancedImage.dimensions, result: enhancedResult }
+        : { imageDimensions, result: originalResult };
     })();
-    const result = await Promise.race([ocrPromise, timeoutPromise]);
-    const text = normalizeOcrText(result.data.text);
+    const ocrOutput = await Promise.race([ocrPromise, timeoutPromise]);
+    const result = ocrOutput.result;
     const lines = collectLines(result.data.blocks);
     const regions = createOcrRegions({
       imageScopedId: `${file.name}-${file.lastModified}`,
-      imageHeight: imageDimensions.height,
-      imageWidth: imageDimensions.width,
+      imageHeight: ocrOutput.imageDimensions.height,
+      imageWidth: ocrOutput.imageDimensions.width,
       lines,
     });
+    const text = getReliableOcrText(result.data.text, lines);
 
     return {
       confidence: clampConfidence((result.data.confidence ?? 0) / 100),
@@ -98,6 +128,89 @@ export async function extractImageTextWithTesseract(
   }
 }
 
+async function createOcrReadyFile(
+  file: File,
+  dimensions: { height: number; width: number },
+) {
+  const longestSide = Math.max(dimensions.width, dimensions.height);
+  const scale = Math.min(3, 3_200 / longestSide);
+
+  if (!Number.isFinite(scale) || scale <= 1) {
+    return null;
+  }
+
+  try {
+    const image = await loadImage(file);
+    const canvas = document.createElement("canvas");
+
+    canvas.width = Math.max(1, Math.round(dimensions.width * scale));
+    canvas.height = Math.max(1, Math.round(dimensions.height * scale));
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return null;
+    }
+
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.filter = "grayscale(1) contrast(1.45) brightness(1.08)";
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const blob = await canvasToBlob(canvas);
+
+    return blob
+      ? {
+          dimensions: { height: canvas.height, width: canvas.width },
+          file: new File([blob], `${getFileStem(file.name)}-ocr.png`, {
+            type: "image/png",
+          }),
+        }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function getOcrConfidence(result: { data: { confidence: number } }) {
+  return clampConfidence((result.data.confidence ?? 0) / 100);
+}
+
+function getOcrQuality(result: {
+  data: {
+    blocks: Tesseract.Block[] | null;
+    confidence: number;
+    text: string;
+  };
+}) {
+  const lines = collectLines(result.data.blocks).filter(isReliableLine);
+
+  if (lines.length === 0) {
+    return getOcrConfidence(result) * 0.5;
+  }
+
+  let weightedConfidence = 0;
+  let totalWeight = 0;
+
+  for (const line of lines) {
+    const characterCount = getMeaningfulCharacterCount(line.text ?? "");
+    const weight = Math.max(1, Math.min(characterCount, 40));
+
+    weightedConfidence += (line.confidence ?? 0) * weight;
+    totalWeight += weight;
+  }
+
+  const averageConfidence = weightedConfidence / totalWeight / 100;
+  const reliableCharacterCount = lines.reduce(
+    (total, line) => total + getMeaningfulCharacterCount(line.text ?? ""),
+    0,
+  );
+
+  return averageConfidence + Math.min(reliableCharacterCount, 120) / 1_200;
+}
+
 function collectLines(blocks: Tesseract.Block[] | null): TesseractLine[] {
   const lines: TesseractLine[] = [];
 
@@ -125,9 +238,7 @@ function createOcrRegions({
   imageWidth: number;
   lines: TesseractLine[];
 }): OcrImageRegion[] {
-  const usableLines = lines.filter(
-    (line) => line.bbox && line.text?.trim() && (line.confidence ?? 0) >= 25,
-  );
+  const usableLines = lines.filter(isReliableLine);
 
   if (usableLines.length === 0 || imageWidth <= 0 || imageHeight <= 0) {
     return [];
@@ -150,6 +261,52 @@ function createOcrRegions({
   });
 }
 
+function getReliableOcrText(
+  fallbackText: string,
+  lines: TesseractLine[],
+) {
+  const readableLines = lines.filter(isReadableLine);
+
+  if (readableLines.length === 0) {
+    return normalizeOcrText(fallbackText);
+  }
+
+  return normalizeOcrText(
+    readableLines.map((line) => line.text ?? "").join("\n"),
+  );
+}
+
+function isReliableLine(line: TesseractLine) {
+  const confidence = line.confidence ?? 0;
+  const characterCount = getMeaningfulCharacterCount(line.text ?? "");
+
+  if (
+    !isReadableLine(line) ||
+    confidence < MIN_REGION_CONFIDENCE ||
+    (characterCount < 2 && confidence < 65)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function isReadableLine(line: TesseractLine) {
+  const bbox = line.bbox;
+
+  return Boolean(
+    bbox &&
+      bbox.x1 > bbox.x0 &&
+      bbox.y1 > bbox.y0 &&
+      (line.confidence ?? 0) >= 30 &&
+      getMeaningfulCharacterCount(line.text ?? "") > 0,
+  );
+}
+
+function getMeaningfulCharacterCount(text: string) {
+  return text.match(/[\p{L}\p{N}]/gu)?.length ?? 0;
+}
+
 function getImageDimensions(file: File) {
   return new Promise<{ height: number; width: number }>((resolve) => {
     const image = new Image();
@@ -168,6 +325,33 @@ function getImageDimensions(file: File) {
     });
     image.src = url;
   });
+}
+
+function loadImage(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    const url = URL.createObjectURL(file);
+
+    image.addEventListener("load", () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    });
+    image.addEventListener("error", () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("이미지 전처리를 준비하지 못했습니다."));
+    });
+    image.src = url;
+  });
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement) {
+  return new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, "image/png");
+  });
+}
+
+function getFileStem(fileName: string) {
+  return fileName.replace(/\.[^.]+$/, "") || "ocr-image";
 }
 
 function normalizeOcrText(text: string) {

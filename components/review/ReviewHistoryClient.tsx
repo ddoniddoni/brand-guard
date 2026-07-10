@@ -203,6 +203,9 @@ function HistoryRecordCard({ workspace }: { workspace: ReviewWorkspace }) {
           {workspace.severityCounts.medium > 0 ? (
             <SeverityBadge severity="medium" />
           ) : null}
+          {workspace.severityCounts.low > 0 ? (
+            <SeverityBadge severity="low" />
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2 md:justify-end">
           {workspace.report ? (

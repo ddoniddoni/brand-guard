@@ -23,12 +23,16 @@ test("uploaded image runs through Tesseract and produces OCR policy findings", a
 
   await page.goto("/reviews/new");
   await page.getByLabel("검수 제목").fill("실제 OCR 검수");
+  await page.getByLabel("브랜드명").fill("노스스타");
   await page.getByRole("textbox", { name: "대본 또는 광고 문구" }).fill("");
   await page.locator('input[type="file"]').setInputFiles({
     buffer: imageBuffer,
     mimeType: "image/png",
     name: "ocr-live.png",
   });
+  await expect(
+    page.getByRole("img", { name: "ocr-live.png 미리보기" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "콘텐츠 검수 시작" }).click();
 
   await page.waitForURL(/\/reviews\/review-local-.+$/, { timeout: 45_000 });

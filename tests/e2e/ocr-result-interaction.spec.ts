@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { ReviewWorkspace } from "@/features/review/types";
 
 const pixelImage =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+3Bq7WQAAAABJRU5ErkJggg==";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='100' viewBox='0 0 400 100'%3E%3Crect width='400' height='100' fill='white'/%3E%3C/svg%3E";
 
 const reviewWorkspace: ReviewWorkspace = {
   events: [],
@@ -156,6 +156,30 @@ test("user switches OCR images and keeps regions synchronized with findings", as
   }, reviewWorkspace);
 
   await page.goto("/reviews/review-ocr-ui");
+
+  const ocrPanel = page.getByTestId("ocr-evidence-panel");
+  const supportingGrid = page.getByTestId("review-supporting-grid");
+  const imageStage = page.getByTestId("ocr-image-stage");
+  const firstImage = page.getByRole("img", {
+    name: "first.png OCR 검수 이미지",
+  });
+  const [ocrPanelBox, supportingGridBox, stageBox, imageBox] = await Promise.all([
+    ocrPanel.boundingBox(),
+    supportingGrid.boundingBox(),
+    imageStage.boundingBox(),
+    firstImage.boundingBox(),
+  ]);
+
+  expect(ocrPanelBox?.width).toBeCloseTo(supportingGridBox?.width ?? 0, 0);
+  expect(ocrPanelBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(
+    supportingGridBox?.y ?? 0,
+  );
+  expect(
+    Math.abs((stageBox?.height ?? 0) - (imageBox?.height ?? 0)),
+  ).toBeLessThanOrEqual(2);
+  expect(
+    (stageBox?.width ?? 0) / Math.max(stageBox?.height ?? 1, 1),
+  ).toBeGreaterThan(3.8);
 
   const secondImageButton = page.getByRole("button", {
     name: "이미지 2 second.png",

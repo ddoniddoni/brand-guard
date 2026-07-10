@@ -2,6 +2,10 @@ import { mockPolicyTerms } from "@/features/policy/mock-terms";
 import type { PolicyTerm } from "@/features/policy/types";
 
 const storageKey = "brandguard.policy-terms.v1";
+const storageChangeEvent = "brandguard.policy-terms.changed";
+
+let cachedStorageValue: string | null | undefined;
+let cachedTerms = mockPolicyTerms;
 
 type StoredPolicyTermsPayload = {
   terms: PolicyTerm[];
@@ -13,15 +17,46 @@ export function getStoredPolicyTerms() {
     return mockPolicyTerms;
   }
 
-  try {
-    const parsed = JSON.parse(
-      window.localStorage.getItem(storageKey) ?? "",
-    ) as StoredPolicyTermsPayload;
+  const storageValue = window.localStorage.getItem(storageKey);
 
-    return Array.isArray(parsed.terms) ? parsed.terms : mockPolicyTerms;
-  } catch {
-    return mockPolicyTerms;
+  if (storageValue === cachedStorageValue) {
+    return cachedTerms;
   }
+
+  try {
+    const parsed = JSON.parse(storageValue ?? "") as StoredPolicyTermsPayload;
+
+    cachedTerms = Array.isArray(parsed.terms) ? parsed.terms : mockPolicyTerms;
+  } catch {
+    cachedTerms = mockPolicyTerms;
+  }
+
+  cachedStorageValue = storageValue;
+  return cachedTerms;
+}
+
+export function getDefaultPolicyTerms() {
+  return mockPolicyTerms;
+}
+
+export function subscribeToPolicyTerms(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  const handleStorageChange = (event: StorageEvent) => {
+    if (event.key === storageKey) {
+      onStoreChange();
+    }
+  };
+
+  window.addEventListener("storage", handleStorageChange);
+  window.addEventListener(storageChangeEvent, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", handleStorageChange);
+    window.removeEventListener(storageChangeEvent, onStoreChange);
+  };
 }
 
 export function savePolicyTerms(terms: PolicyTerm[]) {
@@ -34,5 +69,10 @@ export function savePolicyTerms(terms: PolicyTerm[]) {
     version: 1,
   };
 
-  window.localStorage.setItem(storageKey, JSON.stringify(payload));
+  const storageValue = JSON.stringify(payload);
+
+  cachedStorageValue = storageValue;
+  cachedTerms = terms;
+  window.localStorage.setItem(storageKey, storageValue);
+  window.dispatchEvent(new Event(storageChangeEvent));
 }

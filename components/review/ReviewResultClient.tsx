@@ -350,83 +350,88 @@ export function ReviewResultClient({ reviewId }: { reviewId: string }) {
           storageError={storageError}
         />
       ) : (
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_430px]">
-          <main className="grid min-w-0 gap-5">
-            <TextEvidencePanel
-              findings={workspace.findings}
-              onSelectFinding={selectFinding}
-              segments={pastedTextSegments}
-              selectedFindingId={selectedFinding?.id ?? ""}
-            />
+        <section className="grid gap-5">
+          <OcrEvidencePanel
+            ocrResults={workspace.ocrResults}
+            onSelectImage={selectOcrImage}
+            onSelectRegion={selectOcrRegion}
+            selectedImageId={selectedImageId}
+            selectedRegionId={selectedRegionId}
+          />
 
-            <OcrEvidencePanel
-              ocrResults={workspace.ocrResults}
-              onSelectImage={selectOcrImage}
-              onSelectRegion={selectOcrRegion}
-              selectedImageId={selectedImageId}
-              selectedRegionId={selectedRegionId}
-            />
-          </main>
+          <div
+            className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_430px]"
+            data-testid="review-supporting-grid"
+          >
+            <div className="min-w-0">
+              <TextEvidencePanel
+                findings={workspace.findings}
+                onSelectFinding={selectFinding}
+                segments={pastedTextSegments}
+                selectedFindingId={selectedFinding?.id ?? ""}
+              />
+            </div>
 
-          <aside className="grid h-fit gap-4 xl:sticky xl:top-6">
-            <FindingInspector
-              filteredFindings={filteredFindings}
-              onSelectFinding={selectFinding}
-              selectedFinding={selectedFinding}
-              setSeverityFilter={(value) =>
-                dispatch({ type: "setSeverityFilter", value })
-              }
-              setSourceFilter={(value) =>
-                dispatch({ type: "setSourceFilter", value })
-              }
-              severityFilter={severityFilter}
-              sourceFilter={sourceFilter}
-            />
-
-            <ReportMemoPanel
-              memo={memo}
-              onMemoChange={(value) =>
-                dispatch({ memo: value, type: "setMemo" })
-              }
-              onExport={() => {
-                try {
-                  downloadReviewReport(workspace);
-                } catch (error) {
-                  dispatch({
-                    message:
-                      error instanceof Error
-                        ? error.message
-                        : "검수 리포트를 내보내지 못했습니다.",
-                    type: "storageFailed",
-                  });
+            <aside className="grid h-fit gap-4 xl:sticky xl:top-6">
+              <FindingInspector
+                filteredFindings={filteredFindings}
+                onSelectFinding={selectFinding}
+                selectedFinding={selectedFinding}
+                setSeverityFilter={(value) =>
+                  dispatch({ type: "setSeverityFilter", value })
                 }
-              }}
-              onSave={async () => {
-                try {
-                  const nextWorkspace = await saveReviewReport(
-                    workspace.reviewJob.id,
-                    memo,
-                  );
-                  if (nextWorkspace) {
+                setSourceFilter={(value) =>
+                  dispatch({ type: "setSourceFilter", value })
+                }
+                severityFilter={severityFilter}
+                sourceFilter={sourceFilter}
+              />
+
+              <ReportMemoPanel
+                memo={memo}
+                onMemoChange={(value) =>
+                  dispatch({ memo: value, type: "setMemo" })
+                }
+                onExport={() => {
+                  try {
+                    downloadReviewReport(workspace);
+                  } catch (error) {
                     dispatch({
-                      type: "workspaceSaved",
-                      workspace: nextWorkspace,
+                      message:
+                        error instanceof Error
+                          ? error.message
+                          : "검수 리포트를 내보내지 못했습니다.",
+                      type: "storageFailed",
                     });
                   }
-                } catch (error) {
-                  dispatch({
-                    message:
-                      error instanceof Error
-                        ? error.message
-                        : "검수 리포트를 저장하지 못했습니다.",
-                    type: "storageFailed",
-                  });
-                }
-              }}
-              saved={Boolean(workspace.report)}
-              storageError={storageError}
-            />
-          </aside>
+                }}
+                onSave={async () => {
+                  try {
+                    const nextWorkspace = await saveReviewReport(
+                      workspace.reviewJob.id,
+                      memo,
+                    );
+                    if (nextWorkspace) {
+                      dispatch({
+                        type: "workspaceSaved",
+                        workspace: nextWorkspace,
+                      });
+                    }
+                  } catch (error) {
+                    dispatch({
+                      message:
+                        error instanceof Error
+                          ? error.message
+                          : "검수 리포트를 저장하지 못했습니다.",
+                      type: "storageFailed",
+                    });
+                  }
+                }}
+                saved={Boolean(workspace.report)}
+                storageError={storageError}
+              />
+            </aside>
+          </div>
         </section>
       )}
 
@@ -679,7 +684,10 @@ function OcrEvidencePanel({
   );
 
   return (
-    <section className="app-panel overflow-hidden">
+    <section
+      className="app-panel overflow-hidden"
+      data-testid="ocr-evidence-panel"
+    >
       <PanelTitle
         countLabel={ocrResults.length > 0 ? `${ocrResults.length}개 이미지` : "이미지 없음"}
         icon={<ImageIcon aria-hidden="true" size={18} strokeWidth={1.8} />}
@@ -713,35 +721,53 @@ function OcrEvidencePanel({
             </div>
           ) : null}
 
-          <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid items-start gap-6 p-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(360px,0.85fr)] lg:p-6">
             {ocrResult.imageUrl ? (
-              <div className="relative overflow-hidden rounded-xl bg-[var(--color-review-canvas)]">
-                <img
-                  alt={`${ocrResult.fileName ?? "업로드 이미지"} OCR 검수 이미지`}
-                  className="h-auto w-full object-contain"
-                  src={ocrResult.imageUrl}
-                />
-                {ocrResult.regions.map((region, index) => (
-                  <button
-                    aria-label={`${index + 1}번째 OCR 영역: ${region.text}`}
-                    aria-pressed={region.id === selectedRegion?.id}
-                    className={cx(
-                      "absolute border-2 bg-[var(--color-review-overlay-ocr)]/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-                      region.id === selectedRegion?.id
-                        ? "border-[var(--color-review-overlay-ocr)] bg-[var(--color-review-overlay-ocr)]/30"
-                        : "border-[var(--color-review-overlay-ocr)]/60 hover:bg-[var(--color-review-overlay-ocr)]/25",
-                    )}
-                    key={region.id}
-                    onClick={() => onSelectRegion(ocrResult.imageId, region.id)}
-                    style={{
-                      height: `${region.height * 100}%`,
-                      left: `${region.x * 100}%`,
-                      top: `${region.y * 100}%`,
-                      width: `${region.width * 100}%`,
-                    }}
-                    type="button"
+              <div className="grid min-w-0 self-start gap-3">
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-[var(--color-muted)]">
+                      원본 이미지
+                    </p>
+                    <p className="mt-1 truncate text-sm font-medium">
+                      {ocrResult.fileName ?? "파일명 없음"}
+                    </p>
+                  </div>
+                  <p className="text-xs text-[var(--color-muted)]">
+                    표시된 영역을 선택해 인식 문구를 확인하세요.
+                  </p>
+                </div>
+                <div
+                  className="ocr-image-canvas relative w-full self-start overflow-hidden rounded-xl border border-[var(--color-hairline)]"
+                  data-testid="ocr-image-stage"
+                >
+                  <img
+                    alt={`${ocrResult.fileName ?? "업로드 이미지"} OCR 검수 이미지`}
+                    className="block h-auto w-full object-contain"
+                    src={ocrResult.imageUrl}
                   />
-                ))}
+                  {ocrResult.regions.map((region, index) => (
+                    <button
+                      aria-label={`${index + 1}번째 OCR 영역: ${region.text}`}
+                      aria-pressed={region.id === selectedRegion?.id}
+                      className={cx(
+                        "absolute border-2 bg-[var(--color-review-overlay-ocr)]/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                        region.id === selectedRegion?.id
+                          ? "border-[var(--color-review-overlay-ocr)] bg-[var(--color-review-overlay-ocr)]/30"
+                          : "border-[var(--color-review-overlay-ocr)]/60 hover:bg-[var(--color-review-overlay-ocr)]/25",
+                      )}
+                      key={region.id}
+                      onClick={() => onSelectRegion(ocrResult.imageId, region.id)}
+                      style={{
+                        height: `${region.height * 100}%`,
+                        left: `${region.x * 100}%`,
+                        top: `${region.y * 100}%`,
+                        width: `${region.width * 100}%`,
+                      }}
+                      type="button"
+                    />
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="flex min-h-64 items-center justify-center rounded-xl bg-[var(--color-review-canvas)] px-6 text-center text-sm leading-6 text-white/70">
@@ -749,55 +775,83 @@ function OcrEvidencePanel({
               </div>
             )}
 
-            <div className="grid h-fit gap-4 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold">OCR 추출 텍스트</p>
-                <span className="text-xs text-[var(--color-muted)]">
-                  {getOcrStatusLabel(ocrResult.status)} · 신뢰도 {Math.round(ocrResult.confidence * 100)}%
+            <div className="grid self-start overflow-hidden rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)]">
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div>
+                  <p className="text-xs font-medium text-[var(--color-muted)]">
+                    OCR 결과
+                  </p>
+                  <p className="mt-1 text-lg font-semibold">추출 텍스트</p>
+                </div>
+                <span className="rounded-full bg-[var(--color-panel)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)]">
+                  {getOcrStatusLabel(ocrResult.status)} · {Math.round(ocrResult.confidence * 100)}%
                 </span>
               </div>
 
               {ocrResult.status === "failed" ? (
-                <p className="text-sm leading-6 text-[var(--color-risk-high-text)]">
+                <p className="mx-4 mb-4 text-sm leading-6 text-[var(--color-risk-high-text)]">
                   {ocrResult.errorMessage ?? "OCR을 완료하지 못했습니다."}
                 </p>
               ) : null}
 
-              {ocrResult.regions.length > 0 ? (
-                <div className="grid max-h-56 gap-2 overflow-y-auto">
-                  {ocrResult.regions.map((region, index) => (
-                    <button
-                      aria-pressed={region.id === selectedRegion?.id}
-                      className={cx(
-                        "grid grid-cols-[28px_minmax(0,1fr)] gap-2 rounded-lg border px-3 py-2 text-left text-sm leading-5",
-                        region.id === selectedRegion?.id
-                          ? "border-[var(--color-primary)] bg-[var(--color-panel)]"
-                          : "border-[var(--color-hairline)] hover:bg-[var(--color-panel)]",
-                      )}
-                      key={region.id}
-                      onClick={() => onSelectRegion(ocrResult.imageId, region.id)}
-                      type="button"
-                    >
-                      <span className="text-xs tabular-nums text-[var(--color-muted)]">
-                        {index + 1}
-                      </span>
-                      <span>{region.text}</span>
-                    </button>
-                  ))}
-                </div>
+              {ocrResult.status === "succeeded" &&
+              ocrResult.confidence < 0.75 ? (
+                <p className="mx-4 mb-4 rounded-lg border border-[var(--color-risk-medium-text)] bg-[var(--color-risk-medium-bg)] px-3 py-2 text-xs leading-5 text-[var(--color-risk-medium-text)]">
+                  인식 신뢰도가 낮습니다. 작은 글자, 장식 폰트, 낮은 대비 영역은
+                  원본 이미지와 함께 다시 확인하세요.
+                </p>
               ) : null}
 
               {ocrResult.fullText ? (
-                <div className="border-t border-[var(--color-hairline)] pt-3">
-                  <p className="text-xs font-medium text-[var(--color-muted)]">전체 추출 문구</p>
-                  <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-sm leading-6">
+                <div className="border-y border-[var(--color-hairline)] bg-[var(--color-panel)] p-4">
+                  <p className="text-xs font-medium text-[var(--color-muted)]">
+                    전체 추출 문구
+                  </p>
+                  <p className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap text-sm leading-7">
                     {ocrResult.fullText}
                   </p>
                 </div>
               ) : ocrResult.status !== "failed" ? (
-                <p className="text-sm leading-6 text-[var(--color-muted)]">
+                <p className="border-y border-[var(--color-hairline)] bg-[var(--color-panel)] p-4 text-sm leading-6 text-[var(--color-muted)]">
                   이미지에서 텍스트를 찾지 못했습니다.
                 </p>
+              ) : null}
+
+              {ocrResult.regions.length > 0 ? (
+                <div className="grid gap-3 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-medium text-[var(--color-muted)]">
+                      검출 영역
+                    </p>
+                    <span className="text-xs tabular-nums text-[var(--color-muted)]">
+                      {ocrResult.regions.length}개
+                    </span>
+                  </div>
+                  <div className="grid max-h-72 gap-2 overflow-y-auto">
+                    {ocrResult.regions.map((region, index) => (
+                      <button
+                        aria-pressed={region.id === selectedRegion?.id}
+                        className={cx(
+                          "grid grid-cols-[28px_minmax(0,1fr)_auto] items-start gap-2 rounded-lg border px-3 py-2.5 text-left text-sm leading-5",
+                          region.id === selectedRegion?.id
+                            ? "border-[var(--color-primary)] bg-[var(--color-panel)]"
+                            : "border-[var(--color-hairline)] hover:bg-[var(--color-panel)]",
+                        )}
+                        key={region.id}
+                        onClick={() => onSelectRegion(ocrResult.imageId, region.id)}
+                        type="button"
+                      >
+                        <span className="text-xs tabular-nums text-[var(--color-muted)]">
+                          {index + 1}
+                        </span>
+                        <span>{region.text}</span>
+                        <span className="text-xs tabular-nums text-[var(--color-muted)]">
+                          {Math.round(region.confidence * 100)}%
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ) : null}
             </div>
           </div>

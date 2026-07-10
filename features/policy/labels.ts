@@ -9,7 +9,7 @@ import type { Channel, ContentType } from "@/features/review/types";
 
 export function getSeverityLabel(severity: Severity) {
   const labels: Record<Severity, string> = {
-    critical: "긴급 검토",
+    critical: "긴급",
     high: "높음",
     low: "낮음",
     medium: "보통",

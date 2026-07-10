@@ -4,7 +4,7 @@ import { cx } from "@/lib/utils";
 
 const severityClassName: Record<Severity, string> = {
   critical:
-    "border border-[var(--color-risk-critical-bg)] bg-[var(--color-risk-critical-bg)] text-[var(--color-risk-critical-text)]",
+    "border border-[var(--color-risk-critical-text)] bg-[var(--color-risk-critical-bg)] text-[var(--color-risk-critical-text)]",
   high:
     "border border-[var(--color-risk-high-text)] bg-[var(--color-risk-high-bg)] text-[var(--color-risk-high-text)]",
   low: "border border-[var(--color-risk-low-text)] bg-[var(--color-risk-low-bg)] text-[var(--color-risk-low-text)]",

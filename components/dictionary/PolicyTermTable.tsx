@@ -2,7 +2,7 @@
 
 import { BookOpen, Check, CirclePlus, Pencil, Search, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { AdaptiveSelect } from "@/components/ui/AdaptiveSelect";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { SeverityBadge } from "@/components/ui/SeverityBadge";
@@ -12,8 +12,10 @@ import {
   getPolicyTermTypeLabel,
 } from "@/features/policy/labels";
 import {
+  getDefaultPolicyTerms,
   getStoredPolicyTerms,
   savePolicyTerms,
+  subscribeToPolicyTerms,
 } from "@/features/policy/local-policy-store";
 import type {
   MatchType,
@@ -64,13 +66,22 @@ const emptyDraft: DraftPolicyTerm = {
   type: "forbidden",
 };
 
+function commitTerms(nextTerms: PolicyTerm[]) {
+  savePolicyTerms(nextTerms);
+}
+
 export function PolicyTermTable() {
-  const [terms, setTerms] = useState(() => getStoredPolicyTerms());
+  const terms = useSyncExternalStore(
+    subscribeToPolicyTerms,
+    getStoredPolicyTerms,
+    getDefaultPolicyTerms,
+  );
   const [query, setQuery] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [editingTermId, setEditingTermId] = useState("");
   const [draft, setDraft] = useState<DraftPolicyTerm>(emptyDraft);
   const [formError, setFormError] = useState("");
+
   const filteredTerms = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ko-KR");
 
@@ -92,11 +103,6 @@ export function PolicyTermTable() {
   const cautionTermCount = enabledTerms.filter(
     (term) => term.type === "caution",
   ).length;
-
-  const commitTerms = (nextTerms: PolicyTerm[]) => {
-    setTerms(nextTerms);
-    savePolicyTerms(nextTerms);
-  };
 
   const resetForm = () => {
     setDraft(emptyDraft);

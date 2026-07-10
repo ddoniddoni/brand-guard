@@ -34,11 +34,11 @@ export function AppShell({
                 className="flex min-h-12 min-w-0 items-center gap-3 rounded-full px-2 hover:bg-[var(--color-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
                 href="/reviews/new"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-dark)] text-[var(--color-risk-critical-text)]">
+                <span className="brand-mark flex size-10 shrink-0 items-center justify-center rounded-xl shadow-sm">
                   <ShieldCheck aria-hidden="true" size={20} strokeWidth={1.8} />
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-base font-semibold">
+                  <span className="brand-wordmark block truncate text-base font-semibold tracking-[-0.03em]">
                     BrandGuard
                   </span>
                   <span className="block truncate text-xs leading-5 text-[var(--color-muted)]">

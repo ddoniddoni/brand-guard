@@ -1,116 +1,162 @@
 # BrandGuard
 
-BrandGuard는 기업과 브랜드 마케팅 담당자가 영상 대본, 광고 문구,
-이미지 속 텍스트를 공개하기 전에 검수할 수 있도록 돕는 브랜드 정책 기반
-콘텐츠 사전 검수 SaaS 포트폴리오입니다.
+## 공개 전에 발견하는 브랜드 콘텐츠 검수 플랫폼
 
-사용자는 브랜드 금지어와 주의어를 등록하고, 영상 대본이나 광고 문구를
-붙여넣어 문장 단위로 검사할 수 있습니다. 이미지의 경우 Tesseract.js OCR로
-이미지 속 문구를 추출하고, 동일한 정책 사전 기준으로 검토 후보를 확인할 수
-있습니다.
+BrandGuard는 브랜드가 제작한 영상 대본, 광고 문구, SNS 콘텐츠와 이미지 속
+표현을 게시 전에 검토하는 콘텐츠 사전 검수 플랫폼입니다.
 
-BrandGuard는 특정 사상, 정치 성향, 의도, 커뮤니티 소속을 판정하지 않습니다.
-결과는 최종 확정이 아니라 사람이 확인해야 하는 검토 후보입니다.
+마케팅 콘텐츠는 짧은 문구 하나로도 과장 광고, 오해, 브랜드 신뢰도 저하와 같은
+문제를 만들 수 있습니다. BrandGuard는 브랜드가 직접 정의한 금지어와 주의
+정책을 기준으로 검토 후보를 찾고, 발견된 표현의 위치와 근거, 심각도, 수정
+제안을 한 화면에 정리합니다.
 
-## Core Workflow
+이 제품은 사회적 파장이나 사람의 의도를 자동으로 단정하지 않습니다. 자동
+분석 결과는 담당자가 최종 판단하기 위한 근거이며, 실제 콘텐츠의 맥락과 표현
+의도는 반드시 사람이 확인해야 합니다.
 
-```txt
-브랜드 정책 사전 등록
-→ 영상 대본/광고 문구/SNS 카피 붙여넣기
-→ 문장/줄 단위 분리
+## 제품이 해결하는 문제
+
+콘텐츠 검수는 대개 담당자의 경험과 기억에 의존합니다. 정책 문서가 있어도 제작
+과정에서 매번 찾아보기 어렵고, 영상 자막이나 이미지 안의 작은 문구는 검수에서
+빠지기 쉽습니다. 검수 기준이 사람마다 달라지면 같은 표현도 캠페인마다 다르게
+처리됩니다.
+
+BrandGuard는 다음 문제를 하나의 흐름으로 연결합니다.
+
+- 흩어진 브랜드 표현 정책을 검수 가능한 사전으로 정리합니다.
+- 대본과 광고 문구를 문장과 줄 단위로 나누어 검사합니다.
+- 이미지 속 문구를 OCR로 추출해 같은 정책 기준으로 확인합니다.
+- 검토가 필요한 표현의 출처와 위치를 근거와 함께 보여줍니다.
+- 담당자의 판단과 수정 내용을 검수 리포트로 남깁니다.
+
+## 주요 사용자
+
+- 브랜드 마케팅 담당자
+- 콘텐츠 기획자와 카피라이터
+- 광고 소재를 검토하는 운영 담당자
+- 여러 캠페인의 표현 기준을 관리하는 브랜드 매니저
+- 게시 전 품질 확인이 필요한 에이전시와 제작팀
+
+## 핵심 검수 흐름
+
+```text
+브랜드 정책 사전 설정
+→ 대본·광고 문구·SNS 카피 입력
+→ 문장과 줄 단위 분리
 → 금지어·주의어 정책 매칭
-→ 이미지 업로드
-→ Tesseract.js OCR 문구 추출
+→ 마케팅 이미지 업로드
+→ 이미지 문구 OCR 추출
 → OCR 문구 정책 매칭
-→ 검토 후보, 근거, 위치, 수정 제안 확인
-→ 검수 메모 작성
+→ 검토 후보와 근거 확인
+→ 담당자 메모와 수정 여부 기록
 → 검수 리포트 저장
 ```
 
-## Main Features
+## 브랜드 정책 사전
 
-- 브랜드 정책 사전 mock 관리
-- 금지어/주의어, 심각도, 매칭 방식, 대체 표현 표시
-- 콘텐츠 검수 생성 폼
-- 대본/문구 문장 단위 분리
-- `contains`, `exact`, `normalized`, `regex` 정책 필터 엔진
-- Tesseract.js 기반 이미지 OCR 실행
-- OCR 텍스트와 이미지 영역 표시
-- 출처/심각도별 검토 후보 필터
-- 검수 메모와 리포트 저장
-- 저장된 검수 기록 목록
-- AI 이미지 분석 미연결 상태 화면
+브랜드 관리자는 반복적으로 확인해야 하는 표현을 정책으로 등록할 수 있습니다.
+정책은 단순한 단어 목록이 아니라 실제 검수 판단에 필요한 정보를 함께 가집니다.
 
-## Tech Stack
+- 금지어 또는 주의어
+- 정책 카테고리
+- 긴급·높음·보통·낮음 심각도
+- 일치·포함·정규식·정규화 매칭 방식
+- 검토가 필요한 이유
+- 권장 대체 표현
+- 정책 활성화 상태
 
-- Next.js App Router
-- React
-- TypeScript
-- Tailwind CSS
-- React Hook Form
-- Zod
-- Playwright
-- Tesseract.js
+정책을 비활성화하면 삭제하지 않고도 현재 검수에서 제외할 수 있습니다. 띄어쓰기와
+대소문자 차이를 정규화하여 동일한 표현이 여러 형태로 작성된 경우도 확인합니다.
 
-## Routes
+## 콘텐츠 검수
 
-- `/reviews/new`
-- `/reviews/[id]`
-- `/dictionaries`
-- `/history`
-- `/settings/ai`
+담당자는 검수 제목, 브랜드, 콘텐츠 유형과 채널을 지정한 뒤 대본이나 광고
+문구를 입력하고 이미지를 함께 등록할 수 있습니다. 텍스트만 있는 콘텐츠와
+이미지만 있는 콘텐츠도 검수할 수 있습니다.
 
-## Run
+분석 과정은 콘텐츠 접수, 문장 분리, 정책 사전 매칭, 이미지 OCR, OCR 정책
+검사, 리포트 생성 순서로 진행됩니다. 여러 이미지는 각각의 원본과 추출 결과가
+섞이지 않도록 개별 처리됩니다.
 
-```bash
-npm run dev
-```
+## 이미지 OCR 검사
 
-Open `http://localhost:3000`.
+업로드한 이미지는 원본 비율로 표시되며, OCR이 찾은 문구 위치를 이미지 위의
+영역으로 확인할 수 있습니다. 영역을 선택하면 해당 위치에서 추출한 텍스트와
+인식 신뢰도가 함께 표시됩니다.
 
-## Test
+현재 기본 OCR은 브라우저에서 동작하는 Tesseract 기반입니다. 이미지가 외부 OCR
+서비스로 전송되지 않는 장점이 있지만, 작은 한글, 장식 폰트, 낮은 대비, 복잡한
+배경이 포함된 광고 소재에서는 정확도가 낮아질 수 있습니다. 낮은 신뢰도의 결과는
+확정된 문구로 취급하지 않고 원본 이미지와 함께 재확인하도록 안내합니다.
 
-```bash
-npm run lint
-npm run build
-npm run test:e2e
-```
+운영 수준의 한국어 광고 이미지 검수를 위해서는 CLOVA OCR, Google Cloud
+Vision, Azure Vision 또는 자체 운영 OCR과 같은 고정확도 제공자를 연결할 수
+있도록 확장하는 것이 다음 단계입니다. 어떤 제공자가 적합한지는 실제 브랜드
+이미지 평가 세트로 문구 정확도와 위치 정확도를 비교한 뒤 결정해야 합니다.
 
-The E2E suite checks the policy dictionary, pasted-text review flow, Korean
-validation messages, report saving, and history rendering.
+## 검토 후보와 근거
 
-If Playwright browsers are not installed locally, run:
+BrandGuard의 분석 결과는 위반 확정이 아니라 검토 후보입니다. 각 후보에는
+담당자가 판단하는 데 필요한 정보가 포함됩니다.
 
-```bash
-npx playwright install
-```
+- 발견된 표현과 원문
+- 붙여넣은 텍스트 또는 이미지 OCR 출처
+- 문장·줄·이미지 영역 위치
+- 적용된 브랜드 정책과 카테고리
+- 심각도와 검토 사유
+- 수정 또는 대체 표현 제안
+- OCR 결과의 인식 신뢰도
 
-## Demo Notes
+담당자는 출처와 심각도로 후보를 필터링하고, 원문과 이미지 근거를 오가며 실제
+맥락을 확인할 수 있습니다.
 
-- Policy terms are mock data for portfolio demonstration.
-- Review metadata and reports are persisted in browser `localStorage`.
-- Uploaded image assets are stored separately in IndexedDB and restored when a report is reopened.
-- Uploaded images run client-side OCR with Tesseract.js when possible.
-- AI image analysis is shown as a disabled extension point until an API Key is
-  connected.
-- API Keys must be handled server-side only in future provider work.
-- Wording intentionally stays neutral: 검토 후보, 정책 매칭, 오탐 가능성,
-  담당자 검토 필요.
+## 검수 리포트
 
-## Known Limitations
+검토가 끝나면 담당자는 확인 내용과 수정 여부를 메모로 남기고 리포트를
+저장합니다. 리포트에는 전체 후보 수, 출처별 후보 수, 우선 검토 항목과 담당자
+메모가 함께 기록됩니다. 저장된 검수 기록은 이후 캠페인 검토와 표현 정책 보완의
+근거로 활용할 수 있습니다.
 
-- No real account system or organization membership yet.
-- No server-side persistence yet.
-- Policy dictionary edits are persisted only in the current browser's `localStorage`.
-- OCR is client-side Tesseract.js only.
-- AI image analysis provider is not connected yet.
-- The policy dictionary UI is currently mock-first and will need persistent CRUD.
+## AI 이미지 분석 확장
 
-## Future Improvements
+OCR은 이미지에 적힌 문구를 읽지만 이미지의 전체적인 시각 맥락을 판단하지는
+않습니다. BrandGuard는 향후 선택형 AI 이미지 분석 제공자를 연결하여 브랜드가
+명시한 시각 정책을 기준으로 추가 검토 후보를 만들 수 있도록 설계합니다.
 
-- Persistent policy dictionary CRUD
-- Server-side review/report API
-- OCR result mapping per text line and region
-- AI vision provider interface behind server routes
-- Policy import/export
-- Supabase Auth and database persistence
+AI 이미지 분석 역시 사람의 의도, 정치 성향, 사상 또는 특정 집단 소속을
+판정하는 기능이 아닙니다. 브랜드가 정의한 검수 기준에 따라 시각적 근거와 오탐
+가능성을 제시하고 최종 판단은 담당자에게 남깁니다.
+
+## 제품 원칙
+
+1. 브랜드가 정의한 명시적인 정책을 기준으로 검사합니다.
+2. 자동 분석 결과를 확정 판정으로 표현하지 않습니다.
+3. 모든 검토 후보에 출처와 근거를 제공합니다.
+4. 낮은 신뢰도와 오탐 가능성을 숨기지 않습니다.
+5. 최종 판단과 책임은 콘텐츠 담당자에게 있습니다.
+6. 업로드한 마케팅 자산과 API 인증 정보를 민감한 데이터로 취급합니다.
+
+## 현재 제품 범위
+
+현재 버전은 브랜드 정책 사전, 텍스트 정책 매칭, 이미지 업로드와 OCR, 검토 후보
+필터, 검수 메모, 리포트 저장과 검수 기록 조회까지 핵심 흐름을 제공합니다.
+
+정책과 검수 결과는 현재 사용 중인 브라우저에 보관되는 포트폴리오 단계이며,
+조직 계정, 서버 데이터베이스, 권한 관리와 외부 OCR 제공자는 아직 연결되어 있지
+않습니다. AI 이미지 분석은 연결 상태와 교체 가능한 제공자 구조만 준비되어
+있으며 실제 외부 분석은 기본적으로 비활성화되어 있습니다.
+
+## 다음 단계
+
+- 실제 한국어 광고 이미지 평가 세트를 이용한 OCR 제공자 비교
+- 고정확도 한국어 OCR 제공자 연결과 Tesseract 대체 수단 유지
+- OCR 결과 수정과 정책 재검사
+- 조직별 정책 사전과 검수 리포트 영구 저장
+- 사용자 계정, 조직 권한과 검수 담당자 관리
+- 브랜드 시각 정책 기반 AI 이미지 분석
+- 정책 사전 가져오기와 내보내기
+- 검수 리포트 공유와 버전 비교
+
+BrandGuard의 목표는 모든 논란을 자동으로 예측하는 것이 아닙니다. 브랜드가
+공개 전에 놓치기 쉬운 표현을 근거와 함께 발견하고, 담당자가 더 일관된 기준으로
+콘텐츠를 검토할 수 있도록 돕는 것이 제품의 핵심입니다.
