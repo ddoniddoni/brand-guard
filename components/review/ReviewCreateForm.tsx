@@ -125,7 +125,7 @@ export function ReviewCreateForm() {
               readFileAsDataUrl(file),
               extractImageTextWithTesseract(file, {
                 onProgress: (progress) => setOcrProgress(progress),
-                timeoutMs: 12_000,
+                timeoutMs: 30_000,
               }),
             ]);
 
