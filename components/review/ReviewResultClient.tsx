@@ -1,9 +1,12 @@
 "use client";
 
 import {
+  AlertTriangle,
   FileText,
   Image as ImageIcon,
   ListFilter,
+  Loader2,
+  RotateCcw,
   Save,
   ShieldCheck,
 } from "lucide-react";
@@ -23,8 +26,10 @@ import type {
 } from "@/features/policy/types";
 import {
   getStoredReviewWorkspace,
+  retryReviewWorkspace,
   saveReviewReport,
 } from "@/features/review/local-review-store";
+import { getLatestReviewFailure } from "@/features/review/state-machine";
 import type {
   OcrResult,
   ReviewWorkspace,
@@ -48,7 +53,9 @@ const severityFilters: Array<"all" | Severity> = [
 ];
 
 type ReviewResultState = {
+  isRetrying: boolean;
   memo: string;
+  retryProgressLabel: string;
   selectedFindingId: string;
   selectedImageId: string;
   selectedRegionId: string;
@@ -76,11 +83,15 @@ type ReviewResultAction =
   | { type: "setMemo"; memo: string }
   | { type: "setSeverityFilter"; value: "all" | Severity }
   | { type: "setSourceFilter"; value: "all" | FindingSource }
+  | { type: "retryProgress"; label: string }
+  | { type: "retryStarted" }
   | { type: "storageFailed"; message: string }
   | { type: "workspaceSaved"; workspace: ReviewWorkspace };
 
 const initialReviewResultState: ReviewResultState = {
+  isRetrying: false,
   memo: "",
+  retryProgressLabel: "",
   selectedFindingId: "",
   selectedImageId: "",
   selectedRegionId: "",
@@ -152,11 +163,30 @@ function reviewResultReducer(
     return { ...state, sourceFilter: action.value };
   }
 
-  if (action.type === "storageFailed") {
-    return { ...state, storageError: action.message };
+  if (action.type === "retryStarted") {
+    return {
+      ...state,
+      isRetrying: true,
+      retryProgressLabel: "이미지 OCR 재시도를 준비하고 있습니다.",
+      storageError: "",
+    };
   }
 
-  return { ...state, storageError: "", workspace: action.workspace };
+  if (action.type === "retryProgress") {
+    return { ...state, retryProgressLabel: action.label };
+  }
+
+  if (action.type === "storageFailed") {
+    return { ...state, isRetrying: false, storageError: action.message };
+  }
+
+  return {
+    ...state,
+    isRetrying: false,
+    retryProgressLabel: "",
+    storageError: "",
+    workspace: action.workspace,
+  };
 }
 
 export function ReviewResultClient({ reviewId }: { reviewId: string }) {
@@ -165,7 +195,9 @@ export function ReviewResultClient({ reviewId }: { reviewId: string }) {
     initialReviewResultState,
   );
   const {
+    isRetrying,
     memo,
+    retryProgressLabel,
     selectedFindingId,
     selectedImageId,
     selectedRegionId,
@@ -267,70 +299,117 @@ export function ReviewResultClient({ reviewId }: { reviewId: string }) {
     });
   };
 
+  const retryReview = async () => {
+    dispatch({ type: "retryStarted" });
+
+    try {
+      const nextWorkspace = await retryReviewWorkspace(
+        workspace.reviewJob.id,
+        {
+          onProgress: ({ label, progress }) =>
+            dispatch({
+              label: `${label} · ${Math.round(progress * 100)}%`,
+              type: "retryProgress",
+            }),
+        },
+      );
+      dispatch({ type: "hydrate", workspace: nextWorkspace });
+    } catch (error) {
+      dispatch({
+        message:
+          error instanceof Error
+            ? error.message
+            : "이미지 OCR 재시도를 완료하지 못했습니다.",
+        type: "storageFailed",
+      });
+    }
+  };
+
+  const latestFailure = getLatestReviewFailure(workspace);
+  const isAnalysisBlocked = ["ANALYZING", "FAILED"].includes(
+    workspace.reviewJob.status,
+  );
+
   return (
     <div className="mx-auto grid w-full max-w-[1500px] gap-5 px-5 py-6 sm:px-6 lg:px-8">
       <ReportHeader workspace={workspace} />
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_430px]">
-        <main className="grid min-w-0 gap-5">
-          <TextEvidencePanel
-            findings={workspace.findings}
-            onSelectFinding={selectFinding}
-            segments={pastedTextSegments}
-            selectedFindingId={selectedFinding?.id ?? ""}
-          />
+      {isAnalysisBlocked ? (
+        <ReviewStatusPanel
+          failureMessage={latestFailure?.message}
+          isRetrying={isRetrying}
+          onRetry={retryReview}
+          progressLabel={retryProgressLabel}
+          status={workspace.reviewJob.status}
+          storageError={storageError}
+        />
+      ) : (
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_430px]">
+          <main className="grid min-w-0 gap-5">
+            <TextEvidencePanel
+              findings={workspace.findings}
+              onSelectFinding={selectFinding}
+              segments={pastedTextSegments}
+              selectedFindingId={selectedFinding?.id ?? ""}
+            />
 
-          <OcrEvidencePanel
-            ocrResults={workspace.ocrResults}
-            onSelectImage={selectOcrImage}
-            onSelectRegion={selectOcrRegion}
-            selectedImageId={selectedImageId}
-            selectedRegionId={selectedRegionId}
-          />
-        </main>
+            <OcrEvidencePanel
+              ocrResults={workspace.ocrResults}
+              onSelectImage={selectOcrImage}
+              onSelectRegion={selectOcrRegion}
+              selectedImageId={selectedImageId}
+              selectedRegionId={selectedRegionId}
+            />
+          </main>
 
-        <aside className="grid h-fit gap-4 xl:sticky xl:top-6">
-          <FindingInspector
-            filteredFindings={filteredFindings}
-            onSelectFinding={selectFinding}
-            selectedFinding={selectedFinding}
-            setSeverityFilter={(value) =>
-              dispatch({ type: "setSeverityFilter", value })
-            }
-            setSourceFilter={(value) =>
-              dispatch({ type: "setSourceFilter", value })
-            }
-            severityFilter={severityFilter}
-            sourceFilter={sourceFilter}
-          />
-
-          <ReportMemoPanel
-            memo={memo}
-            onMemoChange={(value) => dispatch({ memo: value, type: "setMemo" })}
-            onSave={async () => {
-              try {
-                const nextWorkspace = await saveReviewReport(
-                  workspace.reviewJob.id,
-                  memo,
-                );
-                if (nextWorkspace) {
-                  dispatch({ type: "workspaceSaved", workspace: nextWorkspace });
-                }
-              } catch (error) {
-                dispatch({
-                  message:
-                    error instanceof Error
-                      ? error.message
-                      : "검수 리포트를 저장하지 못했습니다.",
-                  type: "storageFailed",
-                });
+          <aside className="grid h-fit gap-4 xl:sticky xl:top-6">
+            <FindingInspector
+              filteredFindings={filteredFindings}
+              onSelectFinding={selectFinding}
+              selectedFinding={selectedFinding}
+              setSeverityFilter={(value) =>
+                dispatch({ type: "setSeverityFilter", value })
               }
-            }}
-            saved={Boolean(workspace.report)}
-            storageError={storageError}
-          />
-        </aside>
-      </section>
+              setSourceFilter={(value) =>
+                dispatch({ type: "setSourceFilter", value })
+              }
+              severityFilter={severityFilter}
+              sourceFilter={sourceFilter}
+            />
+
+            <ReportMemoPanel
+              memo={memo}
+              onMemoChange={(value) =>
+                dispatch({ memo: value, type: "setMemo" })
+              }
+              onSave={async () => {
+                try {
+                  const nextWorkspace = await saveReviewReport(
+                    workspace.reviewJob.id,
+                    memo,
+                  );
+                  if (nextWorkspace) {
+                    dispatch({
+                      type: "workspaceSaved",
+                      workspace: nextWorkspace,
+                    });
+                  }
+                } catch (error) {
+                  dispatch({
+                    message:
+                      error instanceof Error
+                        ? error.message
+                        : "검수 리포트를 저장하지 못했습니다.",
+                    type: "storageFailed",
+                  });
+                }
+              }}
+              saved={Boolean(workspace.report)}
+              storageError={storageError}
+            />
+          </aside>
+        </section>
+      )}
     </div>
   );
 }
@@ -358,6 +437,79 @@ function MissingReviewState({ storageError }: { storageError: string }) {
   );
 }
 
+function ReviewStatusPanel({
+  failureMessage,
+  isRetrying,
+  onRetry,
+  progressLabel,
+  status,
+  storageError,
+}: {
+  failureMessage?: string;
+  isRetrying: boolean;
+  onRetry: () => void;
+  progressLabel: string;
+  status: ReviewWorkspace["reviewJob"]["status"];
+  storageError: string;
+}) {
+  const isAnalyzing = status === "ANALYZING" || isRetrying;
+
+  return (
+    <section className="app-panel p-6 sm:p-8">
+      <div className="flex items-start gap-4">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-risk-high-bg)] text-[var(--color-risk-high-text)]">
+          {isAnalyzing ? (
+            <Loader2
+              aria-hidden="true"
+              className="animate-spin"
+              size={20}
+              strokeWidth={1.8}
+            />
+          ) : (
+            <AlertTriangle aria-hidden="true" size={20} strokeWidth={1.8} />
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-[var(--color-muted)]">
+            {isAnalyzing ? "콘텐츠 재분석" : "검수 처리 실패"}
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold">
+            {isAnalyzing
+              ? "이미지 OCR 검수를 다시 진행하고 있습니다"
+              : "이미지 OCR을 완료하지 못했습니다"}
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--color-body)]">
+            {isAnalyzing
+              ? progressLabel || "저장된 이미지를 불러와 OCR을 다시 실행합니다."
+              : failureMessage ||
+                "업로드한 이미지의 문구를 추출하지 못했습니다. 이미지를 확인한 뒤 다시 시도해 주세요."}
+          </p>
+
+          {!isAnalyzing ? (
+            <button
+              className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 text-sm font-medium text-[var(--color-on-primary)] hover:bg-[var(--color-primary-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-info-border)]"
+              onClick={onRetry}
+              type="button"
+            >
+              <RotateCcw aria-hidden="true" size={16} strokeWidth={1.8} />
+              이미지 OCR 다시 시도
+            </button>
+          ) : null}
+
+          {storageError ? (
+            <p
+              className="mt-4 text-sm text-[var(--color-risk-high-text)]"
+              role="alert"
+            >
+              {storageError}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ReportHeader({ workspace }: { workspace: ReviewWorkspace }) {
   const highPriorityCount =
     workspace.severityCounts.critical + workspace.severityCounts.high;
@@ -373,18 +525,15 @@ function ReportHeader({ workspace }: { workspace: ReviewWorkspace }) {
             <span className="text-xs text-[var(--color-muted)]">
               {formatDate(workspace.reviewJob.updatedAt)}
             </span>
-            {workspace.report ? (
-              <span className="inline-flex min-h-7 items-center rounded-full bg-[var(--color-risk-low-bg)] px-3 text-xs font-medium text-[var(--color-risk-low-text)]">
-                리포트 저장됨
-              </span>
-            ) : null}
+            <ReviewStatusBadge status={workspace.reviewJob.status} />
           </div>
           <h2 className="mt-4 truncate text-3xl font-semibold leading-tight">
             {workspace.reviewJob.title}
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--color-body)]">
-            정책 사전 기준으로 검토 후보를 정리했습니다. 결과는 확정 판정이
-            아니며, 담당자가 실제 콘텐츠 맥락과 표현 의도를 확인해야 합니다.
+            {workspace.reviewJob.status === "FAILED"
+              ? "이미지 OCR 처리 중 문제가 발생했습니다. 실패 원인을 확인하고 다시 시도할 수 있습니다."
+              : "정책 사전 기준으로 검토 후보를 정리했습니다. 결과는 확정 판정이 아니며, 담당자가 실제 콘텐츠 맥락과 표현 의도를 확인해야 합니다."}
           </p>
         </div>
 
@@ -399,6 +548,40 @@ function ReportHeader({ workspace }: { workspace: ReviewWorkspace }) {
         </div>
       </div>
     </section>
+  );
+}
+
+function ReviewStatusBadge({
+  status,
+}: {
+  status: ReviewWorkspace["reviewJob"]["status"];
+}) {
+  const label =
+    status === "DRAFT"
+      ? "초안"
+      : status === "ANALYZING"
+        ? "분석 중"
+        : status === "FAILED"
+          ? "분석 실패"
+          : status === "REVIEWED"
+            ? "리포트 저장됨"
+            : "분석 완료";
+  const className =
+    status === "FAILED"
+      ? "bg-[var(--color-risk-high-bg)] text-[var(--color-risk-high-text)]"
+      : status === "ANALYZING"
+        ? "bg-[var(--color-risk-medium-bg)] text-[var(--color-risk-medium-text)]"
+        : "bg-[var(--color-risk-low-bg)] text-[var(--color-risk-low-text)]";
+
+  return (
+    <span
+      className={cx(
+        "inline-flex min-h-7 items-center rounded-full px-3 text-xs font-medium",
+        className,
+      )}
+    >
+      {label}
+    </span>
   );
 }
 

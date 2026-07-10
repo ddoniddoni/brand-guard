@@ -5,6 +5,7 @@ const pixelImage =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+3Bq7WQAAAABJRU5ErkJggg==";
 
 const reviewWorkspace: ReviewWorkspace = {
+  events: [],
   findings: [
     {
       category: "guarantee_claim",

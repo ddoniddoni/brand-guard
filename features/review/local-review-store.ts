@@ -19,12 +19,17 @@ import type {
   OcrExtractionResult,
   OcrImageRegion,
 } from "@/features/ocr/types";
+import { extractImageTextWithTesseract } from "@/features/ocr/tesseract-client";
 import {
   deleteReviewAssets,
   getReviewAssetDataUrls,
   ReviewStorageError,
   saveReviewAssets,
 } from "@/features/review/local-asset-store";
+import {
+  initializeReviewWorkspace,
+  transitionReviewWorkspace,
+} from "@/features/review/state-machine";
 
 const storageKey = "brandguard.review-workspaces.v1";
 const maxStoredReviewCount = 20;
@@ -40,6 +45,11 @@ export type ReviewImageInput = {
   ocrResult?: OcrExtractionResult;
 };
 
+export type ReviewRetryProgress = {
+  label: string;
+  progress: number;
+};
+
 export async function createReviewWorkspace({
   images,
   input,
@@ -51,40 +61,15 @@ export async function createReviewWorkspace({
 }) {
   const timestamp = new Date().toISOString();
   const reviewJobId = `review-local-${Date.now().toString(36)}`;
-  const textSegments = splitTextIntoSegments({
+  const analysis = analyzeReviewContent({
+    images,
+    input,
     reviewJobId,
-    source: "pasted_text",
-    text: input.originalText ?? "",
+    timestamp,
   });
-  const ocrResults = images.map((image, index) =>
-    createOcrResult({
-      image,
-      imageId: `${reviewJobId}-image-${index + 1}`,
-      reviewJobId,
-      timestamp,
-    }),
-  );
-  const ocrSegments = ocrResults.flatMap((result) =>
-    createOcrTextSegments({ result, reviewJobId }),
-  );
-  const segments = [...textSegments, ...ocrSegments];
-  const policyTerms = getStoredPolicyTerms();
-  const pastedTextFindings = runPolicyFilter({
-    policyTerms,
-    reviewJobId,
-    source: "pasted_text",
-    textSegments,
-  }).findings;
-  const ocrFindings = runPolicyFilter({
-    policyTerms,
-    reviewJobId,
-    source: "image_ocr",
-    textSegments: ocrSegments,
-  }).findings;
-  const findings = [...pastedTextFindings, ...ocrFindings];
-  const workspace: ReviewWorkspace = {
-    findings,
-    ocrResults,
+  const draftWorkspace = initializeReviewWorkspace({
+    ...analysis,
+    events: [],
     report: undefined,
     reviewJob: {
       brandName: input.brandName.trim(),
@@ -96,21 +81,29 @@ export async function createReviewWorkspace({
       imageUrls: images.map((image) => image.dataUrl),
       originalText: input.originalText?.trim(),
       reviewerName,
-      status: "COMPLETED",
+      status: "DRAFT",
       title: input.title.trim(),
       updatedAt: timestamp,
     },
-    segments,
-    severityCounts: countBySeverity(findings),
-    sourceCounts: countBySource(findings),
     visionConnectionState: "not_configured",
-  };
+  });
+  const analyzingWorkspace = transitionReviewWorkspace(
+    draftWorkspace,
+    "ANALYZING",
+    "콘텐츠 검수를 시작했습니다.",
+  );
+  const outcome = getReviewOutcome(input.originalText, analysis.ocrResults);
+  const workspace = transitionReviewWorkspace(
+    analyzingWorkspace,
+    outcome.status,
+    outcome.message,
+  );
 
-  const imageIds = ocrResults.map((result) => result.imageId);
+  const imageIds = analysis.ocrResults.map((result) => result.imageId);
 
   try {
     await saveReviewAssets(
-      ocrResults.map((result, index) => ({
+      analysis.ocrResults.map((result, index) => ({
         dataUrl: images[index]?.dataUrl ?? "",
         imageId: result.imageId,
         reviewJobId,
@@ -174,6 +167,125 @@ export async function getStoredReviewWorkspace(id: string) {
   };
 }
 
+export async function retryReviewWorkspace(
+  reviewJobId: string,
+  {
+    onProgress,
+  }: {
+    onProgress?: (progress: ReviewRetryProgress) => void;
+  } = {},
+) {
+  const workspace = await getStoredReviewWorkspace(reviewJobId);
+
+  if (!workspace) {
+    throw new Error("재시도할 검수 결과를 찾을 수 없습니다.");
+  }
+
+  if (workspace.reviewJob.status !== "FAILED") {
+    throw new Error("실패한 검수만 다시 시도할 수 있습니다.");
+  }
+
+  const analyzingWorkspace = transitionReviewWorkspace(
+    workspace,
+    "ANALYZING",
+    "실패한 이미지 OCR 검수를 다시 시작했습니다.",
+  );
+  await saveReviewWorkspace(analyzingWorkspace);
+
+  try {
+    const images = await Promise.all(
+      workspace.ocrResults.map(
+        async (result, index): Promise<ReviewImageInput> => {
+          if (!result.imageUrl) {
+            throw new Error("저장된 이미지 원본을 불러오지 못했습니다.");
+          }
+
+          onProgress?.({
+            label: `이미지 OCR 재시도 ${index + 1}/${workspace.ocrResults.length}`,
+            progress: 0,
+          });
+          const file = await dataUrlToFile(
+            result.imageUrl,
+            result.fileName ?? `review-image-${index + 1}.png`,
+          );
+          const ocrResult = await extractImageTextWithTesseract(file, {
+            onProgress: (progress) =>
+              onProgress?.({
+                label: `이미지 OCR 재시도 ${index + 1}/${workspace.ocrResults.length}`,
+                progress,
+              }),
+            timeoutMs: 30_000,
+          });
+
+          return {
+            dataUrl: result.imageUrl,
+            fileName: result.fileName ?? file.name,
+            ocrResult,
+          };
+        },
+      ),
+    );
+    const input: ReviewCreateInput = {
+      brandName: workspace.reviewJob.brandName,
+      channel: workspace.reviewJob.channel,
+      contentType: workspace.reviewJob.contentType,
+      dictionaryId: workspace.reviewJob.dictionaryId,
+      originalText: workspace.reviewJob.originalText,
+      title: workspace.reviewJob.title,
+    };
+    const timestamp = new Date().toISOString();
+    const analysis = analyzeReviewContent({
+      images,
+      input,
+      reviewJobId,
+      timestamp,
+    });
+    const analyzedWorkspace: ReviewWorkspace = {
+      ...analyzingWorkspace,
+      ...analysis,
+      report: undefined,
+      reviewJob: {
+        ...analyzingWorkspace.reviewJob,
+        imageUrls: images.map((image) => image.dataUrl),
+        updatedAt: timestamp,
+      },
+    };
+    const outcome = getReviewOutcome(
+      workspace.reviewJob.originalText,
+      analysis.ocrResults,
+    );
+    const finalWorkspace = transitionReviewWorkspace(
+      analyzedWorkspace,
+      outcome.status,
+      outcome.message,
+    );
+
+    await saveReviewAssets(
+      analysis.ocrResults.map((result, index) => ({
+        dataUrl: images[index]?.dataUrl ?? "",
+        imageId: result.imageId,
+        reviewJobId,
+      })),
+    );
+    await saveReviewWorkspace(finalWorkspace);
+
+    return (await getStoredReviewWorkspace(reviewJobId)) ?? finalWorkspace;
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "이미지 OCR 재시도 중 오류가 발생했습니다.";
+    const failedWorkspace = transitionReviewWorkspace(
+      analyzingWorkspace,
+      "FAILED",
+      message,
+    );
+
+    await saveReviewWorkspace(failedWorkspace);
+    return (await getStoredReviewWorkspace(reviewJobId)) ?? failedWorkspace;
+  }
+}
+
 export async function saveReviewReport(reviewJobId: string, reviewerMemo: string) {
   const reviews = getStoredReviewWorkspaces();
   const currentWorkspace = reviews.find(
@@ -202,15 +314,22 @@ export async function saveReviewReport(reviewJobId: string, reviewerMemo: string
       visionFindingCount: workspace.sourceCounts.vision_ai,
     };
 
-    return {
+    const workspaceWithReport = {
       ...workspace,
       report,
       reviewJob: {
         ...workspace.reviewJob,
-        status: "REVIEWED" as const,
         updatedAt: timestamp,
       },
     };
+
+    return workspace.reviewJob.status === "COMPLETED"
+      ? transitionReviewWorkspace(
+          workspaceWithReport,
+          "REVIEWED",
+          "검수 메모와 리포트를 저장했습니다.",
+        )
+      : workspaceWithReport;
   });
 
   try {
@@ -244,7 +363,7 @@ function persistReviewWorkspaces(reviews: ReviewWorkspace[]) {
 
   const payload: StoredReviewPayload = {
     reviews: reviews.slice(0, maxStoredReviewCount).map(stripInlineAssets),
-    version: 2,
+    version: 3,
   };
 
   window.localStorage.setItem(storageKey, JSON.stringify(payload));
@@ -288,6 +407,106 @@ function toReviewStorageError(error: unknown) {
   return new ReviewStorageError(
     "검수 결과를 저장하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.",
   );
+}
+
+function analyzeReviewContent({
+  images,
+  input,
+  reviewJobId,
+  timestamp,
+}: {
+  images: ReviewImageInput[];
+  input: ReviewCreateInput;
+  reviewJobId: string;
+  timestamp: string;
+}) {
+  const textSegments = splitTextIntoSegments({
+    reviewJobId,
+    source: "pasted_text",
+    text: input.originalText ?? "",
+  });
+  const ocrResults = images.map((image, index) =>
+    createOcrResult({
+      image,
+      imageId: `${reviewJobId}-image-${index + 1}`,
+      reviewJobId,
+      timestamp,
+    }),
+  );
+  const ocrSegments = ocrResults.flatMap((result) =>
+    createOcrTextSegments({ result, reviewJobId }),
+  );
+  const segments = [...textSegments, ...ocrSegments];
+  const policyTerms = getStoredPolicyTerms();
+  const pastedTextFindings = runPolicyFilter({
+    policyTerms,
+    reviewJobId,
+    source: "pasted_text",
+    textSegments,
+  }).findings;
+  const ocrFindings = runPolicyFilter({
+    policyTerms,
+    reviewJobId,
+    source: "image_ocr",
+    textSegments: ocrSegments,
+  }).findings;
+  const findings = [...pastedTextFindings, ...ocrFindings];
+
+  return {
+    findings,
+    ocrResults,
+    segments,
+    severityCounts: countBySeverity(findings),
+    sourceCounts: countBySource(findings),
+  };
+}
+
+function getReviewOutcome(
+  originalText: string | undefined,
+  ocrResults: OcrResult[],
+): {
+  message: string;
+  status: "COMPLETED" | "FAILED";
+} {
+  const hasPastedText = Boolean(originalText?.trim());
+  const allOcrAttemptsFailed =
+    ocrResults.length > 0 &&
+    ocrResults.every((result) => result.status === "failed");
+
+  if (!hasPastedText && allOcrAttemptsFailed) {
+    return {
+      message:
+        ocrResults.find((result) => result.errorMessage)?.errorMessage ??
+        "업로드한 이미지의 OCR을 완료하지 못했습니다.",
+      status: "FAILED",
+    };
+  }
+
+  const failedImageCount = ocrResults.filter(
+    (result) => result.status === "failed",
+  ).length;
+
+  return {
+    message:
+      failedImageCount > 0
+        ? `텍스트 검수는 완료했으며, ${failedImageCount}개 이미지의 OCR은 완료하지 못했습니다.`
+        : "정책 사전 매칭과 이미지 OCR 검수를 완료했습니다.",
+    status: "COMPLETED",
+  };
+}
+
+async function dataUrlToFile(dataUrl: string, fileName: string) {
+  const response = await fetch(dataUrl);
+
+  if (!response.ok) {
+    throw new Error("저장된 이미지 데이터를 파일로 복원하지 못했습니다.");
+  }
+
+  const blob = await response.blob();
+  return new File([blob], fileName, {
+    lastModified: Date.now(),
+    type: blob.type || "image/png",
+  });
 }
 
 function createOcrResult({

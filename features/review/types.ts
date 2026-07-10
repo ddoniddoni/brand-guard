@@ -12,6 +12,23 @@ export type ReviewStatus =
   | "FAILED"
   | "REVIEWED";
 
+export type ReviewStatusEventType =
+  | "created"
+  | "analysis_started"
+  | "analysis_completed"
+  | "analysis_failed"
+  | "retry_started"
+  | "report_saved";
+
+export type ReviewStatusEvent = {
+  createdAt: string;
+  fromStatus?: ReviewStatus;
+  id: string;
+  message?: string;
+  toStatus: ReviewStatus;
+  type: ReviewStatusEventType;
+};
+
 export type ContentType =
   | "video_script"
   | "ad_copy"
@@ -91,6 +108,7 @@ export type VisionConnectionState =
   | "mock_mode";
 
 export type ReviewWorkspace = {
+  events: ReviewStatusEvent[];
   findings: PolicyFinding[];
   ocrResults: OcrResult[];
   report?: ReviewReport;
