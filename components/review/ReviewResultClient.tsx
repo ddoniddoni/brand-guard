@@ -8,7 +8,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer } from "react";
 import { SeverityBadge } from "@/components/ui/SeverityBadge";
 import {
   getFindingSourceLabel,
@@ -27,7 +27,6 @@ import {
 } from "@/features/review/local-review-store";
 import type {
   OcrResult,
-  OcrTextRegion,
   ReviewWorkspace,
 } from "@/features/review/types";
 import { formatDate } from "@/lib/format";
@@ -48,19 +47,129 @@ const severityFilters: Array<"all" | Severity> = [
   "low",
 ];
 
+type ReviewResultState = {
+  memo: string;
+  selectedFindingId: string;
+  selectedImageId: string;
+  selectedRegionId: string;
+  severityFilter: "all" | Severity;
+  sourceFilter: "all" | FindingSource;
+  workspace: ReviewWorkspace | null;
+};
+
+type ReviewResultAction =
+  | { type: "hydrate"; workspace: ReviewWorkspace | null }
+  | { type: "selectFinding"; finding: PolicyFinding }
+  | {
+      type: "selectImage";
+      findingId: string;
+      imageId: string;
+      regionId: string;
+    }
+  | {
+      type: "selectRegion";
+      findingId: string;
+      imageId: string;
+      regionId: string;
+    }
+  | { type: "setMemo"; memo: string }
+  | { type: "setSeverityFilter"; value: "all" | Severity }
+  | { type: "setSourceFilter"; value: "all" | FindingSource }
+  | { type: "workspaceSaved"; workspace: ReviewWorkspace };
+
+const initialReviewResultState: ReviewResultState = {
+  memo: "",
+  selectedFindingId: "",
+  selectedImageId: "",
+  selectedRegionId: "",
+  severityFilter: "all",
+  sourceFilter: "all",
+  workspace: null,
+};
+
+function reviewResultReducer(
+  state: ReviewResultState,
+  action: ReviewResultAction,
+): ReviewResultState {
+  if (action.type === "hydrate") {
+    const firstOcrFinding = action.workspace?.findings.find(
+      (finding) => finding.source === "image_ocr",
+    );
+    const firstOcrResult = action.workspace?.ocrResults[0];
+
+    return {
+      ...initialReviewResultState,
+      memo: action.workspace?.report?.reviewerMemo ?? "",
+      selectedFindingId: action.workspace?.findings[0]?.id ?? "",
+      selectedImageId:
+        firstOcrFinding?.imageId ?? firstOcrResult?.imageId ?? "",
+      selectedRegionId:
+        firstOcrFinding?.regionId ?? firstOcrResult?.regions[0]?.id ?? "",
+      workspace: action.workspace,
+    };
+  }
+
+  if (action.type === "selectFinding") {
+    const isOcrFinding =
+      action.finding.source === "image_ocr" && action.finding.imageId;
+
+    return {
+      ...state,
+      selectedFindingId: action.finding.id,
+      selectedImageId: isOcrFinding
+        ? (action.finding.imageId ?? "")
+        : state.selectedImageId,
+      selectedRegionId: isOcrFinding
+        ? (action.finding.regionId ?? "")
+        : state.selectedRegionId,
+    };
+  }
+
+  if (action.type === "selectImage" || action.type === "selectRegion") {
+    return {
+      ...state,
+      selectedFindingId: action.findingId,
+      selectedImageId: action.imageId,
+      selectedRegionId: action.regionId,
+      severityFilter: action.findingId ? "all" : state.severityFilter,
+      sourceFilter: action.findingId ? "image_ocr" : state.sourceFilter,
+    };
+  }
+
+  if (action.type === "setMemo") {
+    return { ...state, memo: action.memo };
+  }
+
+  if (action.type === "setSeverityFilter") {
+    return { ...state, severityFilter: action.value };
+  }
+
+  if (action.type === "setSourceFilter") {
+    return { ...state, sourceFilter: action.value };
+  }
+
+  return { ...state, workspace: action.workspace };
+}
+
 export function ReviewResultClient({ reviewId }: { reviewId: string }) {
-  const [workspace, setWorkspace] = useState<ReviewWorkspace | null>(null);
-  const [sourceFilter, setSourceFilter] = useState<"all" | FindingSource>("all");
-  const [severityFilter, setSeverityFilter] = useState<"all" | Severity>("all");
-  const [selectedFindingId, setSelectedFindingId] = useState("");
-  const [memo, setMemo] = useState("");
+  const [state, dispatch] = useReducer(
+    reviewResultReducer,
+    initialReviewResultState,
+  );
+  const {
+    memo,
+    selectedFindingId,
+    selectedImageId,
+    selectedRegionId,
+    severityFilter,
+    sourceFilter,
+    workspace,
+  } = state;
 
   useEffect(() => {
     queueMicrotask(() => {
       const nextWorkspace = getStoredReviewWorkspace(reviewId) ?? null;
-      setWorkspace(nextWorkspace);
-      setSelectedFindingId(nextWorkspace?.findings[0]?.id ?? "");
-      setMemo(nextWorkspace?.report?.reviewerMemo ?? "");
+      dispatch({ type: "hydrate", workspace: nextWorkspace });
     });
   }, [reviewId]);
 
@@ -82,18 +191,53 @@ export function ReviewResultClient({ reviewId }: { reviewId: string }) {
     [workspace?.segments],
   );
   const selectedFinding =
-    filteredFindings.find((finding) => finding.id === selectedFindingId) ??
-    filteredFindings[0] ??
-    null;
+    filteredFindings.find((finding) => finding.id === selectedFindingId) ?? null;
 
   if (!workspace) {
     return <MissingReviewState />;
   }
 
-  const firstOcrResult = workspace.ocrResults[0];
-  const selectedRegion = selectedFinding?.regionId
-    ? firstOcrResult?.regions.find((region) => region.id === selectedFinding.regionId)
-    : firstOcrResult?.regions[0];
+  const selectFinding = (findingId: string) => {
+    const finding = workspace.findings.find((item) => item.id === findingId);
+
+    if (finding) {
+      dispatch({ finding, type: "selectFinding" });
+    }
+  };
+
+  const selectOcrImage = (imageId: string) => {
+    const result = workspace.ocrResults.find((item) => item.imageId === imageId);
+    const firstRegionId = result?.regions[0]?.id ?? "";
+    const firstFinding = workspace.findings.find(
+      (finding) =>
+        finding.source === "image_ocr" &&
+        finding.imageId === imageId &&
+        (!firstRegionId || finding.regionId === firstRegionId),
+    );
+
+    dispatch({
+      findingId: firstFinding?.id ?? "",
+      imageId,
+      regionId: firstRegionId,
+      type: "selectImage",
+    });
+  };
+
+  const selectOcrRegion = (imageId: string, regionId: string) => {
+    const finding = workspace.findings.find(
+      (item) =>
+        item.source === "image_ocr" &&
+        item.imageId === imageId &&
+        item.regionId === regionId,
+    );
+
+    dispatch({
+      findingId: finding?.id ?? "",
+      imageId,
+      regionId,
+      type: "selectRegion",
+    });
+  };
 
   return (
     <div className="mx-auto grid w-full max-w-[1500px] gap-5 px-5 py-6 sm:px-6 lg:px-8">
@@ -103,35 +247,42 @@ export function ReviewResultClient({ reviewId }: { reviewId: string }) {
         <main className="grid min-w-0 gap-5">
           <TextEvidencePanel
             findings={workspace.findings}
-            onSelectFinding={setSelectedFindingId}
+            onSelectFinding={selectFinding}
             segments={pastedTextSegments}
             selectedFindingId={selectedFinding?.id ?? ""}
           />
 
           <OcrEvidencePanel
-            ocrResult={firstOcrResult}
-            selectedRegion={selectedRegion}
+            ocrResults={workspace.ocrResults}
+            onSelectImage={selectOcrImage}
+            onSelectRegion={selectOcrRegion}
+            selectedImageId={selectedImageId}
+            selectedRegionId={selectedRegionId}
           />
         </main>
 
         <aside className="grid h-fit gap-4 xl:sticky xl:top-6">
           <FindingInspector
             filteredFindings={filteredFindings}
-            onSelectFinding={setSelectedFindingId}
+            onSelectFinding={selectFinding}
             selectedFinding={selectedFinding}
-            setSeverityFilter={setSeverityFilter}
-            setSourceFilter={setSourceFilter}
+            setSeverityFilter={(value) =>
+              dispatch({ type: "setSeverityFilter", value })
+            }
+            setSourceFilter={(value) =>
+              dispatch({ type: "setSourceFilter", value })
+            }
             severityFilter={severityFilter}
             sourceFilter={sourceFilter}
           />
 
           <ReportMemoPanel
             memo={memo}
-            onMemoChange={setMemo}
+            onMemoChange={(value) => dispatch({ memo: value, type: "setMemo" })}
             onSave={() => {
               const nextWorkspace = saveReviewReport(workspace.reviewJob.id, memo);
               if (nextWorkspace) {
-                setWorkspace(nextWorkspace);
+                dispatch({ type: "workspaceSaved", workspace: nextWorkspace });
               }
             }}
             saved={Boolean(workspace.report)}
@@ -296,58 +447,143 @@ function TextEvidencePanel({
 }
 
 function OcrEvidencePanel({
-  ocrResult,
-  selectedRegion,
+  ocrResults,
+  onSelectImage,
+  onSelectRegion,
+  selectedImageId,
+  selectedRegionId,
 }: {
-  ocrResult?: OcrResult;
-  selectedRegion?: OcrTextRegion;
+  ocrResults: OcrResult[];
+  onSelectImage: (imageId: string) => void;
+  onSelectRegion: (imageId: string, regionId: string) => void;
+  selectedImageId: string;
+  selectedRegionId: string;
 }) {
+  const ocrResult =
+    ocrResults.find((result) => result.imageId === selectedImageId) ??
+    ocrResults[0];
+  const selectedRegion = ocrResult?.regions.find(
+    (region) => region.id === selectedRegionId,
+  );
+
   return (
     <section className="app-panel overflow-hidden">
       <PanelTitle
-        countLabel={
-          ocrResult ? `신뢰도 ${Math.round(ocrResult.confidence * 100)}%` : "이미지 없음"
-        }
+        countLabel={ocrResults.length > 0 ? `${ocrResults.length}개 이미지` : "이미지 없음"}
         icon={<ImageIcon aria-hidden="true" size={18} strokeWidth={1.8} />}
         kicker="이미지 OCR 검사"
         title="OCR 문구와 위치"
       />
 
       {ocrResult ? (
-        <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="relative overflow-hidden rounded-xl bg-[var(--color-review-canvas)]">
-            <img
-              alt="OCR 검수 이미지"
-              className="h-auto w-full object-contain"
-              src={ocrResult.imageUrl}
-            />
-            {selectedRegion ? (
-              <button
-                aria-label="선택된 OCR 영역"
-                className="absolute border-2 border-[var(--color-review-overlay-ocr)] bg-[var(--color-review-overlay-ocr)]/20"
-                style={{
-                  height: `${selectedRegion.height * 100}%`,
-                  left: `${selectedRegion.x * 100}%`,
-                  top: `${selectedRegion.y * 100}%`,
-                  width: `${selectedRegion.width * 100}%`,
-                }}
-                type="button"
+        <>
+          {ocrResults.length > 1 ? (
+            <div className="flex gap-2 overflow-x-auto border-b border-[var(--color-hairline)] p-4">
+              {ocrResults.map((result, index) => (
+                <button
+                  aria-pressed={result.imageId === ocrResult.imageId}
+                  className={cx(
+                    "flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-xs font-medium",
+                    result.imageId === ocrResult.imageId
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                      : "border-[var(--color-hairline)] hover:bg-[var(--color-surface-soft)]",
+                  )}
+                  key={result.imageId}
+                  onClick={() => onSelectImage(result.imageId)}
+                  type="button"
+                >
+                  <span>이미지 {index + 1}</span>
+                  <span className="max-w-40 truncate opacity-75">
+                    {result.fileName ?? "파일명 없음"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="relative overflow-hidden rounded-xl bg-[var(--color-review-canvas)]">
+              <img
+                alt={`${ocrResult.fileName ?? "업로드 이미지"} OCR 검수 이미지`}
+                className="h-auto w-full object-contain"
+                src={ocrResult.imageUrl}
               />
-            ) : null}
+              {ocrResult.regions.map((region, index) => (
+                <button
+                  aria-label={`${index + 1}번째 OCR 영역: ${region.text}`}
+                  aria-pressed={region.id === selectedRegion?.id}
+                  className={cx(
+                    "absolute border-2 bg-[var(--color-review-overlay-ocr)]/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                    region.id === selectedRegion?.id
+                      ? "border-[var(--color-review-overlay-ocr)] bg-[var(--color-review-overlay-ocr)]/30"
+                      : "border-[var(--color-review-overlay-ocr)]/60 hover:bg-[var(--color-review-overlay-ocr)]/25",
+                  )}
+                  key={region.id}
+                  onClick={() => onSelectRegion(ocrResult.imageId, region.id)}
+                  style={{
+                    height: `${region.height * 100}%`,
+                    left: `${region.x * 100}%`,
+                    top: `${region.y * 100}%`,
+                    width: `${region.width * 100}%`,
+                  }}
+                  type="button"
+                />
+              ))}
+            </div>
+
+            <div className="grid h-fit gap-4 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold">OCR 추출 텍스트</p>
+                <span className="text-xs text-[var(--color-muted)]">
+                  {getOcrStatusLabel(ocrResult.status)} · 신뢰도 {Math.round(ocrResult.confidence * 100)}%
+                </span>
+              </div>
+
+              {ocrResult.status === "failed" ? (
+                <p className="text-sm leading-6 text-[var(--color-risk-high-text)]">
+                  {ocrResult.errorMessage ?? "OCR을 완료하지 못했습니다."}
+                </p>
+              ) : null}
+
+              {ocrResult.regions.length > 0 ? (
+                <div className="grid max-h-56 gap-2 overflow-y-auto">
+                  {ocrResult.regions.map((region, index) => (
+                    <button
+                      aria-pressed={region.id === selectedRegion?.id}
+                      className={cx(
+                        "grid grid-cols-[28px_minmax(0,1fr)] gap-2 rounded-lg border px-3 py-2 text-left text-sm leading-5",
+                        region.id === selectedRegion?.id
+                          ? "border-[var(--color-primary)] bg-[var(--color-panel)]"
+                          : "border-[var(--color-hairline)] hover:bg-[var(--color-panel)]",
+                      )}
+                      key={region.id}
+                      onClick={() => onSelectRegion(ocrResult.imageId, region.id)}
+                      type="button"
+                    >
+                      <span className="text-xs tabular-nums text-[var(--color-muted)]">
+                        {index + 1}
+                      </span>
+                      <span>{region.text}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {ocrResult.fullText ? (
+                <div className="border-t border-[var(--color-hairline)] pt-3">
+                  <p className="text-xs font-medium text-[var(--color-muted)]">전체 추출 문구</p>
+                  <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-sm leading-6">
+                    {ocrResult.fullText}
+                  </p>
+                </div>
+              ) : ocrResult.status !== "failed" ? (
+                <p className="text-sm leading-6 text-[var(--color-muted)]">
+                  이미지에서 텍스트를 찾지 못했습니다.
+                </p>
+              ) : null}
+            </div>
           </div>
-          <div className="rounded-xl border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-4">
-            <p className="text-sm font-semibold">OCR 추출 텍스트</p>
-            {ocrResult.fullText ? (
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
-                {ocrResult.fullText}
-              </p>
-            ) : (
-              <p className="mt-3 text-sm leading-6 text-[var(--color-muted)]">
-                이미지에서 텍스트를 찾지 못했거나 OCR을 완료하지 못했습니다.
-              </p>
-            )}
-          </div>
-        </div>
+        </>
       ) : (
         <p className="p-5 text-sm leading-6 text-[var(--color-muted)]">
           업로드된 이미지가 없습니다. 이미지가 있으면 OCR 문구와 위치가 이곳에
@@ -356,6 +592,22 @@ function OcrEvidencePanel({
       )}
     </section>
   );
+}
+
+function getOcrStatusLabel(status: OcrResult["status"]) {
+  if (status === "succeeded") {
+    return "추출 완료";
+  }
+
+  if (status === "failed") {
+    return "추출 실패";
+  }
+
+  if (status === "empty") {
+    return "문구 없음";
+  }
+
+  return "미실행";
 }
 
 function FindingInspector({

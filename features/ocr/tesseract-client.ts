@@ -1,6 +1,6 @@
 import type { OcrExtractionResult, OcrImageRegion } from "@/features/ocr/types";
 
-type TesseractWord = {
+type TesseractLine = {
   bbox?: {
     x0: number;
     x1: number;
@@ -62,12 +62,12 @@ export async function extractImageTextWithTesseract(
     })();
     const result = await Promise.race([ocrPromise, timeoutPromise]);
     const text = normalizeOcrText(result.data.text);
-    const words = collectWords(result.data.blocks);
+    const lines = collectLines(result.data.blocks);
     const regions = createOcrRegions({
       imageScopedId: `${file.name}-${file.lastModified}`,
       imageHeight: imageDimensions.height,
       imageWidth: imageDimensions.width,
-      words,
+      lines,
     });
 
     return {
@@ -98,63 +98,56 @@ export async function extractImageTextWithTesseract(
   }
 }
 
-function collectWords(blocks: Tesseract.Block[] | null): TesseractWord[] {
-  const words: TesseractWord[] = [];
+function collectLines(blocks: Tesseract.Block[] | null): TesseractLine[] {
+  const lines: TesseractLine[] = [];
 
   for (const block of blocks ?? []) {
     for (const paragraph of block.paragraphs) {
       for (const line of paragraph.lines) {
-        for (const word of line.words) {
-          if (word.text?.trim()) {
-            words.push(word);
-          }
+        if (line.text?.trim()) {
+          lines.push(line);
         }
       }
     }
   }
 
-  return words;
+  return lines;
 }
 
 function createOcrRegions({
   imageScopedId,
   imageHeight,
   imageWidth,
-  words,
+  lines,
 }: {
   imageScopedId: string;
   imageHeight: number;
   imageWidth: number;
-  words: TesseractWord[];
+  lines: TesseractLine[];
 }): OcrImageRegion[] {
-  const usableWords = words.filter(
-    (word) => word.bbox && (word.confidence ?? 0) >= 35,
+  const usableLines = lines.filter(
+    (line) => line.bbox && line.text?.trim() && (line.confidence ?? 0) >= 25,
   );
 
-  if (usableWords.length === 0 || imageWidth <= 0 || imageHeight <= 0) {
+  if (usableLines.length === 0 || imageWidth <= 0 || imageHeight <= 0) {
     return [];
   }
 
-  const x0 = Math.min(...usableWords.map((word) => word.bbox?.x0 ?? 0));
-  const y0 = Math.min(...usableWords.map((word) => word.bbox?.y0 ?? 0));
-  const x1 = Math.max(...usableWords.map((word) => word.bbox?.x1 ?? 0));
-  const y1 = Math.max(...usableWords.map((word) => word.bbox?.y1 ?? 0));
-  const averageConfidence =
-    usableWords.reduce((sum, word) => sum + (word.confidence ?? 0), 0) /
-    usableWords.length;
+  return usableLines.slice(0, 80).map((line, index) => {
+    const bbox = line.bbox;
+    const label = normalizeOcrText(line.text ?? "");
 
-  return [
-    {
-      confidence: clampConfidence(averageConfidence / 100),
-      height: clamp01((y1 - y0) / imageHeight),
-      id: `ocr-region-${hashText(imageScopedId)}`,
-      label: "OCR 추출 문구 영역",
+    return {
+      confidence: clampConfidence((line.confidence ?? 0) / 100),
+      height: clamp01(((bbox?.y1 ?? 0) - (bbox?.y0 ?? 0)) / imageHeight),
+      id: `ocr-region-${hashText(`${imageScopedId}-${index}-${label}`)}`,
+      label,
       type: "ocr_text",
-      width: clamp01((x1 - x0) / imageWidth),
-      x: clamp01(x0 / imageWidth),
-      y: clamp01(y0 / imageHeight),
-    },
-  ];
+      width: clamp01(((bbox?.x1 ?? 0) - (bbox?.x0 ?? 0)) / imageWidth),
+      x: clamp01((bbox?.x0 ?? 0) / imageWidth),
+      y: clamp01((bbox?.y0 ?? 0) / imageHeight),
+    };
+  });
 }
 
 function getImageDimensions(file: File) {

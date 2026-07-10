@@ -45,6 +45,8 @@ export type OcrTextRegion = {
 export type OcrResult = {
   confidence: number;
   createdAt: string;
+  errorMessage?: string;
+  fileName?: string;
   fullText: string;
   id: string;
   imageId: string;

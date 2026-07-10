@@ -199,12 +199,13 @@ function createOcrResult({
   const regions = mapOcrRegions({
     imageId,
     regions: ocrResult?.regions ?? [],
-    text: ocrResult?.text ?? "",
   });
 
   return {
     confidence: ocrResult?.confidence ?? 0,
     createdAt: timestamp,
+    errorMessage: ocrResult?.errorMessage,
+    fileName: image.fileName,
     fullText: ocrResult?.text ?? "",
     id: `${imageId}-ocr`,
     imageId,
@@ -219,11 +220,9 @@ function createOcrResult({
 function mapOcrRegions({
   imageId,
   regions,
-  text,
 }: {
   imageId: string;
   regions: OcrImageRegion[];
-  text: string;
 }): OcrTextRegion[] {
   return regions.map((region, index) => ({
     confidence: region.confidence,
@@ -231,7 +230,7 @@ function mapOcrRegions({
     id: region.id,
     imageId,
     lineNumber: index + 1,
-    text: text || region.label,
+    text: region.label,
     width: region.width,
     x: region.x,
     y: region.y,
@@ -245,17 +244,33 @@ function createOcrTextSegments({
   result: OcrResult;
   reviewJobId: string;
 }) {
+  if (result.regions.length > 0) {
+    return result.regions.flatMap((region) =>
+      splitTextIntoSegments({
+        reviewJobId,
+        source: "image_ocr",
+        text: region.text,
+      }).map(
+        (segment): TextSegment => ({
+          ...segment,
+          id: `${segment.id}-${result.imageId}-${region.id}`,
+          imageId: result.imageId,
+          lineNumber: region.lineNumber,
+          regionId: region.id,
+        }),
+      ),
+    );
+  }
+
   const segments = splitTextIntoSegments({
     reviewJobId,
     source: "image_ocr",
     text: result.fullText,
   });
-  const regionId = result.regions[0]?.id;
 
   return segments.map((segment): TextSegment => ({
     ...segment,
     imageId: result.imageId,
-    regionId,
   }));
 }
 
