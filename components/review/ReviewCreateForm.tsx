@@ -197,9 +197,9 @@ export function ReviewCreateForm() {
   );
 
   return (
-    <form className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:px-8" onSubmit={handleSubmit}>
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="grid gap-6">
+    <form className="mx-auto grid w-full max-w-[1500px] gap-6 px-5 py-6 sm:px-6 lg:min-h-0 lg:flex-1 lg:px-8" onSubmit={handleSubmit}>
+      <section className="grid min-h-0 gap-6 lg:h-full lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid min-h-0 gap-6 lg:grid-rows-[auto_minmax(0,1fr)]">
           <section className="app-panel p-5">
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="검수 제목" error={form.formState.errors.title?.message}>
@@ -245,8 +245,8 @@ export function ReviewCreateForm() {
             </div>
           </section>
 
-          <section className="app-panel p-5">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+          <section className="app-panel flex min-h-0 flex-col p-5">
+            <div className="flex shrink-0 flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-[var(--color-muted)]">
                   대본/문구 검사
@@ -257,10 +257,10 @@ export function ReviewCreateForm() {
                 {policyTerms.filter((term) => term.enabled).length}개 정책 적용
               </span>
             </div>
-            <label className="mt-5 block">
+            <label className="mt-5 flex min-h-0 flex-1">
               <span className="sr-only">대본 또는 광고 문구</span>
               <textarea
-                className="app-input min-h-72 w-full resize-y px-4 py-3 text-sm leading-6"
+                className="app-input min-h-72 w-full resize-y px-4 py-3 text-sm leading-6 lg:h-full lg:min-h-0"
                 placeholder="영상 대본, 광고 문구, SNS 캡션을 붙여넣으세요."
                 {...form.register("originalText")}
               />
@@ -273,7 +273,7 @@ export function ReviewCreateForm() {
           </section>
         </div>
 
-        <aside className="grid h-fit gap-5">
+        <aside className="grid min-h-0 gap-5 lg:h-full lg:grid-rows-[minmax(0,1fr)_auto_auto]">
           <ImageUploadPanel
             imageError={imageError}
             imageFiles={imageFiles}
@@ -310,12 +310,12 @@ function ImageUploadPanel({
   onImageChange: (files: FileList | null) => void;
 }) {
   return (
-    <section className="app-panel p-5">
+    <section className="app-panel flex min-h-0 flex-col p-5">
       <p className="text-sm font-medium text-[var(--color-muted)]">
         이미지 OCR 검사
       </p>
       <h2 className="mt-2 text-2xl font-normal">이미지 업로드</h2>
-      <label className="mt-5 flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-6 text-center hover:bg-[var(--color-surface-strong)]">
+      <label className="mt-5 flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-4 py-6 text-center hover:bg-[var(--color-surface-strong)] lg:min-h-28">
         <UploadCloud aria-hidden="true" size={24} strokeWidth={1.8} />
         <span className="mt-3 text-sm font-medium">이미지 선택</span>
         <span className="mt-1 text-xs text-[var(--color-muted)]">
@@ -334,7 +334,7 @@ function ImageUploadPanel({
           {imageError}
         </p>
       ) : null}
-      <div className="mt-4 grid gap-2">
+      <div className="mt-4 grid min-h-0 flex-1 gap-2 overflow-y-auto">
         {imageFiles.length > 0 ? (
           imageFiles.map((file) => (
             <div
